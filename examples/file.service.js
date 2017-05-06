@@ -9,7 +9,7 @@ module.exports = {
 			responseType: "image/png",
 			handler(ctx) {
 				return new this.Promise((resolve, reject) => {
-					fs.readFile(path.join(__dirname, "www", "assets", "images", "logo.png"), (err, content) => {
+					fs.readFile(path.join(__dirname, "full", "assets", "images", "logo.png"), (err, content) => {
 						if (err)
 							return reject(err);
 

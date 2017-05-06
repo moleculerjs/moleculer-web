@@ -112,9 +112,6 @@ module.exports = {
 	// Service name
 	name: "api-gw",
 
-	// Version
-	version: "1.0",
-
 	// Default settings
 	settings: {
 
@@ -389,7 +386,7 @@ module.exports = {
 			.then(ctx => {
 				if (route.authorization) {
 					const params = {
-						apiKey: (query && query.apiKey) || req.headers["apikey"]
+						apiKey: (query && query.apikey) || req.headers["apikey"]
 					};
 					return ctx.call("auth.resolveUser", params).then(user => {
 						if (user) {
@@ -419,6 +416,7 @@ module.exports = {
 							"Content-type": contentType,
 							"Request-Id": ctx.id
 						});
+						//this.logger.info(`  Response as '${contentType}'. Duration: `, ctx.duration + "ms");
 						if (contentType == "application/json")
 							res.end(JSON.stringify(data));
 						else {
@@ -441,7 +439,7 @@ module.exports = {
 
 			// Error handling
 			.catch(err => {				
-				this.logger.error("Calling error!", err.name, ":", err.message, "\n", err.stack, "\nData:", err.data);
+				this.logger.error("  Calling error!", err.name, ":", err.message, "\n", err.stack, "\nData:", err.data);
 				
 				const headers = { 
 					"Content-type": "application/json"					
@@ -451,7 +449,8 @@ module.exports = {
 				}
 
 				// Return with the error
-				res.writeHead(err.code || 500, headers);
+				const code = _.isNumber(err.code) ? err.code : 500;
+				res.writeHead(code, headers);
 				const errObj = _.pick(err, ["name", "message", "code", "data"]);
 				res.end(JSON.stringify(errObj, null, 2));
 

@@ -11,7 +11,7 @@
 			"program": "${workspaceRoot}\\examples\\index.js",
 			"cwd": "${workspaceRoot}",
 			"args": [
-				"simple"
+				"ssl"
 			]
 		}
 	]

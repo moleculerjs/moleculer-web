@@ -1,68 +1,90 @@
 "use strict";
 
-let fs = require("fs");
-let path = require("path");
+/**
+ * This example uses all features of API Gateway:
+ * 	- server assets
+ *  - SSL
+ *  - Multi routes
+ *  - body-parsers
+ *  - whitelist
+ *  - alias
+ *  - authorization
+ * Metrics, statistics, validation features of Moleculer is enabled.
+ * 
+ * Example:
+ * 	
+ *  - Open index.html
+ * 		http://localhost:3000
+ * 	
+ *  - Access to assets
+ * 		http://localhost:3000/images/logo.png
+ * 	
+ *  - API: Add two numbers (use alias name)
+ * 		http://localhost:3000/api/add?a=25&b=13
+ * 	
+ *  - API: Divide two numbers with validation
+ * 		http://localhost:3000/api/math/div?a=25&b=13
+ * 		http://localhost:3000/api/math/div?a=25      <-- Throw validation error because b is missing
+ * 	
+ *  - API: get health info
+ * 		http://localhost:3000/api/~node/health
+ * 
+ */
 
-let { ServiceBroker } = require("moleculer");
-let MemoryCacher = require("moleculer").Cachers.Memory;
-let NatsTransporter = require("moleculer").Transporters.NATS;
-
-let ApiGatewayService = require("../../index");
+let fs	 				= require("fs");
+let path 				= require("path");
+let { ServiceBroker } 	= require("moleculer");
+let ApiGatewayService 	= require("../../index");
 
 // Create broker
 let broker = new ServiceBroker({
-	//cacher: new MemoryCacher(),
-	//transporter: new NatsTransporter(),
-	nodeID: "server",
 	logger: console,
-	logLevel: {
-		"*": "info",
-		"API-GW-SVC": "debug"
-	},
 	metrics: true,
-	metricsRate: 1,
 	statistics: true,
-
 	validation: true
-	
 });
 
-//broker.on("metrics.**", console.log);
+// Load other services
+broker.loadServices(path.join(__dirname, ".."), "*.service.js");
 
-//broker.loadServices(path.join(__dirname, ".."));
+// Load metrics example service from Moleculer
+broker.createService(require("moleculer/examples/metrics.service.js")());
 
-//broker.loadService(path.join(__dirname, "..", "api.service"));
-broker.loadService(path.join(__dirname, "..", "auth.service"));
-broker.loadService(path.join(__dirname, "..", "math.service"));
-broker.loadService(path.join(__dirname, "..", "file.service"));
-//broker.loadService(path.join(__dirname, "..", "metrics.service"));
-
+// Load API Gateway
 broker.createService(ApiGatewayService, {
 	settings: {
 
 		// Exposed port
-		port: process.env.PORT || 4000,
+		port: 4000,
 
 		// Exposed IP
-		ip: process.env.IP || "0.0.0.0",
+		ip: "0.0.0.0",
 
 		// HTTPS server with certificate
-		_https: {
-			key: fs.readFileSync("examples/www/ssl/key.pem"),
-			cert: fs.readFileSync("examples/www/ssl/cert.pem")
+		https: {
+			key: fs.readFileSync(path.join(__dirname, "../ssl/key.pem")),
+			cert: fs.readFileSync(path.join(__dirname, "../ssl/cert.pem"))
 		},
 
 		// Exposed path prefix
 		path: "/api",
 
 		routes: [
+
+			/**
+			 * This route demonstrates a protected `/api/admin` path to access `users.*` & internal actions.
+			 * To test you have to set an `apikey` header item with `123` value or pass as a query variable
+			 * E.g.: 
+			 * 		https://localhost:4000/api/admin/~node/health?apikey=123
+			 * 
+			 */
 			{
 				// Path prefix to this route
 				path: "/admin",
 
 				// Whitelist of actions (array of string mask or regex)
 				whitelist: [
-					"users.get",
+					"users.*",
 					"$node.*"
 				],
 
@@ -80,6 +102,9 @@ broker.createService(ApiGatewayService, {
 				}
 			},
 
+			/**
+			 * This route demonstrates a public `/api` path to access `posts`, `file` and `math` actions.
+			 */
 			{
 				// Path prefix to this route
 				path: "/",
@@ -120,5 +145,5 @@ broker.createService(ApiGatewayService, {
 	}
 });
 
-
+// Start server
 broker.start();
