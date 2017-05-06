@@ -319,7 +319,7 @@ module.exports = {
 				if (route.hasWhitelist) {
 					if (!this.checkWhitelist(route, actionName)) {
 						this.logger.debug(`  The '${actionName}' action is not in the whitelist!`);
-						return Promise.reject(new ServiceNotFoundError(`Action '${actionName}' is not available!`, actionName));
+						return this.Promise.reject(new ServiceNotFoundError(`Action '${actionName}' is not available!`, actionName));
 					}
 				}
 			})
@@ -357,7 +357,7 @@ module.exports = {
 						this.broker.validator.validate(params, endpoint.action.params);					
 				} else {
 					// Action is not available
-					return Promise.reject(new ServiceNotFoundError(`Action '${actionName}' is not available!`, actionName));
+					return this.Promise.reject(new ServiceNotFoundError(`Action '${actionName}' is not available!`, actionName));
 				}
 
 				return endpoint;
@@ -394,7 +394,7 @@ module.exports = {
 							ctx.meta.user = user;
 						} else {
 							this.logger.warn("No logged in user!");
-							return Promise.reject(new CustomError("Forbidden", 403));
+							return this.Promise.reject(new CustomError("Forbidden", 403));
 						}
 
 						return ctx;

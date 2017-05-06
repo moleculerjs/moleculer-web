@@ -33,7 +33,8 @@
     "jest": "19.0.2",
     "lolex": "1.6.0",
     "nodemon": "1.11.0",
-    "npm-check": "5.4.0"
+    "npm-check": "5.4.0",
+    "supertest": "3.0.0"
   },
   "jest": {
     "testEnvironment": "node",
