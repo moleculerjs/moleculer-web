@@ -2,7 +2,7 @@
 
 const request = require("supertest");
 const ApiGateway = require("../../src");
-const { ServiceBroker } = require("Moleculer");
+const { ServiceBroker } = require("moleculer");
 
 
 describe("Test default settings", () => {
