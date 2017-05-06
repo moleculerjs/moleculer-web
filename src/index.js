@@ -124,7 +124,11 @@ module.exports = {
 		routes: [
 			{
 				// Path prefix to this route
-				path: "/"
+				path: "/",
+
+				bodyParsers: {
+					json: true
+				}
 			}			
 		]
 
@@ -327,7 +331,7 @@ module.exports = {
 			// Parse body
 			.then(() => {
 				
-				if (["POST", "PUT", "PATCH"].indexOf(req.method) !== -1 && route.parsers.length > 0) {
+				if (["POST", "PUT", "PATCH"].indexOf(req.method) !== -1 && route.parsers && route.parsers.length > 0) {
 					return this.Promise.mapSeries(route.parsers, parser => {
 						return new this.Promise((resolve, reject) => {
 							parser(req, res, err => {

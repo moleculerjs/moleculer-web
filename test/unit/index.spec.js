@@ -18,7 +18,7 @@ describe("Test default settings", () => {
 		server = service.server;
 	});
 
-	it("should return with the result of math.add", () => {
+	it("GET /math/add", () => {
 		return request(server)
 			.get("/math/add")
 			.query({a: 5, b: 4 })
@@ -29,7 +29,7 @@ describe("Test default settings", () => {
 			});
 	});
 
-	it("should return with error if request `/` root path", () => {
+	it("GET /", () => {
 		return request(server)
 			.get("/")
 			.expect(404, "Not found")
@@ -38,7 +38,7 @@ describe("Test default settings", () => {
 			});
 	});
 
-	it("should return with error if the action is not exists", () => {
+	it("GET /other/action", () => {
 		return request(server)
 			.get("/other/action")
 			.expect("Content-Type", "application/json")
@@ -51,4 +51,38 @@ describe("Test default settings", () => {
 				});
 			});
 	});
+
+	it("POST /math/add with query", () => {
+		return request(server)
+			.post("/math/add")
+			.query({a: 5, b: 4 })
+			.expect("Content-Type", "application/json")
+			.expect(200)
+			.then(res => {
+				expect(res.body).toBe(9);
+			});
+	});	
+
+	it("POST /math/add with body", () => {
+		return request(server)
+			.post("/math/add")
+			.send({a: 10, b: 8 })
+			.expect("Content-Type", "application/json")
+			.expect(200)
+			.then(res => {
+				expect(res.body).toBe(18);
+			});
+	});	
+
+	it("POST /math/add with query & body", () => {
+		return request(server)
+			.post("/math/add")
+			.query({a: 5, b: 4 })
+			.send({a: 10, b: 8 })
+			.expect("Content-Type", "application/json")
+			.expect(200)
+			.then(res => {
+				expect(res.body).toBe(18);
+			});
+	});	
 });
