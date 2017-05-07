@@ -28,6 +28,7 @@ let broker = new ServiceBroker({
 });
 
 // Load other services
+broker.loadService(path.join(__dirname, "..", "test.service"));
 broker.loadService(path.join(__dirname, "..", "math.service"));
 
 // Load API Gateway
