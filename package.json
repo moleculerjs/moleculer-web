@@ -30,7 +30,8 @@
     "coveralls": "2.13.1",
     "eslint": "3.19.0",
     "fakerator": "0.3.0",
-    "jest": "19.0.2",
+    "jest": "20.0.0",
+    "jest-cli": "20.0.0",
     "lolex": "1.6.0",
     "nodemon": "1.11.0",
     "npm-check": "5.4.0",
@@ -46,7 +47,7 @@
   "dependencies": {
     "body-parser": "1.17.1",
     "es6-error": "4.0.2",
-    "moleculer": "0.7.0",
+    "moleculer": "0.7.1",
     "nanomatch": "1.1.1",
     "serve-static": "1.12.2"
   },
