@@ -34,8 +34,12 @@ module.exports = {
 			}
 		},
 
-		text: {
-			//responseType: "text/plain",
+		text(ctx) {
+			return "String text";
+		},
+
+		textPlain: {
+			responseType: "text/plain",
 			handler(ctx) {
 				return "Plain text";
 			}

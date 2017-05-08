@@ -5,8 +5,11 @@ const _ = require("lodash");
 module.exports = {
 	name: "test",
 	actions: {
-		hello(ctx) {
-			return "Hello Moleculer";
+		hello: {
+			responseType: "text/plain",
+			handler(ctx) {
+				return "Hello Moleculer";
+			}
 		},
 
 		greeter: {

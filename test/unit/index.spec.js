@@ -54,9 +54,9 @@ describe("Test default settings", () => {
 		return request(server)
 			.get("/test/hello")
 			.expect(200)
-			.expect("Content-Type", "text/plain")
+			.expect("Content-Type", "application/json")
 			.then(res => {
-				expect(res.text).toBe("Hello Moleculer");
+				expect(res.body).toBe("Hello Moleculer");
 			});
 	});
 
@@ -65,8 +65,9 @@ describe("Test default settings", () => {
 			.get("/test/greeter")
 			.query({ name: "John" })
 			.expect(200)
+			.expect("Content-Type", "application/json")
 			.then(res => {
-				expect(res.text).toBe("Hello John");
+				expect(res.body).toBe("Hello John");
 			});
 	});
 
@@ -75,8 +76,9 @@ describe("Test default settings", () => {
 			.post("/test/greeter")
 			.query({ name: "John" })
 			.expect(200)
+			.expect("Content-Type", "application/json")
 			.then(res => {
-				expect(res.text).toBe("Hello John");
+				expect(res.body).toBe("Hello John");
 			});
 	});	
 
@@ -85,8 +87,9 @@ describe("Test default settings", () => {
 			.post("/test/greeter")
 			.send({ name: "Adam" })
 			.expect(200)
+			.expect("Content-Type", "application/json")
 			.then(res => {
-				expect(res.text).toBe("Hello Adam");
+				expect(res.body).toBe("Hello Adam");
 			});
 	});	
 
@@ -96,8 +99,9 @@ describe("Test default settings", () => {
 			.query({ name: "John" })
 			.send({ name: "Adam" })
 			.expect(200)
+			.expect("Content-Type", "application/json")
 			.then(res => {
-				expect(res.text).toBe("Hello Adam");
+				expect(res.body).toBe("Hello Adam");
 			});
 	});	
 });
@@ -116,9 +120,19 @@ describe("Test responses", () => {
 		return request(server)
 			.get("/test/text")
 			.expect(200)
-			.expect("Content-Type", "text/plain")
+			.expect("Content-Type", "application/json")
 			.then(res => {
 				expect(res.header["request-id"]).toBeDefined();
+				expect(res.body).toEqual("String text");
+			});
+	});
+
+	it("GET /test/text with 'text/plain'", () => {
+		return request(server)
+			.get("/test/textPlain")
+			.expect(200)
+			.expect("Content-Type", "text/plain")
+			.then(res => {
 				expect(res.text).toEqual("Plain text");
 			});
 	});
@@ -127,9 +141,9 @@ describe("Test responses", () => {
 		return request(server)
 			.get("/test/number")
 			.expect(200)
-			.expect("Content-Type", "text/plain")
+			.expect("Content-Type", "application/json")
 			.then(res => {
-				expect(res.text).toEqual("123");
+				expect(res.body).toEqual(123);
 			});
 	});
 
@@ -137,9 +151,9 @@ describe("Test responses", () => {
 		return request(server)
 			.get("/test/boolean")
 			.expect(200)
-			.expect("Content-Type", "text/plain")
+			.expect("Content-Type", "application/json")
 			.then(res => {
-				expect(res.text).toEqual("true");
+				expect(res.body).toEqual(true);
 			});
 	});
 
@@ -280,9 +294,9 @@ describe("Test with `path` prefix", () => {
 		return request(server)
 			.get("/my-api/test/hello")
 			.expect(200)
-			.expect("Content-Type", "text/plain")
+			.expect("Content-Type", "application/json")
 			.then(res => {
-				expect(res.text).toBe("Hello Moleculer");
+				expect(res.body).toBe("Hello Moleculer");
 			});
 	});
 
@@ -373,9 +387,9 @@ describe("Test assets & API route", () => {
 		return request(server)
 			.get("/api/test/hello")
 			.expect(200)
-			.expect("Content-Type", "text/plain")
+			.expect("Content-Type", "application/json")
 			.then(res => {
-				expect(res.text).toBe("Hello Moleculer");
+				expect(res.body).toBe("Hello Moleculer");
 			});
 	});	
 
@@ -404,9 +418,9 @@ describe("Test whitelist", () => {
 		return request(server)
 			.get("/api/test/hello")
 			.expect(200)
-			.expect("Content-Type", "text/plain")
+			.expect("Content-Type", "application/json")
 			.then(res => {
-				expect(res.text).toBe("Hello Moleculer");
+				expect(res.body).toBe("Hello Moleculer");
 			});
 	});	
 
@@ -429,9 +443,9 @@ describe("Test whitelist", () => {
 			.get("/api/math.add")
 			.query({ a: 5, b: 8 })
 			.expect(200)
-			.expect("Content-Type", "text/plain")
+			.expect("Content-Type", "application/json")
 			.then(res => {
-				expect(res.text).toBe("13");
+				expect(res.body).toBe(13);
 			});
 	});	
 
@@ -440,9 +454,9 @@ describe("Test whitelist", () => {
 			.get("/api/math.sub")
 			.query({ a: 5, b: 8 })
 			.expect(200)
-			.expect("Content-Type", "text/plain")
+			.expect("Content-Type", "application/json")
 			.then(res => {
-				expect(res.text).toBe("-3");
+				expect(res.body).toBe(-3);
 			});
 	});	
 });
@@ -473,9 +487,9 @@ describe("Test alias", () => {
 			.get("/api/math.add")
 			.query({ a: 5, b: 8 })
 			.expect(200)
-			.expect("Content-Type", "text/plain")
+			.expect("Content-Type", "application/json")
 			.then(res => {
-				expect(res.text).toBe("13");
+				expect(res.body).toBe(13);
 			});
 	});
 
@@ -485,9 +499,9 @@ describe("Test alias", () => {
 			.get("/api/add")
 			.query({ a: 5, b: 8 })
 			.expect(200)
-			.expect("Content-Type", "text/plain")
+			.expect("Content-Type", "application/json")
 			.then(res => {
-				expect(res.text).toBe("13");
+				expect(res.body).toBe(13);
 			});
 	});		
 
@@ -496,9 +510,9 @@ describe("Test alias", () => {
 			.post("/api/add")
 			.send({ a: 5, b: 8 })
 			.expect(200)
-			.expect("Content-Type", "text/plain")
+			.expect("Content-Type", "application/json")
 			.then(res => {
-				expect(res.text).toBe("13");
+				expect(res.body).toBe(13);
 			});
 	});		
 
@@ -506,9 +520,9 @@ describe("Test alias", () => {
 		return request(server)
 			.get("/api/test/hello")
 			.expect(200)
-			.expect("Content-Type", "text/plain")
+			.expect("Content-Type", "application/json")
 			.then(res => {
-				expect(res.text).toBe("Hello Moleculer");
+				expect(res.body).toBe("Hello Moleculer");
 			});
 	});	
 
@@ -516,9 +530,9 @@ describe("Test alias", () => {
 		return request(server)
 			.get("/api/hello")
 			.expect(200)
-			.expect("Content-Type", "text/plain")
+			.expect("Content-Type", "application/json")
 			.then(res => {
-				expect(res.text).toBe("Hello Moleculer");
+				expect(res.body).toBe("Hello Moleculer");
 			});
 	});	
 
@@ -527,9 +541,9 @@ describe("Test alias", () => {
 			.post("/api/hello")
 			.query({ name: "Ben" })
 			.expect(200)
-			.expect("Content-Type", "text/plain")
+			.expect("Content-Type", "application/json")
 			.then(res => {
-				expect(res.text).toBe("Hello Ben");
+				expect(res.body).toBe("Hello Ben");
 			});		
 	});	
 
@@ -562,9 +576,9 @@ describe("Test alias & whitelist", () => {
 			.get("/api/add")
 			.query({ a: 5, b: 8 })
 			.expect(200)
-			.expect("Content-Type", "text/plain")
+			.expect("Content-Type", "application/json")
 			.then(res => {
-				expect(res.text).toBe("13");
+				expect(res.body).toBe(13);
 			});
 	});		
 
@@ -631,9 +645,9 @@ describe("Test body-parsers", () => {
 			.post("/test.greeter")
 			.send({ name: "John" })
 			.expect(200)
-			.expect("Content-Type", "text/plain")
+			.expect("Content-Type", "application/json")
 			.then(res => {
-				expect(res.text).toBe("Hello John");
+				expect(res.body).toBe("Hello John");
 			});
 	});	
 
@@ -696,9 +710,9 @@ describe("Test body-parsers", () => {
 			.set("Content-Type", "application/x-www-form-urlencoded")
 			.send({ name: "Adam" })
 			.expect(200)
-			.expect("Content-Type", "text/plain")
+			.expect("Content-Type", "application/json")
 			.then(res => {
-				expect(res.text).toBe("Hello Adam");
+				expect(res.body).toBe("Hello Adam");
 			});
 	});		
 
@@ -748,9 +762,9 @@ describe("Test multiple routes", () => {
 		return request(server)
 			.get("/api2/test/hello")
 			.expect(200)
-			.expect("Content-Type", "text/plain")
+			.expect("Content-Type", "application/json")
 			.then(res => {
-				expect(res.text).toBe("Hello Moleculer");
+				expect(res.body).toBe("Hello Moleculer");
 			});
 	});	
 
@@ -759,9 +773,9 @@ describe("Test multiple routes", () => {
 			.get("/api1/math.add")
 			.query({ a: 5, b: 8 })
 			.expect(200)
-			.expect("Content-Type", "text/plain")
+			.expect("Content-Type", "application/json")
 			.then(res => {
-				expect(res.text).toBe("13");
+				expect(res.body).toBe(13);
 			});
 	});	
 
@@ -777,9 +791,9 @@ describe("Test multiple routes", () => {
 			.get("/api1/main")
 			.query({ a: 5, b: 8 })
 			.expect(200)
-			.expect("Content-Type", "text/plain")
+			.expect("Content-Type", "application/json")
 			.then(res => {
-				expect(res.text).toBe("13");
+				expect(res.body).toBe(13);
 			});
 	});	
 
@@ -788,9 +802,9 @@ describe("Test multiple routes", () => {
 			.get("/api2/main")
 			.query({ name: "Thomas" })
 			.expect(200)
-			.expect("Content-Type", "text/plain")
+			.expect("Content-Type", "application/json")
 			.then(res => {
-				expect(res.text).toBe("Hello Thomas");
+				expect(res.body).toBe("Hello Thomas");
 			});
 	});	
 });

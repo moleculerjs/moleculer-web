@@ -452,11 +452,15 @@ module.exports = {
 								res.setHeader("Content-Type", responseType || "application/json");
 								res.end(JSON.stringify(data));
 							} else if (_.isString(data)) {
-								res.setHeader("Content-Type", responseType || "text/plain");
-								res.end(data);
-
+								if (!responseType) {
+									res.setHeader("Content-Type", "application/json");
+									res.end(JSON.stringify(data));
+								} else {
+									res.setHeader("Content-Type", responseType);
+									res.end(data);
+								}
 							} else {
-								res.setHeader("Content-Type", responseType || "text/plain");
+								res.setHeader("Content-Type", responseType || "application/json");
 								res.end(JSON.stringify(data));
 
 							}
