@@ -27,12 +27,11 @@ npm install moleculer-web --save
 
 ### Run with default settings
 This example uses API Gateway service with default settings.
-You can access to all services (including internal `$node.`) via `http://localhost:3000`
-
+You can access to all services (including internal `$node.`) via `http://localhost:3000/`
 
 ```js
-let { ServiceBroker } 	= require("moleculer");
-let ApiService 			= require("moleculer-web");
+let { ServiceBroker } = require("moleculer");
+let ApiService = require("moleculer-web");
 
 // Create broker
 let broker = new ServiceBroker();
@@ -48,17 +47,105 @@ broker.start();
 ```
 
 **Example URLs:**	
-- `http://localhost:3000/test/hello`
-- `http://localhost:3000/math/add?a=25&b=13`
+- Call `test.hello` action: `http://localhost:3000/test/hello`
+- Call `math.add` action with params: `http://localhost:3000/math/add?a=25&b=13`
 
-- Get health info `http://localhost:3000/~node/health`
-- List of actions `http://localhost:3000/~node/actions`
+- Get health info of node: `http://localhost:3000/~node/health`
+- List all actions: `http://localhost:3000/~node/actions`
+
+
+# Service settings
+
+```js
+settings: {
+
+	// Exposed port
+	port: process.env.PORT || 4000,
+
+	// Exposed IP
+	ip: process.env.IP || "0.0.0.0",
+
+	// HTTPS server with certificate
+	https: {
+		key: fs.readFileSync("ssl/key.pem"),
+		cert: fs.readFileSync("ssl/cert.pem")
+	},
+
+	// Exposed path prefix
+	path: "/api",
+
+	// Routes
+	routes: [
+		{
+			// Path prefix to this route  (full path: /api/admin )
+			path: "/admin",
+
+			// Whitelist of actions (array of string mask or regex)
+			whitelist: [
+				"users.get",
+				"$node.*"
+			],
+
+			// Under development
+			authorization: true,
+
+			// Action aliases
+			aliases: {
+				"POST users": "users.create",
+				"health": "$node.health"
+			},
+
+			// Use bodyparser module
+			bodyParsers: {
+				json: true,
+				urlencoded: { extended: true }
+			}
+		},
+		{
+			// Path prefix to this route  (full path: /api )
+			path: "",
+
+			// Whitelist of actions (array of string mask or regex)
+			whitelist: [
+				"posts.*",
+				"file.*",
+				/^math\.\w+$/
+			],
+
+			authorization: false,
+			
+			// Action aliases
+			aliases: {
+				"add": "math.add",
+				"GET sub": "math.sub",
+				"POST divide": "math.div",
+			},
+			
+			// Use bodyparser module
+			bodyParsers: {
+				json: false,
+				urlencoded: { extended: true }
+			}
+		}
+	],
+
+	// Folder to server assets (static files)
+	assets: {
+
+		// Root folder of assets
+		folder: "./examples/www/assets",
+		
+		// Options to `server-static` module
+		options: {}
+	}
+}
+```
 
 # Examples
-- [simple](/examples/simple)
-- [ssl](/examples/ssl)
-- [www](/examples/www)
-- [full](/examples/full)
+- [Simple](/examples/simple)
+- [SSL server](/examples/ssl)
+- [WWW with assets](/examples/www)
+- [All features](/examples/full)
 
 # Test
 ```
