@@ -1,10 +1,12 @@
 "use strict";
 
 const fs = require("fs");
+const http = require("http");
 const path = require("path");
 const request = require("supertest");
 const ApiGateway = require("../../src");
-const { ServiceBroker } = require("moleculer");
+const { ServiceBroker, Context } = require("moleculer");
+const { CustomError } = require("moleculer").Errors;
 
 function setup(settings) {
 	const broker = new ServiceBroker();
@@ -857,6 +859,84 @@ describe("Test multiple routes", () => {
 			});
 	});	
 });
+
+describe("Test authorization", () => {
+
+	it("don't enabled authorization if missing 'authorize' method", () => {
+		let service = setup({
+			routes: [{
+				authorization: true
+			}]
+		})[1];
+
+		expect(service.routes[0].authorization).toBe(false);
+	});	
+
+	it("should return with data", () => {
+		const broker = new ServiceBroker();
+		broker.loadService("./test/services/test.service");
+
+		const authorize = jest.fn(() => Promise.resolve());
+		const service = broker.createService(ApiGateway, {
+			settings: {
+				routes: [{
+					authorization: true
+				}]
+			},
+			methods: {
+				authorize
+			}
+		});
+		const server = service.server;	
+
+		expect(service.routes[0].authorization).toBe(true);
+
+		return request(server)
+			.get("/test/hello")
+			.expect(200)
+			.expect("Content-Type", "application/json")
+			.then(res => {
+				expect(res.body).toBe("Hello Moleculer");
+				expect(authorize).toHaveBeenCalledTimes(1);
+				expect(authorize).toHaveBeenCalledWith(jasmine.any(Context), jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse));
+			});		
+	});	
+
+	it("should give back error", () => {
+		const broker = new ServiceBroker();
+		broker.loadService("./test/services/test.service");
+
+		const authorize = jest.fn(() => Promise.reject(new CustomError("Unauthorized! Invalid token", 401)));
+		const service = broker.createService(ApiGateway, {
+			settings: {
+				routes: [{
+					authorization: true
+				}]
+			},
+			methods: {
+				authorize
+			}
+		});
+		const server = service.server;	
+
+		expect(service.routes[0].authorization).toBe(true);
+
+		return request(server)
+			.get("/test/hello")
+			.expect(401)
+			.expect("Content-Type", "application/json")
+			.then(res => {
+				expect(res.body).toEqual({
+					"code": 401, 
+					"message": "Unauthorized! Invalid token", 
+					"name": "CustomError"});
+				expect(authorize).toHaveBeenCalledTimes(1);
+				expect(authorize).toHaveBeenCalledWith(jasmine.any(Context), jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse));
+			});		
+	});	
+
+});
+
 
 describe("Test lifecycle events", () => {
 

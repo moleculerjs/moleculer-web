@@ -10,9 +10,12 @@
 
 module.exports = {
 	name: "auth",
-	settings: {
-	},
+
+	settings: {},
+
 	actions: {
+		
+
 		resolveUser(ctx) {
 			switch(ctx.params.apiKey) {
 			case "123": return { id: 1, name: "John Doe" };

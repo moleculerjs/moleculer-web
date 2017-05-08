@@ -21,93 +21,6 @@ const { InvalidRequestBodyError, InvalidResponseType } = require("./errors");
 
 /**
  * Official API Gateway service for Moleculer
- * 
- * Example settings:
- * 
- * 	settings: {
- * 
- * 		// Exposed port
- * 		port: process.env.PORT || 4000,
- * 
- * 		// Exposed IP
- * 		ip: process.env.IP || "0.0.0.0",
- * 
- * 		// HTTPS server with certificate
- * 		https: {
- * 			key: fs.readFileSync("examples/www/ssl/key.pem"),
- * 			cert: fs.readFileSync("examples/www/ssl/cert.pem")
- * 		},
- * 
- * 		// Exposed path prefix
- * 		path: "/api",
- * 
- * 		routes: [
- * 			{
- * 				// Path prefix to this route
- * 				path: "/admin",
- * 
- * 				// Whitelist of actions (array of string mask or regex)
- * 				whitelist: [
- * 					"users.get",
- * 					"$node.*"
- * 				],
- * 
- * 				authorization: true,
- * 
- * 				// Action aliases
- * 				aliases: {
- * 					"POST users": "users.create",
- * 					"health": "$node.health"
- * 				},
- * 
- * 				// Use bodyparser module
- * 				bodyParsers: {
- * 					json: true,
- * 					urlencoded: { extended: true }
- * 				}
- * 			},
- * 
- * 			{
- * 				// Path prefix to this route
- * 				path: "",
- * 
- * 				// Whitelist of actions (array of string mask or regex)
- * 				whitelist: [
- * 					"posts.*",
- * 					"file.*",
- * 					/^math\.\w+$/
- * 				],
- * 
- * 				authorization: false,
- * 
- * 				// Action aliases
- * 				aliases: {
- * 					"add": "math.add",
- * 					"GET sub": "math.sub",
- * 					"POST divide": "math.div",
- * 				},
- * 
- * 				// Use bodyparser module
- * 				bodyParsers: {
- * 					json: true,
- * 					urlencoded: { extended: true }
- * 				}
- * 
- * 			}
- * 		],
- * 
- * 		// Folder to server assets (static files)
- * 		assets: {
- * 			// Root folder of assets
- * 			folder: "./examples/www/assets",
- * 			// Options to `server-static` module
- * 			options: {}
- * 		}
- * 
- * 	}
- * 
- * 
- * 
  */
 module.exports = {
 
@@ -185,9 +98,17 @@ module.exports = {
 		 */
 		createRoute(opts) {
 			let route = {
-				opts,
-				authorization: opts.authorization
+				opts
 			};
+			if (opts.authorization) {
+				if (!_.isFunction(this.authorize)) {
+					this.logger.warn("If you would like to use authorization, please add a 'authorize' method to the service!");
+					route.authorization = false;
+				} else
+					route.authorization = true;
+			}
+
+
 			// Handle whitelist
 			route.whitelist = opts.whitelist;
 			route.hasWhitelist = Array.isArray(route.whitelist);
@@ -401,18 +322,7 @@ module.exports = {
 			// Authorization
 			.then(ctx => {
 				if (route.authorization) {
-					const params = {
-						apiKey: (query && query.apikey) || req.headers["apikey"]
-					};
-					return ctx.call("auth.resolveUser", params).then(user => {
-						if (user) {
-							this.logger.debug("Logged in user:", user);
-							ctx.meta.user = user;
-						} else {
-							this.logger.warn("No logged in user!");
-							return this.Promise.reject(new CustomError("Forbidden", 403));
-						}
-
+					return this.authorize(ctx, req, res).then(() => {
 						return ctx;
 					});
 				}
