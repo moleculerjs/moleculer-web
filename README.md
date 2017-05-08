@@ -8,7 +8,9 @@
 [![Known Vulnerabilities](https://snyk.io/test/github/ice-services/moleculer-web/badge.svg)](https://snyk.io/test/github/ice-services/moleculer-web)
 [![Join the chat at https://gitter.im/ice-services/moleculer](https://badges.gitter.im/ice-services/moleculer.svg)](https://gitter.im/ice-services/moleculer?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-# Official API Gateway for Moleculer framework
+# Official API Gateway for Moleculer framework  [![NPM version](https://img.shields.io/npm/v/moleculer-web.svg)](https://www.npmjs.com/package/moleculer-web)
+
+
 The `moleculer-web` is the official API gateway service for Moleculer. Use it to publish your services.
 
 ## Features
