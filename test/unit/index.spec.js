@@ -147,6 +147,16 @@ describe("Test responses", () => {
 			});
 	});
 
+	it("GET /test/numberPlain", () => {
+		return request(server)
+			.get("/test/numberPlain")
+			.expect(200)
+			.expect("Content-Type", "text/plain")
+			.then(res => {
+				expect(res.text).toEqual("123");
+			});
+	});
+
 	it("GET /test/boolean", () => {
 		return request(server)
 			.get("/test/boolean")
@@ -264,6 +274,21 @@ describe("Test responses", () => {
 				expect(res.text).toEqual("");
 			});
 	});
+
+	it("GET /test/error", () => {
+		return request(server)
+			.get("/test/error")
+			.expect(505)
+			.expect("Content-Type", "application/json")
+			.then(res => {
+				expect(res.header["request-id"]).toBeDefined();
+				expect(res.body).toEqual({
+					"code": 505, 
+					"message": "I'm dangerous", 
+					"name": "CustomError"
+				});
+			});
+	});	
 });
 
 describe("Test with `path` prefix", () => {
@@ -406,7 +431,8 @@ describe("Test whitelist", () => {
 				path: "/api",
 				whitelist: [
 					"test.hello",
-					"math.*"
+					"math.*",
+					/^test\.json/
 				]
 			}]
 		});
@@ -421,6 +447,29 @@ describe("Test whitelist", () => {
 			.expect("Content-Type", "application/json")
 			.then(res => {
 				expect(res.body).toBe("Hello Moleculer");
+			});
+	});	
+
+	it("GET /api/test/json", () => {
+		return request(server)
+			.get("/api/test/json")
+			.expect(200)
+			.expect("Content-Type", "application/json")
+			.then(res => {
+				expect(res.body).toEqual({ id: 1, name: "Eddie" });
+			});
+	});	
+
+	it("GET /api/test/jsonArray", () => {
+		return request(server)
+			.get("/api/test/jsonArray")
+			.expect(200)
+			.expect("Content-Type", "application/json")
+			.then(res => {
+				expect(res.body).toEqual([
+					{ id: 1, name: "John" },
+					{ id: 2, name: "Jane" },
+				]);
 			});
 	});	
 
@@ -831,5 +880,35 @@ describe("Test lifecycle events", () => {
 		});
 		expect(service.isHTTPS).toBe(true);
 	});
+
+	it("`started`", () => {
+		const broker = new ServiceBroker();
+		const service = broker.createService(ApiGateway);
+		const server = service.server;
+
+		server.listen = jest.fn();
+
+		service.schema.started.call(service);
+
+		expect(server.listen).toHaveBeenCalledTimes(1);
+		expect(server.listen).toHaveBeenCalledWith(service.settings.port, service.settings.ip, jasmine.any(Function));
+	});	
+
+	it("`stopped`", () => {
+		const broker = new ServiceBroker();
+		const service = broker.createService(ApiGateway);
+		const server = service.server;
+		server.listen();
+
+		const oldClose = server.close;
+		server.close = jest.fn();
+
+		service.schema.stopped.call(service);
+
+		expect(server.close).toHaveBeenCalledTimes(1);
+		expect(server.close).toHaveBeenCalledWith(jasmine.any(Function));
+
+		oldClose.call(server);
+	});	
 });
 

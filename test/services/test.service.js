@@ -49,6 +49,13 @@ module.exports = {
 			return 123;
 		},
 
+		numberPlain: {
+			responseType: "text/plain",
+			handler(ctx) {
+				return 123;	
+			}
+		},
+
 		boolean(ctx) {
 			return true;
 		},
@@ -113,6 +120,10 @@ module.exports = {
 			}, 100);
 
 			return stream;
+		},
+
+		error() {
+			throw new CustomError("I'm dangerous", 505);
 		}
 	}
 };

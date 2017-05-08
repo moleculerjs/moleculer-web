@@ -14,7 +14,7 @@ const _ 				= require("lodash");
 const bodyParser 		= require("body-parser");
 const serveStatic 		= require("serve-static");
 const nanomatch  		= require("nanomatch");
-const isStream  		= require("isStream");
+const isStream  		= require("isstream");
 
 const { ServiceNotFoundError, CustomError } = require("moleculer").Errors;
 const { InvalidRequestBodyError, InvalidResponseType } = require("./errors");
@@ -150,6 +150,7 @@ module.exports = {
 			this.isHTTPS = false;
 		}
 
+		/* istanbul ignore next */
 		this.server.on("error", err => {
 			this.logger.error("Server error", err);
 		});
@@ -291,10 +292,12 @@ module.exports = {
 				this.send404(req, res);
 
 			} catch(err) {
-				// 500
+				/* istanbul ignore next */
 				this.logger.error("Handler error!", err);
 
+				/* istanbul ignore next */
 				res.writeHead(500);
+				/* istanbul ignore next */
 				res.end("Server error! " + err.message);				
 			}
 		},
@@ -377,7 +380,7 @@ module.exports = {
 			})
 
 			// Create a new context for request
-			.then(endpoint => {
+			.then(() => {
 				this.logger.info(`  Call '${actionName}' action with params:`, params);
 
 				const restAction = {
@@ -429,7 +432,6 @@ module.exports = {
 						if (ctx.requestID)
 							res.setHeader("Request-Id", ctx.requestID);
 
-						//this.logger.info(`  Response as '${responseType}'. Duration: `, ctx.duration + "ms");
 						try {
 							if (data == null) {
 								res.end();
@@ -451,20 +453,20 @@ module.exports = {
 							} else if (_.isObject(data) || Array.isArray(data)) {
 								res.setHeader("Content-Type", responseType || "application/json");
 								res.end(JSON.stringify(data));
-							} else if (_.isString(data)) {
+							} else {
 								if (!responseType) {
 									res.setHeader("Content-Type", "application/json");
 									res.end(JSON.stringify(data));
 								} else {
 									res.setHeader("Content-Type", responseType);
-									res.end(data);
+									if (_.isString(data))
+										res.end(data);
+									else
+										res.end(data.toString());
 								}
-							} else {
-								res.setHeader("Content-Type", responseType || "application/json");
-								res.end(JSON.stringify(data));
-
 							}
 						} catch(err) {
+							/* istanbul ignore next */
 							return this.Promise.reject(new InvalidResponseType(typeof(data)));
 						}
 
@@ -503,10 +505,12 @@ module.exports = {
 		 */
 		checkWhitelist(route, action) {
 			return route.whitelist.find(mask => {
-				if (_.isString(mask))
-					return nanomatch.isMatch(action, mask, { unixify: false,  });
-				else if (_.isRegExp(mask))
+				if (_.isString(mask)) {
+					return nanomatch.isMatch(action, mask, { unixify: false });
+				}
+				else if (_.isRegExp(mask)) {
 					return mask.test(action);
+				}
 			}) != null;
 		},
 
@@ -532,6 +536,7 @@ module.exports = {
 	 * Service started lifecycle event handler
 	 */
 	started() {
+		/* istanbul ignore next */
 		this.server.listen(this.settings.port, this.settings.ip, err => {
 			if (err) 
 				return this.logger.error("API Gateway listen error!", err);
@@ -546,6 +551,7 @@ module.exports = {
 	 */
 	stopped() {
 		if (this.server.listening) {
+			/* istanbul ignore next */
 			this.server.close(err => {
 				if (err) 
 					return this.logger.error("API Gateway close error!", err);
