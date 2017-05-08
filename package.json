@@ -59,6 +59,5 @@
   },
   "engines": {
     "node": ">= 6.x.x"
-  },
-  "typings": "./index.d.ts"
+  }
 }
