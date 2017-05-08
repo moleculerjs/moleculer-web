@@ -14,8 +14,10 @@ const _ 				= require("lodash");
 const bodyParser 		= require("body-parser");
 const serveStatic 		= require("serve-static");
 const nanomatch  		= require("nanomatch");
+const isStream  		= require("isStream");
 
 const { ServiceNotFoundError, CustomError } = require("moleculer").Errors;
+const { InvalidRequestBodyError, InvalidResponseType } = require("./errors");
 
 /**
  * Official API Gateway service for Moleculer
@@ -143,8 +145,14 @@ module.exports = {
 		if (this.settings.https && this.settings.https.key && this.settings.https.cert) {
 			this.server = https.createServer(this.settings.https, this.httpHandler);
 			this.isHTTPS = true;
-		} else
+		} else {
 			this.server = http.createServer(this.httpHandler);
+			this.isHTTPS = false;
+		}
+
+		this.server.on("error", err => {
+			this.logger.error("Server error", err);
+		});
 
 		/*this.server.on("connection", socket => {
 			// Disable Nagle algorithm https://nodejs.org/dist/latest-v6.x/docs/api/net.html#net_socket_setnodelay_nodelay
@@ -335,8 +343,9 @@ module.exports = {
 					return this.Promise.mapSeries(route.parsers, parser => {
 						return new this.Promise((resolve, reject) => {
 							parser(req, res, err => {
-								if (err)
-									return reject(err);
+								if (err) {
+									return reject(new InvalidRequestBodyError(err.body, err.message));
+								}
 
 								resolve();
 							});
@@ -411,30 +420,48 @@ module.exports = {
 			.then(ctx => {
 				return ctx.call(endpoint, params)
 					.then(data => {
-						let contentType = "application/json";
-						if (endpoint.action.responseType)
-							contentType = endpoint.action.responseType;
+						res.statusCode = 200;
+
+						// Override responseType by action
+						const responseType = endpoint.action.responseType;
 
 						// Return with the response
-						res.writeHead(200, { 
-							"Content-type": contentType,
-							"Request-Id": ctx.id
-						});
-						//this.logger.info(`  Response as '${contentType}'. Duration: `, ctx.duration + "ms");
-						if (contentType == "application/json")
-							res.end(JSON.stringify(data));
-						else {
-							// Convert back Buffer (Transporter & serializer convert Buffer to JSON)
-							if (_.isString(data) || _.isBuffer(data)) {
+						if (ctx.requestID)
+							res.setHeader("Request-Id", ctx.requestID);
+
+						//this.logger.info(`  Response as '${responseType}'. Duration: `, ctx.duration + "ms");
+						try {
+							if (data == null) {
+								res.end();
+							}
+							else if (Buffer.isBuffer(data)) {
+								res.setHeader("Content-Type", responseType || "application/octet-stream");
+								res.setHeader("Content-Length", data.length);
 								res.end(data);
+
 							} else if (_.isObject(data) && data.type == "Buffer") {
 								const buf = Buffer.from(data);
+								res.setHeader("Content-Type", responseType || "application/octet-stream");
 								res.end(buf);
-							} else {
-								const err = new CustomError("Invalid response format: " + typeof(data) + "!");
-								return this.Promise.reject(err);
-							}
 
+							} else if (isStream(data)) {
+								res.setHeader("Content-Type", responseType || "application/octet-stream");
+								data.pipe(res);
+
+							} else if (_.isObject(data) || Array.isArray(data)) {
+								res.setHeader("Content-Type", responseType || "application/json");
+								res.end(JSON.stringify(data));
+							} else if (_.isString(data)) {
+								res.setHeader("Content-Type", responseType || "text/plain");
+								res.end(data);
+
+							} else {
+								res.setHeader("Content-Type", responseType || "text/plain");
+								res.end(JSON.stringify(data));
+
+							}
+						} catch(err) {
+							return this.Promise.reject(new InvalidResponseType(typeof(data)));
 						}
 
 						ctx._metricFinish(null, ctx.metrics);

@@ -7,6 +7,9 @@
  * 
  * Example:
  * 	
+ *  - Hello action
+ * 		http://localhost:3000/test/hello
+ * 
  *  - Add two numbers
  * 		http://localhost:3000/math/add?a=25&b=13
  * 
