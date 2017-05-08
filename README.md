@@ -16,7 +16,6 @@ The `moleculer-web` is the official API gateway service for Moleculer. Use it to
 * alias names
 * whitelist
 * multiple body parsers (json, urlencoded)
-* handle different response types
 * Buffer & Stream handling
 
 ## Install
@@ -28,7 +27,7 @@ npm install moleculer-web --save
 
 ### Run with default settings
 This example uses API Gateway service with default settings.
-You can access to math.* & internal $node.* actions via http://localhost:3000
+You can access to all services (including internal `$node.`) via `http://localhost:3000`
 
 
 ```js
@@ -49,20 +48,24 @@ broker.start();
 ```
 
 **Example URLs:**	
-- http://localhost:3000/test/hello
-- http://localhost:3000/math/add?a=25&b=13
+- `http://localhost:3000/test/hello`
+- `http://localhost:3000/math/add?a=25&b=13`
 
-- Get health info http://localhost:3000/~node/health
-- List of actions http://localhost:3000/~node/actions
+- Get health info `http://localhost:3000/~node/health`
+- List of actions `http://localhost:3000/~node/actions`
 
-
+# Examples
+- [simple](/examples/simple)
+- [ssl](/examples/ssl)
+- [www](/examples/www)
+- [full](/examples/full)
 
 # Test
 ```
 $ npm test
 ```
 
-or in development
+In development with watching
 
 ```
 $ npm run ci
