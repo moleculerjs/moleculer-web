@@ -898,7 +898,7 @@ describe("Test authorization", () => {
 			.then(res => {
 				expect(res.body).toBe("Hello Moleculer");
 				expect(authorize).toHaveBeenCalledTimes(1);
-				expect(authorize).toHaveBeenCalledWith(jasmine.any(Context), jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse));
+				expect(authorize).toHaveBeenCalledWith(jasmine.any(Context), jasmine.any(Object), jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse));
 			});		
 	});	
 
@@ -931,7 +931,7 @@ describe("Test authorization", () => {
 					"message": "Unauthorized! Invalid token", 
 					"name": "CustomError"});
 				expect(authorize).toHaveBeenCalledTimes(1);
-				expect(authorize).toHaveBeenCalledWith(jasmine.any(Context), jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse));
+				expect(authorize).toHaveBeenCalledWith(jasmine.any(Context), jasmine.any(Object), jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse));
 			});		
 	});	
 
