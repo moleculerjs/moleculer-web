@@ -1,3 +1,4 @@
+![Moleculer logo](http://moleculer.services/images/banner.png)
 
 [![Build Status](https://travis-ci.org/ice-services/moleculer-web.svg?branch=master)](https://travis-ci.org/ice-services/moleculer-web)
 [![Coverage Status](https://coveralls.io/repos/github/ice-services/moleculer-web/badge.svg?branch=master)](https://coveralls.io/github/ice-services/moleculer-web?branch=master)
@@ -5,6 +6,7 @@
 [![Code Climate](https://codeclimate.com/github/ice-services/moleculer-web/badges/gpa.svg)](https://codeclimate.com/github/ice-services/moleculer-web)
 [![David](https://img.shields.io/david/ice-services/moleculer-web.svg)](https://david-dm.org/ice-services/moleculer-web)
 [![Known Vulnerabilities](https://snyk.io/test/github/ice-services/moleculer-web/badge.svg)](https://snyk.io/test/github/ice-services/moleculer-web)
+[![Join the chat at https://gitter.im/ice-services/moleculer](https://badges.gitter.im/ice-services/moleculer.svg)](https://gitter.im/ice-services/moleculer?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 # Official API Gateway for Moleculer framework
 The `moleculer-web` is the official API gateway service for Moleculer. Use it to publish your services.
@@ -54,7 +56,7 @@ broker.start();
 - List all actions: `http://localhost:3000/~node/actions`
 
 
-# Service settings
+## Service settings
 
 ```js
 settings: {
@@ -141,13 +143,13 @@ settings: {
 }
 ```
 
-# Examples
+## Examples
 - [Simple](/examples/simple)
 - [SSL server](/examples/ssl)
 - [WWW with assets](/examples/www)
 - [All features](/examples/full)
 
-# Test
+## Test
 ```
 $ npm test
 ```
@@ -158,13 +160,13 @@ In development with watching
 $ npm run ci
 ```
 
-# Contribution
+## Contribution
 Please send pull requests improving the usage and fixing bugs, improving documentation and providing better examples, or providing some testing, because these things are important.
 
-# License
+## License
 Moleculer-web is available under the [MIT license](https://tldrlegal.com/license/mit-license).
 
-# Contact
+## Contact
 Copyright (c) 2017 Ice-Services
 
 [![@icebob](https://img.shields.io/badge/github-ice--services-green.svg)](https://github.com/ice-services) [![@icebob](https://img.shields.io/badge/twitter-Icebobcsi-blue.svg)](https://twitter.com/Icebobcsi)
