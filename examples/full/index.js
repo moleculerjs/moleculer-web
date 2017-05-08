@@ -34,6 +34,7 @@
 let fs	 				= require("fs");
 let path 				= require("path");
 let { ServiceBroker } 	= require("moleculer");
+let { CustomError } 	= require("moleculer").Errors;
 let ApiGatewayService 	= require("../../index");
 
 // Create broker
@@ -90,6 +91,8 @@ broker.createService(ApiGatewayService, {
 
 				authorization: true,
 
+				roles: ["admin"],
+
 				// Action aliases
 				aliases: {
 					"POST users": "users.create",
@@ -111,7 +114,7 @@ broker.createService(ApiGatewayService, {
 
 				// Whitelist of actions (array of string mask or regex)
 				whitelist: [
-					"posts.*",
+					"auth.*",
 					"file.*",
 					/^math\.\w+$/
 				],
@@ -120,6 +123,7 @@ broker.createService(ApiGatewayService, {
 
 				// Action aliases
 				aliases: {
+					"login": "auth.login",
 					"add": "math.add",
 					"GET sub": "math.sub",
 					"POST divide": "math.div",
@@ -142,6 +146,46 @@ broker.createService(ApiGatewayService, {
 			options: {}
 		}
 
+	},
+
+	methods: {
+		/**
+		 * Authorize the request
+		 * 
+		 * @param {Context} ctx 
+		 * @param {IncomingRequest} req 
+		 * @returns {Promise}
+		 */
+		authorize(ctx, req) {
+			let authValue = req.headers["authorization"];
+			if (authValue && authValue.startsWith("Bearer")) {
+				let token = authValue.split(" ")[1];
+
+				// Verify JWT token
+				return ctx.call("auth.verifyToken", { token }).then(decoded => {
+					//console.log("decoded data", decoded);
+
+					// Check the role from JWT
+					if (decoded.role != "admin")
+						return Promise.reject(new CustomError("Forbidden!", 403));
+
+					// If authorization was succes, we set the user entity to ctx.meta
+					return ctx.call("auth.getUserByID", { id: decoded.id }).then(user => {
+						ctx.meta.user = user;
+						this.logger.info("Logged in user", user);
+					});
+				})
+
+				.catch(err => {
+					if (err instanceof CustomError)
+						return Promise.reject(err);
+
+					return Promise.reject(new CustomError("Unauthorized! Invalid token", 401));
+				});
+
+			} else
+				return Promise.reject(new CustomError("Unauthorized! Missing token", 401));
+		}
 	}
 });
 

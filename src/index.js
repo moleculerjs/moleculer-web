@@ -102,7 +102,7 @@ module.exports = {
 			};
 			if (opts.authorization) {
 				if (!_.isFunction(this.authorize)) {
-					this.logger.warn("If you would like to use authorization, please add a 'authorize' method to the service!");
+					this.logger.warn("If you would like to use authorization, please add the 'authorize' method to the service!");
 					route.authorization = false;
 				} else
 					route.authorization = true;
