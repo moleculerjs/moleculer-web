@@ -21,6 +21,7 @@ The `moleculer-web` is the official API gateway service for Moleculer. Use it to
 * whitelist
 * multiple body parsers (json, urlencoded)
 * Buffer & Stream handling
+* support authorization
 
 ## Install
 ```
@@ -90,7 +91,7 @@ settings: {
 				"$node.*"
 			],
 
-			// Under development
+			// It will call the `this.authorize` method before call the action
 			authorization: true,
 
 			// Action aliases
@@ -116,6 +117,7 @@ settings: {
 				/^math\.\w+$/
 			],
 
+			// No need authorization
 			authorization: false,
 			
 			// Action aliases

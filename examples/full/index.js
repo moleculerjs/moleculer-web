@@ -2,13 +2,14 @@
 
 /**
  * This example uses all features of API Gateway:
- * 	- server assets
  *  - SSL
+ * 	- server assets
  *  - Multi routes
- *  - body-parsers
+ *  - authorization
  *  - whitelist
  *  - alias
- *  - authorization
+ *  - body-parsers
+ * 
  * Metrics, statistics, validation features of Moleculer is enabled.
  * 
  * Example:
@@ -153,10 +154,11 @@ broker.createService(ApiGatewayService, {
 		 * Authorize the request
 		 * 
 		 * @param {Context} ctx 
+		 * @param {Object} route
 		 * @param {IncomingRequest} req 
 		 * @returns {Promise}
 		 */
-		authorize(ctx, req) {
+		authorize(ctx, route, req) {
 			let authValue = req.headers["authorization"];
 			if (authValue && authValue.startsWith("Bearer")) {
 				let token = authValue.split(" ")[1];
@@ -165,8 +167,8 @@ broker.createService(ApiGatewayService, {
 				return ctx.call("auth.verifyToken", { token }).then(decoded => {
 					//console.log("decoded data", decoded);
 
-					// Check the role from JWT
-					if (decoded.role != "admin")
+					// Check the user role
+					if (route.opts.roles.indexOf(decoded.role) === -1)
 						return Promise.reject(new CustomError("Forbidden!", 403));
 
 					// If authorization was succes, we set the user entity to ctx.meta

@@ -322,7 +322,7 @@ module.exports = {
 			// Authorization
 			.then(ctx => {
 				if (route.authorization) {
-					return this.authorize(ctx, req, res).then(() => {
+					return this.authorize(ctx, route, req, res).then(() => {
 						return ctx;
 					});
 				}
