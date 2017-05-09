@@ -5,7 +5,7 @@
  *  - SSL
  * 	- server assets
  *  - Multi routes
- *  - authorization
+ *  - role-based authorization with JWT
  *  - whitelist
  *  - alias
  *  - body-parsers
@@ -25,7 +25,7 @@
  * 	
  *  - API: Divide two numbers with validation
  * 		http://localhost:3000/api/math/div?a=25&b=13
- * 		http://localhost:3000/api/math/div?a=25      <-- Throw validation error because b is missing
+ * 		http://localhost:3000/api/math/div?a=25      <-- Throw validation error because `b` is missing
  * 	
  *  - API: get health info
  * 		http://localhost:3000/api/~node/health

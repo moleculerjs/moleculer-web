@@ -3,7 +3,7 @@
 /**
  * This example uses API Gateway service with default settings.
  * 
- * You can access to math.* & internal $node.* actions via http://localhost:3000
+ * You can access to test.*, math.* & internal $node.* actions via http://localhost:3000
  * 
  * Example:
  * 	

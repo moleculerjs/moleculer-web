@@ -58,100 +58,283 @@ broker.start();
 - Get health info of node: `http://localhost:3000/~node/health`
 - List all actions: `http://localhost:3000/~node/actions`
 
+### Whitelist
+If you don't want to public all actions, you can filter them with a whitelist.
+You can use [match strings](https://github.com/micromatch/nanomatch) or regexp.
+
+```js
+broker.createService(ApiService, {
+    settings: {
+        routes: [{
+            path: "/api",
+
+            whitelist: [
+                // Access to any actions in 'posts' service
+                "posts.*",
+                // Access to call only the `users.list` action
+                "users.list",
+                // Access to any actions in 'math' service
+                /^math\.\w+$/
+            ]
+        }]
+    }
+});
+```
+
+### Aliases
+You can use alias names instead of action names.
+
+```js
+broker.createService(ApiService, {
+    settings: {
+        routes: [{
+            aliases: {
+                // Call `auth.login` action with `GET /login` or `POST /login`
+                "login": "auth.login"
+
+                // Restrict the request method
+                "POST users": "users.create",
+            }
+        }]
+    }
+});
+```
+
+With this you can create RESTful APIs.
+
+```js
+broker.createService(ApiService, {
+    settings: {
+        routes: [{
+            aliases: {
+                "GET users": "users.list",
+                "POST users": "users.create",
+                "PUT users": "users.update",
+                "DELETE users": "users.remove",
+            }
+        }]
+    }
+});
+```
+
+### Serve static files
+Serve assets files with the [serve-static](https://github.com/expressjs/serve-static) module like ExpressJS.
+
+```js
+broker.createService(ApiService, {
+    settings: {
+        assets: {
+            // Root folder of assets
+            folder: "./assets",
+
+            // Further options to `server-static` module
+            options: {}
+        }		
+    }
+});
+```
+
+### Multiple routes 
+You can create multiple routes with different prefix, whitelist, alias & authorization
+
+```js
+broker.createService(ApiService, {
+    settings: {
+        routes: [
+            {
+                path: "/admin",
+
+                authorization: true,
+
+                whitelist: [
+                    "$node.*",
+                    "users.*",
+                ]
+            },
+            {
+                path: "/",
+
+                whitelist: [
+                    "posts.*",
+                    "math.*",
+                ]
+            }
+        ]
+    }
+});
+```
+
+### Authorization
+You can implement your authorization method to Moleculer Web. For this you have to do 2 things.
+1. Set `authorization: true` in your routes
+2. Define the `authorize` method.
+
+> You can find a more detailed role-based JWT authorization example in [full example](/examples/full)
+
+**Example authorization**
+```js
+broker.createService(ApiService, {
+    settings: {
+        routes: [{
+            // First thing
+            authorization: true,
+        }]
+    },
+
+    methods: {
+        /**
+         * Second thing
+         * 
+         * Authorize the user from request
+         * 
+         * @param {Context} ctx 
+         * @param {IncomingMessage} req 
+         * @param {ServerResponse} res 
+         * @returns {Promise}
+         */
+        authorize(ctx, req, res) {
+            // Read the token from header
+            let auth = req.headers["authorization"];
+            if (auth && auth.startsWith("Bearer")) {
+                let token = auth.split(" ")[1];
+
+                // Check the token
+                if (token == "123456") {
+                    // Set the authorized user entity to `ctx.meta`
+                    ctx.meta.user = { id: 1, name: "John Doe" };
+                    return Promise.resolve(ctx);
+
+                } else {
+                    // Invalid token
+                    return Promise.reject(new CustomError("Unauthorized! Invalid token", 401));
+                }
+
+            } else {
+                // No token
+                return Promise.reject(new CustomError("Unauthorized! Missing token", 401));
+            }
+        }
+
+    }
+}
+```
 
 ## Service settings
+List of all settings of Moleculer Web servie
 
 ```js
 settings: {
 
-	// Exposed port
-	port: process.env.PORT || 4000,
+    // Exposed port
+    port: 3000,
 
-	// Exposed IP
-	ip: process.env.IP || "0.0.0.0",
+    // Exposed IP
+    ip: "0.0.0.0",
 
-	// HTTPS server with certificate
-	https: {
-		key: fs.readFileSync("ssl/key.pem"),
-		cert: fs.readFileSync("ssl/cert.pem")
-	},
+    // HTTPS server with certificate
+    https: {
+        key: fs.readFileSync("ssl/key.pem"),
+        cert: fs.readFileSync("ssl/cert.pem")
+    },
 
-	// Exposed path prefix
-	path: "/api",
+    // Exposed path prefix
+    path: "/api",
 
-	// Routes
-	routes: [
-		{
-			// Path prefix to this route  (full path: /api/admin )
-			path: "/admin",
+    // Routes
+    routes: [
+        {
+            // Path prefix to this route  (full path: /api/admin )
+            path: "/admin",
 
-			// Whitelist of actions (array of string mask or regex)
-			whitelist: [
-				"users.get",
-				"$node.*"
-			],
+            // Whitelist of actions (array of string mask or regex)
+            whitelist: [
+                "users.get",
+                "$node.*"
+            ],
 
-			// It will call the `this.authorize` method before call the action
-			authorization: true,
+            // It will call the `this.authorize` method before call the action
+            authorization: true,
 
-			// Action aliases
-			aliases: {
-				"POST users": "users.create",
-				"health": "$node.health"
-			},
+            // Action aliases
+            aliases: {
+                "POST users": "users.create",
+                "health": "$node.health"
+            },
 
-			// Use bodyparser module
-			bodyParsers: {
-				json: true,
-				urlencoded: { extended: true }
-			}
-		},
-		{
-			// Path prefix to this route  (full path: /api )
-			path: "",
+            // Use bodyparser module
+            bodyParsers: {
+                json: true,
+                urlencoded: { extended: true }
+            }
+        },
+        {
+            // Path prefix to this route  (full path: /api )
+            path: "",
 
-			// Whitelist of actions (array of string mask or regex)
-			whitelist: [
-				"posts.*",
-				"file.*",
-				/^math\.\w+$/
-			],
+            // Whitelist of actions (array of string mask or regex)
+            whitelist: [
+                "posts.*",
+                "file.*",
+                /^math\.\w+$/
+            ],
 
-			// No need authorization
-			authorization: false,
-			
-			// Action aliases
-			aliases: {
-				"add": "math.add",
-				"GET sub": "math.sub",
-				"POST divide": "math.div",
-			},
-			
-			// Use bodyparser module
-			bodyParsers: {
-				json: false,
-				urlencoded: { extended: true }
-			}
-		}
-	],
+            // No need authorization
+            authorization: false,
+            
+            // Action aliases
+            aliases: {
+                "add": "math.add",
+                "GET sub": "math.sub",
+                "POST divide": "math.div",
+            },
+            
+            // Use bodyparser module
+            bodyParsers: {
+                json: false,
+                urlencoded: { extended: true }
+            }
+        }
+    ],
 
-	// Folder to server assets (static files)
-	assets: {
+    // Folder to server assets (static files)
+    assets: {
 
-		// Root folder of assets
-		folder: "./examples/www/assets",
-		
-		// Options to `server-static` module
-		options: {}
-	}
+        // Root folder of assets
+        folder: "./examples/www/assets",
+        
+        // Options to `server-static` module
+        options: {}
+    }
 }
 ```
 
 ## Examples
 - [Simple](/examples/simple)
+    - simple gateway with default settings.
+
 - [SSL server](/examples/ssl)
+    - open HTTPS server
+    - whitelist handling
+
 - [WWW with assets](/examples/www)
-- [All features](/examples/full)
+    - serve static files from the `assets` folder
+    - whitelist
+    - aliases
+    - multiple body-parsers
+
+- [Authorization](/examples/authorization)
+    - simple authorization demo
+    - set the authorized user to `Context.meta`
+
+- [Full](/examples/full)
+    - SSL
+    - static files
+    - multiple routes with different roles
+    - role-based authorization with JWT
+    - whitelist
+    - aliases
+    - multiple body-parsers
+    - metrics, statistics & validation from Moleculer
 
 ## Test
 ```

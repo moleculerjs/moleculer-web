@@ -33,21 +33,33 @@ broker.createService(ApiGatewayService, {
 
 		routes: [
 			{
+				// Enable authorization
 				authorization: true
 			}
 		]
 	},
 
 	methods: {
+		/**
+		 * Authorize the user from request
+		 * 
+		 * @param {Context} ctx 
+		 * @param {IncomingMessage} req 
+		 * @param {ServerResponse} res 
+		 * @returns 
+		 */
 		authorize(ctx, req, res) {
-			let authValue = req.headers["authorization"];
-			if (authValue && authValue.startsWith("Bearer")) {
-				let token = authValue.split(" ")[1];
+			let auth = req.headers["authorization"];
+			if (auth && auth.startsWith("Bearer")) {
+				let token = auth.split(" ")[1];
 				if (token == "123456") {
+					// Set the authorized user entity to `ctx.meta`
 					ctx.meta.user = { id: 1, name: "John Doe" };
-					return Promise.resolve();
+					return Promise.resolve(ctx);
+
 				} else 
 					return Promise.reject(new CustomError("Unauthorized! Invalid token", 401));
+
 			} else
 				return Promise.reject(new CustomError("Unauthorized! Missing token", 401));
 		}
