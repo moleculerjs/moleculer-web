@@ -15,7 +15,7 @@
 				"PORT": "4000"
 			},
 			"args": [
-				"full"
+				"simple"
 			]
 		},
 		{
