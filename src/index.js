@@ -342,43 +342,12 @@ module.exports = {
 						if (ctx.requestID)
 							res.setHeader("Request-Id", ctx.requestID);
 
-						try {
-							if (data == null) {
-								res.end();
-							}
-							else if (Buffer.isBuffer(data)) {
-								res.setHeader("Content-Type", responseType || "application/octet-stream");
-								res.setHeader("Content-Length", data.length);
-								res.end(data);
-
-							} else if (_.isObject(data) && data.type == "Buffer") {
-								const buf = Buffer.from(data);
-								res.setHeader("Content-Type", responseType || "application/octet-stream");
-								res.end(buf);
-
-							} else if (isStream(data)) {
-								res.setHeader("Content-Type", responseType || "application/octet-stream");
-								data.pipe(res);
-
-							} else if (_.isObject(data) || Array.isArray(data)) {
-								res.setHeader("Content-Type", responseType || "application/json");
-								res.end(JSON.stringify(data));
-							} else {
-								if (!responseType) {
-									res.setHeader("Content-Type", "application/json");
-									res.end(JSON.stringify(data));
-								} else {
-									res.setHeader("Content-Type", responseType);
-									if (_.isString(data))
-										res.end(data);
-									else
-										res.end(data.toString());
-								}
-							}
-						} catch(err) {
+						//try {
+							this.sendResponse(res, data, responseType);
+						//} catch(err) {
 							/* istanbul ignore next */
-							return this.Promise.reject(new InvalidResponseType(typeof(data)));
-						}
+						//	return this.Promise.reject(new InvalidResponseType(typeof(data)));
+						//}
 
 						ctx._metricFinish(null, ctx.metrics);
 					});
@@ -404,6 +373,54 @@ module.exports = {
 				if (err.ctx)
 					err.ctx._metricFinish(null, err.ctx.metrics);
 			});
+		},
+
+		/**
+		 * Convert data & send back to client
+		 * 
+		 * @param {HttpResponse} res 
+		 * @param {any} data 
+		 * @param {String|null} responseType 
+		 */
+		sendResponse(res, data, responseType) {
+			if (data == null) {
+				res.end();
+			}
+			// Buffer
+			else if (Buffer.isBuffer(data)) {
+				res.setHeader("Content-Type", responseType || "application/octet-stream");
+				res.setHeader("Content-Length", data.length);
+				res.end(data);
+			} 
+			// Buffer from JSON
+			else if (_.isObject(data) && data.type == "Buffer") {
+				const buf = Buffer.from(data);
+				res.setHeader("Content-Type", responseType || "application/octet-stream");
+				res.end(buf);
+			} 
+			// Stream
+			else if (isStream(data)) {
+				res.setHeader("Content-Type", responseType || "application/octet-stream");
+				data.pipe(res);
+			} 
+			// Object or Array
+			else if (_.isObject(data) || Array.isArray(data)) {
+				res.setHeader("Content-Type", responseType || "application/json");
+				res.end(JSON.stringify(data));
+			} 
+			// Other
+			else {
+				if (!responseType) {
+					res.setHeader("Content-Type", "application/json");
+					res.end(JSON.stringify(data));
+				} else {
+					res.setHeader("Content-Type", responseType);
+					if (_.isString(data))
+						res.end(data);
+					else
+						res.end(data.toString());
+				}
+			}			
 		},
 
 		/**

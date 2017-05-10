@@ -50,7 +50,7 @@ let broker = new ServiceBroker({
 broker.loadServices(path.join(__dirname, ".."), "*.service.js");
 
 // Load metrics example service from Moleculer
-broker.createService(require("moleculer/examples/metrics.service.js")());
+//broker.createService(require("moleculer/examples/metrics.service.js")());
 
 // Load API Gateway
 broker.createService(ApiGatewayService, {
@@ -117,6 +117,7 @@ broker.createService(ApiGatewayService, {
 				whitelist: [
 					"auth.*",
 					"file.*",
+					"test.*",
 					/^math\.\w+$/
 				],
 
@@ -160,8 +161,8 @@ broker.createService(ApiGatewayService, {
 		 */
 		authorize(ctx, route, req) {
 			let authValue = req.headers["authorization"];
-			if (authValue && authValue.startsWith("Bearer")) {
-				let token = authValue.split(" ")[1];
+			if (authValue && authValue.startsWith("Bearer ")) {
+				let token = authValue.splice(7);
 
 				// Verify JWT token
 				return ctx.call("auth.verifyToken", { token }).then(decoded => {

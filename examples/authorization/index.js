@@ -44,14 +44,15 @@ broker.createService(ApiGatewayService, {
 		 * Authorize the user from request
 		 * 
 		 * @param {Context} ctx 
+		 * @param {Object} route
 		 * @param {IncomingMessage} req 
 		 * @param {ServerResponse} res 
 		 * @returns 
 		 */
-		authorize(ctx, req, res) {
+		authorize(ctx, route, req, res) {
 			let auth = req.headers["authorization"];
-			if (auth && auth.startsWith("Bearer")) {
-				let token = auth.split(" ")[1];
+			if (auth && auth.startsWith("Bearer ")) {
+				let token = auth.splice(7);
 				if (token == "123456") {
 					// Set the authorized user entity to `ctx.meta`
 					ctx.meta.user = { id: 1, name: "John Doe" };
