@@ -16,7 +16,7 @@ const serveStatic 		= require("serve-static");
 const nanomatch  		= require("nanomatch");
 const isStream  		= require("isstream");
 
-const { ServiceNotFoundError, CustomError } = require("moleculer").Errors;
+const { ServiceNotFoundError } = require("moleculer").Errors;
 const { InvalidRequestBodyError, InvalidResponseType } = require("./errors");
 
 /**
@@ -29,6 +29,7 @@ module.exports = {
 
 	// Default settings
 	settings: {
+		middleware: false,
 
 		// Exposed port
 		port: process.env.PORT || 3000,
@@ -53,25 +54,26 @@ module.exports = {
 	 * Service created lifecycle event handler
 	 */
 	created() {
+		if (!this.settings.middleware) {
+			// Create HTTP or HTTPS server
+			if (this.settings.https && this.settings.https.key && this.settings.https.cert) {
+				this.server = https.createServer(this.settings.https, this.httpHandler);
+				this.isHTTPS = true;
+			} else {
+				this.server = http.createServer(this.httpHandler);
+				this.isHTTPS = false;
+			}
 
-		// Create HTTP or HTTPS server
-		if (this.settings.https && this.settings.https.key && this.settings.https.cert) {
-			this.server = https.createServer(this.settings.https, this.httpHandler);
-			this.isHTTPS = true;
-		} else {
-			this.server = http.createServer(this.httpHandler);
-			this.isHTTPS = false;
+			/* istanbul ignore next */
+			this.server.on("error", err => {
+				this.logger.error("Server error", err);
+			});
+
+			/*this.server.on("connection", socket => {
+				// Disable Nagle algorithm https://nodejs.org/dist/latest-v6.x/docs/api/net.html#net_socket_setnodelay_nodelay
+				socket.setNoDelay(true);
+			});*/
 		}
-
-		/* istanbul ignore next */
-		this.server.on("error", err => {
-			this.logger.error("Server error", err);
-		});
-
-		/*this.server.on("connection", socket => {
-			// Disable Nagle algorithm https://nodejs.org/dist/latest-v6.x/docs/api/net.html#net_socket_setnodelay_nodelay
-			socket.setNoDelay(true);
-		});*/
 
 		// Create static server middleware
 		if (this.settings.assets) {
@@ -155,9 +157,10 @@ module.exports = {
 		 * 
 		 * @param {HttpRequest} req 
 		 * @param {HttpResponse} res 
+		 * @param {Function} Call next middleware (for Express)
 		 * @returns 
 		 */
-		httpHandler(req, res) {
+		httpHandler(req, res, next) {
 			this.logger.debug("");
 			this.logger.debug(`${req.method} ${req.url}`);
 
@@ -209,18 +212,35 @@ module.exports = {
 					return;
 				} 
 
-				// 404
-				this.send404(req, res);
+				if (next) {
+					next();
+				} else {
+					// 404
+					this.send404(req, res);
+				}
 
 			} catch(err) {
 				/* istanbul ignore next */
 				this.logger.error("Handler error!", err);
 
 				/* istanbul ignore next */
+				if (next)
+					return next();
+
+				/* istanbul ignore next */
 				res.writeHead(500);
 				/* istanbul ignore next */
 				res.end("Server error! " + err.message);				
 			}
+		},
+
+		/**
+		 * Middleware for ExpressJS
+		 * 
+		 * @returns 
+		 */
+		express() {
+			return (req, res, next) => this.httpHandler(req, res, next);
 		},
 
 		/**
@@ -463,6 +483,9 @@ module.exports = {
 	 * Service started lifecycle event handler
 	 */
 	started() {
+		if (this.settings.middleware)
+			return;
+
 		/* istanbul ignore next */
 		this.server.listen(this.settings.port, this.settings.ip, err => {
 			if (err) 
@@ -477,6 +500,9 @@ module.exports = {
 	 * Service stopped lifecycle event handler
 	 */
 	stopped() {
+		if (this.settings.middleware)
+			return;
+
 		if (this.server.listening) {
 			/* istanbul ignore next */
 			this.server.close(err => {
