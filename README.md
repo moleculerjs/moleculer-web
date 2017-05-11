@@ -1,4 +1,4 @@
-![Moleculer logo](http://moleculer.services/images/banner.png)
+[![Moleculer logo](http://moleculer.services/images/banner.png)](https://github.com/ice-services/moleculer)
 
 [![Build Status](https://travis-ci.org/ice-services/moleculer-web.svg?branch=master)](https://travis-ci.org/ice-services/moleculer-web)
 [![Coverage Status](https://coveralls.io/repos/github/ice-services/moleculer-web/badge.svg?branch=master)](https://coveralls.io/github/ice-services/moleculer-web?branch=master)
@@ -11,7 +11,7 @@
 # Official API Gateway for Moleculer framework  [![NPM version](https://img.shields.io/npm/v/moleculer-web.svg)](https://www.npmjs.com/package/moleculer-web)
 
 
-The `moleculer-web` is the official API gateway service for Moleculer. Use it to publish your services.
+The `moleculer-web` is the official API gateway service for [Moleculer](https://github.com/ice-services/moleculer). Use it to publish your services.
 
 ## Features
 * support HTTP & HTTPS
