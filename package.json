@@ -17,7 +17,8 @@
     "api-gateway",
     "http-server",
     "microservices",
-    "microservice"
+    "microservice",
+    "moleculer"
   ],
   "repository": {
     "type": "git",
@@ -37,6 +38,7 @@
     "lolex": "1.6.0",
     "nodemon": "1.11.0",
     "npm-check": "5.4.0",
+    "resumer": "0.0.0",
     "supertest": "3.0.0"
   },
   "peerDependencies": {
@@ -48,7 +50,6 @@
     "isstream": "0.1.2",
     "lodash": "4.17.4",
     "nanomatch": "1.1.1",
-    "resumer": "0.0.0",
     "serve-static": "1.12.2"
   },
   "engines": {
