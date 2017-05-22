@@ -15,20 +15,18 @@
  * Example:
  * 	
  *  - Open index.html
- * 		http://localhost:3000
+ * 		https://localhost:4000
  * 	
  *  - Access to assets
- * 		http://localhost:3000/images/logo.png
+ * 		https://localhost:4000/images/logo.png
  * 	
  *  - API: Add two numbers (use alias name)
- * 		http://localhost:3000/api/add?a=25&b=13
+ * 		https://localhost:4000/api/add?a=25&b=13
  * 	
  *  - API: Divide two numbers with validation
- * 		http://localhost:3000/api/math/div?a=25&b=13
- * 		http://localhost:3000/api/math/div?a=25      <-- Throw validation error because `b` is missing
+ * 		https://localhost:4000/api/math/div?a=25&b=13
+ * 		https://localhost:4000/api/math/div?a=25      <-- Throw validation error because `b` is missing
  * 	
- *  - API: get health info
- * 		http://localhost:3000/api/~node/health
  * 
  */
 
