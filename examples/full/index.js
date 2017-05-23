@@ -26,7 +26,15 @@
  *  - API: Divide two numbers with validation
  * 		https://localhost:4000/api/math/div?a=25&b=13
  * 		https://localhost:4000/api/math/div?a=25      <-- Throw validation error because `b` is missing
- * 	
+ * 
+ *  - Authorization:
+ * 		https://localhost:4000/api/admin/~node/health  <-- Throw `Unauthorized` because no `Authorization` header	
+ * 
+ * 		First you have to login . You will get a token and set it to the `Authorization` key in header
+ * 			https://localhost:4000/api/login?username=admin&password=admin
+ * 
+ * 		Set the token to header and try again
+ * 			https://localhost:4000/api/admin/~node/health
  * 
  */
 
@@ -72,11 +80,8 @@ broker.createService(ApiGatewayService, {
 		routes: [
 
 			/**
-			 * This route demonstrates a protected `/api/admin` path to access `users.*` & internal actions.
-			 * To test you have to set an `apikey` header item with `123` value or pass as a query variable
-			 * E.g.: 
-			 * 		https://localhost:4000/api/admin/~node/health?apikey=123
-			 * 
+			 * This route demonstrates a protected `/api/admin` path to access `users.*` & internal actions. 
+			 * To access them, you need to login first & use the received token in header
 			 */
 			{
 				// Path prefix to this route
@@ -160,7 +165,7 @@ broker.createService(ApiGatewayService, {
 		authorize(ctx, route, req) {
 			let authValue = req.headers["authorization"];
 			if (authValue && authValue.startsWith("Bearer ")) {
-				let token = authValue.splice(7);
+				let token = authValue.slice(7);
 
 				// Verify JWT token
 				return ctx.call("auth.verifyToken", { token }).then(decoded => {

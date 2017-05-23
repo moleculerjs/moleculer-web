@@ -22,6 +22,9 @@
  *  - API: get health info
  * 		http://localhost:3000/api/~node/health
  * 
+ *  - API: try call action which is not in whitelist
+ * 		http://localhost:3000/api/~node/actions     <-- Throw "Not Implemented" error
+ * 
  */
 
 let path 				= require("path");

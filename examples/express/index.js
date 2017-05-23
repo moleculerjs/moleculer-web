@@ -3,14 +3,19 @@
 /**
  * This example shows how to use Moleculer-Web as an ExpressJS middleware
  * 
+ *  Example:
+ * 	
+ *  - Call test.hello action
+ * 		http://localhost:3333/api/test/hello
+ * 
+ *  - Call test.hi with alias
+ * 		http://localhost:3333/api/hi?name=John
  */
 
 let path 				= require("path");
 let { ServiceBroker } 	= require("moleculer");
 let ApiGatewayService 	= require("../../index");
 let express 			= require("express");
-
-const { CustomError } = require("moleculer").Errors;
 
 // Create broker
 let broker = new ServiceBroker({

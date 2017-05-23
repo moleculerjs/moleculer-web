@@ -132,7 +132,7 @@ module.exports = {
 				route.parsers = parsers;
 			}
 
-			// Create URL prefix regexp
+			// Create URL prefix
 			route.path = (this.settings.path || "") + (opts.path || "");
 			route.path = route.path || "/";
 
@@ -416,6 +416,7 @@ module.exports = {
 			else if (_.isObject(data) && data.type == "Buffer") {
 				const buf = Buffer.from(data);
 				res.setHeader("Content-Type", responseType || "application/octet-stream");
+				res.setHeader("Content-Length", buf.length);
 				res.end(buf);
 			} 
 			// Stream
