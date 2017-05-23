@@ -41,8 +41,15 @@ let ApiService = require("moleculer-web");
 
 let broker = new ServiceBroker();
 
-// Load your services
-broker.loadService(...);
+// Create a service
+broker.createService({
+    name: "test",
+    actions: {
+        hello() {
+            return "Hello API Gateway!"
+        }
+    }
+});
 
 // Load API Gateway
 broker.createService(ApiService);
@@ -51,9 +58,8 @@ broker.createService(ApiService);
 broker.start();
 ```
 
-**Example URLs:**	
+**Test URLs:**	
 - Call `test.hello` action: `http://localhost:3000/test/hello`
-- Call `math.add` action with params: `http://localhost:3000/math/add?a=25&b=13`
 
 - Get health info of node: `http://localhost:3000/~node/health`
 - List all actions: `http://localhost:3000/~node/actions`
