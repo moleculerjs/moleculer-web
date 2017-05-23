@@ -17,7 +17,7 @@ const nanomatch  		= require("nanomatch");
 const isStream  		= require("isstream");
 
 const { ServiceNotFoundError } = require("moleculer").Errors;
-const { InvalidRequestBodyError, InvalidResponseType } = require("./errors");
+const { InvalidRequestBodyError } = require("./errors");
 
 /**
  * Official API Gateway service for Moleculer
@@ -363,7 +363,7 @@ module.exports = {
 							res.setHeader("Request-Id", ctx.requestID);
 
 						//try {
-							this.sendResponse(res, data, responseType);
+						this.sendResponse(res, data, responseType);
 						//} catch(err) {
 							/* istanbul ignore next */
 						//	return this.Promise.reject(new InvalidResponseType(typeof(data)));
