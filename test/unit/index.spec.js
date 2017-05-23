@@ -4,6 +4,7 @@ const fs = require("fs");
 const http = require("http");
 const path = require("path");
 const request = require("supertest");
+const express = require("express");
 const ApiGateway = require("../../src");
 const { ServiceBroker, Context } = require("moleculer");
 const { CustomError } = require("moleculer").Errors;
@@ -992,3 +993,55 @@ describe("Test lifecycle events", () => {
 	});	
 });
 
+describe("Test middleware mode", () => {
+	let broker;
+	let app;
+	let service;
+	let nextHandler = jest.fn((req, res) => res.sendStatus(200));
+
+	beforeAll(() => {
+
+		broker = new ServiceBroker();
+		broker.loadService("./test/services/test.service");
+
+		service = broker.createService(ApiGateway, {
+			settings: {
+				middleware: true,
+				path: "/api"
+			}
+		});
+
+		app = express();
+		app.use(service.express(), nextHandler);
+
+		return broker.start();
+	});
+
+	afterAll(() => {
+		return broker.stop();
+	});
+
+	it("internal server is not defined in middleware mode", () => {
+		expect(service.server).toBeUndefined();
+	});
+
+	it("GET /api/test/hello", () => {
+		return request(app)
+			.get("/api/test/hello")
+			.expect(200)
+			.then(res => {
+				expect(res.body).toBe("Hello Moleculer");
+				expect(nextHandler).toHaveBeenCalledTimes(0);
+			});
+	});		
+
+	it("GET /missing", () => {
+		return request(app)
+			.get("/missing")
+			.expect(200)
+			.then(res => {
+				expect(res.text).toBe("OK");
+				expect(nextHandler).toHaveBeenCalledTimes(1);
+			});
+	});		
+});
