@@ -21,6 +21,7 @@ The `moleculer-web` is the official API gateway service for [Moleculer](https://
 * whitelist
 * multiple body parsers (json, urlencoded)
 * Buffer & Stream handling
+* middleware mode (use as a middleware with Express)
 * support authorization
 
 ## Install
@@ -38,7 +39,6 @@ You can access to all services (including internal `$node.`) via `http://localho
 let { ServiceBroker } = require("moleculer");
 let ApiService = require("moleculer-web");
 
-// Create broker
 let broker = new ServiceBroker();
 
 // Load your services
@@ -196,7 +196,7 @@ broker.createService(ApiService, {
             // Read the token from header
             let auth = req.headers["authorization"];
             if (auth && auth.startsWith("Bearer")) {
-                let token = auth.split(" ")[1];
+                let token = auth.slice(7);
 
                 // Check the token
                 if (token == "123456") {
@@ -219,6 +219,32 @@ broker.createService(ApiService, {
 }
 ```
 
+
+### ExpressJS middleware usage
+You can use Moleculer-Web as a middleware for [ExpressJS](http://expressjs.com/).
+
+**Usage**
+```js
+const svc = broker.createService(ApiGatewayService, {
+	settings: {
+		middleware: true
+	}
+});
+
+// Create Express application
+const app = express();
+
+// Use ApiGateway as middleware
+app.use("/api", svc.express());
+
+// Listening
+app.listen(3000);
+
+// Start server
+broker.start();
+```
+
+
 ## Service settings
 List of all settings of Moleculer Web servie
 
@@ -236,6 +262,9 @@ settings: {
         key: fs.readFileSync("ssl/key.pem"),
         cert: fs.readFileSync("ssl/cert.pem")
     },
+
+    // Middleware mode (for ExpressJS)
+    middleware: false,
 
     // Exposed path prefix
     path: "/api",
@@ -325,6 +354,10 @@ settings: {
 - [Authorization](/examples/authorization)
     - simple authorization demo
     - set the authorized user to `Context.meta`
+
+- [Express](/examples/express)
+    - webserver with Express
+    - use moleculer-web as a middleware
 
 - [Full](/examples/full)
     - SSL
