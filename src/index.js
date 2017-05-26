@@ -110,6 +110,12 @@ module.exports = {
 					route.authorization = true;
 			}
 
+			route.attachHeaders = opts.attachHeaders ? true : false;
+
+			route.attachHeadersKey = "_reqHeaders";
+			if (opts.attachHeadersKey) {
+				route.attachHeadersKey = opts.attachHeadersKey;
+			}
 
 			// Handle whitelist
 			route.whitelist = opts.whitelist;
@@ -303,6 +309,16 @@ module.exports = {
 				params = Object.assign({}, query);
 				if (_.isObject(req.body)) 
 					params = Object.assign(params, req.body);
+			})
+
+			// Attach headers to params
+			.then(() => {
+				if (route.attachHeaders) {
+					let headers = {};
+					headers[route.attachHeadersKey] = req.headers;
+
+					params = Object.assign(params, headers);
+				}
 			})
 
 			// Resolve action by name
