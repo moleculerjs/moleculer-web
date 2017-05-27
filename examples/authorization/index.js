@@ -28,7 +28,9 @@ let broker = new ServiceBroker({
 broker.loadService(path.join(__dirname, "..", "test.service"));
 
 // Load API Gateway
-broker.createService(ApiGatewayService, {
+broker.createService({
+	mixins: ApiGatewayService,
+
 	settings: {
 
 		routes: [

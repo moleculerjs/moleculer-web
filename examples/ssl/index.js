@@ -34,7 +34,8 @@ broker.loadService(path.join(__dirname, "..", "math.service"));
 broker.loadService(path.join(__dirname, "..", "file.service"));
 
 // Load API Gateway
-broker.createService(ApiService, {
+broker.createService({
+	mixins: ApiService,
 
 	// Override default settings
 	settings: {

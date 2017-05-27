@@ -4,8 +4,8 @@
   "description": "Official API Gateway service for Moleculer framework",
   "main": "index.js",
   "scripts": {
+    "dev": "nodemon examples/index.js",
     "demo": "node examples/index.js",
-    "demow": "nodemon examples/index.js",
     "bench": "node benchmark/index.js",
     "ci": "jest --watch",
     "test": "jest --coverage",

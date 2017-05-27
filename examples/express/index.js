@@ -26,7 +26,9 @@ let broker = new ServiceBroker({
 broker.loadService(path.join(__dirname, "..", "test.service"));
 
 // Load API Gateway
-const svc = broker.createService(ApiGatewayService, {
+const svc = broker.createService({
+	mixins: ApiGatewayService,
+	
 	settings: {
 		middleware: true,
 		routes: [{

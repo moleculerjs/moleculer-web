@@ -44,7 +44,9 @@ broker.loadService(path.join(__dirname, "..", "math.service"));
 broker.loadService(path.join(__dirname, "..", "file.service"));
 
 // Load API Gateway
-broker.createService(ApiGatewayService, {
+broker.createService({
+	mixins: ApiGatewayService,
+	
 	settings: {
 
 		// Folder to server assets (static files)

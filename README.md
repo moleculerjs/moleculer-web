@@ -65,7 +65,7 @@ broker.start();
 - List all actions: `http://localhost:3000/~node/actions`
 
 ## Documentation
-Please read our [documentation on Moleculer site](http://localhost:4000/docs/moleculer-web.html)
+Please read our [documentation on Moleculer site](http://moleculer.services/docs/moleculer-web.html)
 
 ## Test
 ```

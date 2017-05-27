@@ -59,9 +59,10 @@ broker.loadServices(path.join(__dirname, ".."), "*.service.js");
 //broker.createService(require("moleculer/examples/metrics.service.js")());
 
 // Load API Gateway
-broker.createService(ApiGatewayService, {
+broker.createService({
+	mixins: ApiGatewayService,
+	
 	settings: {
-
 		// Exposed port
 		port: 4000,
 
