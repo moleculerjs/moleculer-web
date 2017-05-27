@@ -48,7 +48,8 @@ describe("Test default settings", () => {
 				expect(res.body).toEqual({
 					"code": 501, 
 					"message": "Action 'other.action' is not available!", 
-					"name": "ServiceNotFoundError"
+					"name": "ServiceNotFoundError",
+					"data": "other.action"
 				});
 			});
 	});
@@ -485,7 +486,8 @@ describe("Test whitelist", () => {
 				expect(res.body).toEqual({
 					code: 501, 
 					message: "Action 'test.greeter' is not available!", 
-					name: "ServiceNotFoundError"
+					name: "ServiceNotFoundError",
+					data: "test.greeter"
 				});
 			});			
 	});	
@@ -643,7 +645,8 @@ describe("Test alias & whitelist", () => {
 				expect(res.body).toEqual({
 					code: 501, 
 					message: "Action 'test.hello' is not available!", 
-					name: "ServiceNotFoundError"
+					name: "ServiceNotFoundError",
+					data: "test.hello"
 				});
 			});
 	});	
