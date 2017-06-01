@@ -42,7 +42,7 @@ const fs	 				= require("fs");
 const path 					= require("path");
 const { ServiceBroker } 	= require("moleculer");
 const { MoleculerError } 	= require("moleculer").Errors;
-const { ForbiddenError, UnAuthorizedError, ERR_NO_TOKEN, ERR_INVALID_TOKEN } = require("../../errors");
+const { ForbiddenError, UnAuthorizedError, ERR_NO_TOKEN, ERR_INVALID_TOKEN } = require("../../src/errors");
 
 const ApiGatewayService 	= require("../../index");
 
