@@ -147,8 +147,6 @@ module.exports = {
 			route.path = (this.settings.path || "") + (opts.path || "");
 			route.path = route.path || "/";
 
-			//route.urlRegex = new RegExp(route.path.replace("/", "\\/") + "\\/([\\w\\.\\~\\/]+)", "g");
-
 			// Handle aliases
 			if (opts.aliases && Object.keys(opts.aliases).length > 0) {
 				route.aliases = [];
@@ -159,6 +157,9 @@ module.exports = {
 						method = p[0];
 						matchPath = p[1];
 					}
+					if (matchPath.startsWith("/"))
+						matchPath = matchPath.slice(1);
+
 					let keys = [];
 					const re = pathToRegexp(matchPath, keys, {}); // Options: https://github.com/pillarjs/path-to-regexp#usage
 
@@ -236,21 +237,16 @@ module.exports = {
 				if (this.routes && this.routes.length > 0) {
 					for(let i = 0; i < this.routes.length; i++) {
 						const route = this.routes[i];
-						/*
-						this.urlRegex.lastIndex = 0;
-						const match = this.urlRegex.exec(url);
-						if (match) {
-						*/
+
 						if (url.startsWith(route.path)) {
 							// Resolve action name
-							//let actionName = match[1].replace(/~/, "$").replace(/\//g, ".");
-							let actionName = url.slice(route.path.length);
-							if (actionName.startsWith("/"))
-								actionName = actionName.slice(1);
+							let urlPath = url.slice(route.path.length);
+							if (urlPath.startsWith("/"))
+								urlPath = urlPath.slice(1);
 
-							actionName = actionName.replace(/~/, "$");
+							urlPath = urlPath.replace(/~/, "$");
 
-							return this.callAction(route, actionName, req, res, query);
+							return this.callAction(route, urlPath, req, res, query);
 						} 
 					}
 				}
