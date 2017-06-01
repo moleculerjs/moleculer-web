@@ -15,9 +15,19 @@ const bodyParser 		= require("body-parser");
 const serveStatic 		= require("serve-static");
 const nanomatch  		= require("nanomatch");
 const isStream  		= require("isstream");
+const pathToRegexp 		= require("path-to-regexp");
 
 const { ServiceNotFoundError } = require("moleculer").Errors;
-const { InvalidRequestBodyError } = require("./errors");
+const { InvalidRequestBodyError, BadRequestError, ERR_UNABLE_DECODE_PARAM } = require("./errors");
+
+function decodeParam(param) {
+	try {
+		return decodeURIComponent(param);
+	} catch (_) {
+		/* istanbul ignore next */
+		throw BadRequestError(ERR_UNABLE_DECODE_PARAM, { param });
+	}
+}
 
 /**
  * Official API Gateway service for Moleculer
@@ -115,10 +125,6 @@ module.exports = {
 			route.whitelist = opts.whitelist;
 			route.hasWhitelist = Array.isArray(route.whitelist);
 
-			// Handle aliases
-			route.aliases = opts.aliases;
-			route.hasAliases = route.aliases && Object.keys(route.aliases).length > 0;
-
 			// Create body parsers
 			if (opts.bodyParsers) {
 				const bps = opts.bodyParsers;
@@ -142,7 +148,49 @@ module.exports = {
 			route.path = (this.settings.path || "") + (opts.path || "");
 			route.path = route.path || "/";
 
-			//route.urlRegex = new RegExp(route.path.replace("/", "\\/") + "\\/([\\w\\.\\~\\/]+)", "g");
+			// Handle aliases
+			if (opts.aliases && Object.keys(opts.aliases).length > 0) {
+				route.aliases = [];
+				_.forIn(opts.aliases, (action, matchPath) => {
+					let method = "*";
+					if (matchPath.indexOf(" ") !== -1) {
+						const p = matchPath.split(" ");
+						method = p[0];
+						matchPath = p[1];
+					}
+					if (matchPath.startsWith("/"))
+						matchPath = matchPath.slice(1);
+
+					let keys = [];
+					const re = pathToRegexp(matchPath, keys, {}); // Options: https://github.com/pillarjs/path-to-regexp#usage
+
+					route.aliases.push({
+						action,
+						method,
+						re, 
+						match: url => {
+							const m = re.exec(url);
+							if (!m) return false;
+
+							const params = {};
+
+							let key, param;
+							for (let i = 0; i < keys.length; i++) {
+								key = keys[i];
+								param = m[i + 1];
+								if (!param) continue;
+
+								params[key.name] = decodeParam(param);
+
+								if (key.repeat) 
+									params[key.name] = params[key.name].split(key.delimiter);
+							}
+
+							return params;
+						}
+					});
+				});
+			}
 
 			return route;
 		},
@@ -190,21 +238,16 @@ module.exports = {
 				if (this.routes && this.routes.length > 0) {
 					for(let i = 0; i < this.routes.length; i++) {
 						const route = this.routes[i];
-						/*
-						this.urlRegex.lastIndex = 0;
-						const match = this.urlRegex.exec(url);
-						if (match) {
-						*/
+
 						if (url.startsWith(route.path)) {
 							// Resolve action name
-							//let actionName = match[1].replace(/~/, "$").replace(/\//g, ".");
-							let actionName = url.slice(route.path.length);
-							if (actionName.startsWith("/"))
-								actionName = actionName.slice(1);
+							let urlPath = url.slice(route.path.length);
+							if (urlPath.startsWith("/"))
+								urlPath = urlPath.slice(1);
 
-							actionName = actionName.replace(/~/, "$").replace(/\//g, ".");
+							urlPath = urlPath.replace(/~/, "$");
 
-							return this.callAction(route, actionName, req, res, query);
+							return this.callAction(route, urlPath, req, res, query);
 						} 
 					}
 				}
@@ -267,13 +310,16 @@ module.exports = {
 
 			// Resolve aliases
 			.then(() => {
-				if (route.hasAliases) {
-					const newActionName = this.resolveAlias(route, actionName, req.method);
-					if (newActionName !== actionName) {
-						this.logger.debug(`  Alias: ${req.method} ${actionName} -> ${newActionName}`);
-						actionName = newActionName;
+				if (route.aliases && route.aliases.length > 0) {
+					const alias = this.resolveAlias(route, actionName, req.method);
+					if (alias) {
+						this.logger.debug(`  Alias: ${req.method} ${actionName} -> ${alias.action}`);
+						actionName = alias.action;
+						Object.assign(params, alias.params);
+						this.logger.debug("Params:", params);
 					}
 				}
+				actionName = actionName.replace(/\//g, ".");
 			})
 
 			// Whitelist check
@@ -306,9 +352,9 @@ module.exports = {
 
 			// Merge params
 			.then(() => {
-				params = Object.assign({}, query);
+				Object.assign(params, query);
 				if (_.isObject(req.body)) 
-					params = Object.assign(params, req.body);
+					Object.assign(params, req.body);
 			})
 
 			// Resolve action by name
@@ -490,16 +536,24 @@ module.exports = {
 		 * Resolve alias names
 		 * 
 		 * @param {Object} route 
-		 * @param {String} actionName 
+		 * @param {String} url 
 		 * @param {string} [method="GET"] 
 		 * @returns {String} Resolved actionName
 		 */
-		resolveAlias(route, actionName, method = "GET") {
-			const match = method + " " + actionName;
-
-			const res = route.aliases[match] || route.aliases[actionName];
-
-			return res ? res : actionName;
+		resolveAlias(route, url, method = "GET") {
+			for(let i = 0; i < route.aliases.length; i++) {
+				const alias = route.aliases[i];
+				if (alias.method === "*" || alias.method === method) {
+					const res = alias.match(url);
+					if (res) {
+						return {
+							action: alias.action,
+							params: res
+						};
+					}
+				}
+			}
+			return false;
 		}
 
 	},

@@ -51,6 +51,7 @@
     "isstream": "0.1.2",
     "lodash": "4.17.4",
     "nanomatch": "1.2.0",
+    "path-to-regexp": "1.7.0",
     "serve-static": "1.12.3"
   },
   "engines": {

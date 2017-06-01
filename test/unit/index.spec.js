@@ -534,7 +534,11 @@ describe("Test alias", () => {
 				aliases: {
 					"add": "math.add",
 					"GET hello": "test.hello",
-					"POST hello": "test.greeter"
+					"POST /hello": "test.greeter",
+					"GET greeter/:name": "test.greeter",
+					"opt-test/:name?": "test.echo",
+					"/repeat-test/:args*": "test.echo",
+					"GET /": "test.hello"
 				}
 			}]
 		});
@@ -542,7 +546,7 @@ describe("Test alias", () => {
 		broker.loadService("./test/services/math.service");
 	});
 
-
+	
 	it("GET /api/math.add", () => {
 		return request(server)
 			.get("/api/math.add")
@@ -608,6 +612,75 @@ describe("Test alias", () => {
 			});		
 	});	
 
+	it("GET /api/greeter/Norbert", () => {
+		return request(server)
+			.get("/api/greeter/Norbert")
+			.expect(200)
+			.expect("Content-Type", "application/json")
+			.then(res => {
+				expect(res.body).toBe("Hello Norbert");
+			});		
+	});	
+
+	it("POST /api/greeter/Norbert", () => {
+		return request(server)
+			.post("/api/greeter/Norbert")
+			.expect(501)
+			.expect("Content-Type", "application/json")
+			.then(res => {
+				expect(res.body).toEqual({
+					"name": "ServiceNotFoundError", 
+					"message": "Service 'greeter.Norbert' is not available!", 
+					"code": 501, 
+					"type": null,
+					"data": {"action": "greeter.Norbert"}
+				});
+			});		
+	});	
+
+	it("GET opt-test/:name? with name", () => {
+		return request(server)
+			.get("/api/opt-test/John")
+			.expect(200)
+			.expect("Content-Type", "application/json")
+			.then(res => {
+				expect(res.body.params).toEqual({
+					name: "John"
+				});
+			});		
+	});	
+
+	it("GET opt-test/:name? without name", () => {
+		return request(server)
+			.get("/api/opt-test")
+			.expect(200)
+			.expect("Content-Type", "application/json")
+			.then(res => {
+				expect(res.body.params).toEqual({});
+			});		
+	});	
+
+	it("GET repeat-test/:args?", () => {
+		return request(server)
+			.get("/api/repeat-test/John/Jane/Adam/Walter")
+			.expect(200)
+			.expect("Content-Type", "application/json")
+			.then(res => {
+				expect(res.body.params).toEqual({
+					args: ["John", "Jane", "Adam", "Walter"]
+				});
+			});		
+	});
+
+	it("GET /api/", () => {
+		return request(server)
+			.get("/api")
+			.expect(200)
+			.expect("Content-Type", "application/json")
+			.then(res => {
+				expect(res.body).toBe("Hello Moleculer");
+			});
+	});		
 });
 
 describe("Test alias & whitelist", () => {

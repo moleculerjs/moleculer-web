@@ -10,6 +10,7 @@ const { MoleculerError } = require("moleculer").Errors;
 
 const ERR_NO_TOKEN = "ERR_NO_TOKEN";
 const ERR_INVALID_TOKEN = "ERR_INVALID_TOKEN";
+const ERR_UNABLE_DECODE_PARAM = "ERR_UNABLE_DECODE_PARAM";
 
 /**
  * Invalid request body
@@ -123,5 +124,6 @@ module.exports = {
 	BadRequestError,
 
 	ERR_NO_TOKEN,
-	ERR_INVALID_TOKEN
+	ERR_INVALID_TOKEN,
+	ERR_UNABLE_DECODE_PARAM
 };

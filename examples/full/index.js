@@ -22,6 +22,9 @@
  * 	
  *  - API: Add two numbers (use alias name)
  * 		https://localhost:4000/api/add?a=25&b=13
+ * 
+ * 	- or with named parameters
+ * 		https://localhost:4000/api/add/25/13
  * 	
  *  - API: Divide two numbers with validation
  * 		https://localhost:4000/api/math/div?a=25&b=13
@@ -143,6 +146,7 @@ broker.createService({
 				aliases: {
 					"login": "auth.login",
 					"add": "math.add",
+					"add/:a/:b": "math.add",
 					"GET sub": "math.sub",
 					"POST divide": "math.div",
 				},
