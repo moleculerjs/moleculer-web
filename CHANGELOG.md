@@ -1,3 +1,36 @@
+<a name="0.2.2"></a>
+# 0.2.2 (2017-06-01)
+
+## New
+
+### Before & after call hooks
+The route of service has `onBeforeCall` and `onAfterCall` hooks. It can be asynchronous if return with Promise. In methods the `this` is pointed to Service instance. So you can access the service methods & broker.
+
+**Usage**
+```js
+broker.createService(ApiGatewayService, {
+	settings: {
+		routes: [{
+			onBeforeCall(ctx, route, req, res) {
+				// Save request headers to context meta
+				ctx.meta.userAgent = req.headers["user-agent"];
+			},
+
+			onAfterCall(ctx, route, req, res, data) {
+				// Async function which return with Promise
+				return doSomething(ctx, res, data);
+			}
+		}]
+	}
+});
+
+// Start server
+broker.start();
+```
+
+Example: [examples/full](/examples/full)
+
+-----------------------------
 <a name="0.2.1"></a>
 # 0.2.1 (2017-05-23)
 

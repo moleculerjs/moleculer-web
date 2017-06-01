@@ -156,7 +156,8 @@ broker.createService({
 				onBeforeCall(ctx, route, req, res) {
 					return new this.Promise(resolve => {
 						this.logger.info("async onBeforeCall in public");
-						ctx.meta.something = "Set in `onBeforeCall`";
+						ctx.meta.userAgent = req.headers["user-agent"];
+						//ctx.meta.headers = req.headers;
 						resolve();
 					});
 				},
