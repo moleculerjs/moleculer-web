@@ -24,6 +24,7 @@ function decodeParam(param) {
 	try {
 		return decodeURIComponent(param);
 	} catch (_) {
+		/* istanbul ignore next */
 		throw BadRequestError(ERR_UNABLE_DECODE_PARAM, { param });
 	}
 }

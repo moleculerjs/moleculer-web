@@ -1,3 +1,35 @@
+<a name="0.3.0"></a>
+# 0.3.0 (2017-06-01)
+
+## New
+
+### Named parameters in aliases
+It is possible to use named parameters in aliases. Named paramters are defined by prefixing a colon to the parameter name (`:name`)
+
+**Usage**
+```js
+broker.createService(ApiGatewayService, {
+    settings: {
+        routes: [{
+            path: "/api",
+
+            aliases: {
+                "GET greeter/:name": "test.greeter",
+                "optinal-param/:name?": "test.echo",
+                "repeat-param/:args*": "test.echo",
+                "GET /": "test.hello"                
+            }
+        }]
+    }
+});
+
+// Start server
+broker.start();
+```
+
+Example: [examples/full](/examples/full)
+
+-----------------------------
 <a name="0.2.2"></a>
 # 0.2.2 (2017-06-01)
 
