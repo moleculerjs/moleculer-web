@@ -875,6 +875,51 @@ describe("Test multiple routes", () => {
 	});	
 });
 
+describe("Test onBeforeCall & onAfterCall", () => {
+
+	it("should call handlers", () => {
+		const broker = new ServiceBroker();
+		broker.loadService("./test/services/test.service");
+
+		const beforeCall = jest.fn((ctx) => {
+			ctx.meta.custom = "John";
+			return Promise.resolve();
+		});
+		const afterCall = jest.fn((ctx, route, req, res, data) => {
+			res.setHeader("X-Custom-Header", "working");
+		});
+
+		const service = broker.createService(ApiGateway, {
+			settings: {
+				routes: [{
+					onBeforeCall: beforeCall,
+					onAfterCall: afterCall,
+				}]
+			}
+		});
+		const server = service.server;	
+
+		expect(service.routes[0].onBeforeCall).toBeDefined();
+		expect(service.routes[0].onAfterCall).toBeDefined();
+
+		return request(server)
+			.get("/test/hello")
+			.expect(200)
+			.expect("Content-Type", "application/json")
+			.expect("X-Custom-Header", "working")
+			.then(res => {
+				expect(res.body).toBe("Hello Moleculer");
+				expect(beforeCall).toHaveBeenCalledTimes(1);
+				expect(beforeCall).toHaveBeenCalledWith(jasmine.any(Context), jasmine.any(Object), jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse));
+
+				expect(afterCall).toHaveBeenCalledTimes(1);
+				expect(afterCall).toHaveBeenCalledWith(jasmine.any(Context), jasmine.any(Object), jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse), "Hello Moleculer");
+				expect(afterCall.mock.calls[0][0].meta.custom).toBe("John");
+			});		
+	});	
+
+});	
+
 describe("Test authorization", () => {
 
 	it("don't enabled authorization if missing 'authorize' method", () => {

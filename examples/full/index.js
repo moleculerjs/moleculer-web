@@ -109,7 +109,17 @@ broker.createService({
 				// Use bodyparser module
 				bodyParsers: {
 					json: true
-				}
+				},
+
+				onBeforeCall(ctx, route, req, res) {
+					this.logger.info("onBeforeCall in protected route");
+					ctx.meta.authToken = req.headers["authorization"];
+				},	
+
+				onAfterCall(ctx, route, req, res, data) {
+					this.logger.info("onAfterCall in protected route");
+					res.setHeader("X-Custom-Header", "Authorized path");
+				}							
 			},
 
 			/**
@@ -141,6 +151,22 @@ broker.createService({
 				bodyParsers: {
 					json: true,
 					urlencoded: { extended: true }
+				},
+
+				onBeforeCall(ctx, route, req, res) {
+					return new this.Promise(resolve => {
+						this.logger.info("async onBeforeCall in public");
+						ctx.meta.something = "Set in `onBeforeCall`";
+						resolve();
+					});
+				},
+
+				onAfterCall(ctx, route, req, res, data) {
+					this.logger.info("async onAfterCall in public");
+					return new this.Promise(resolve => {
+						res.setHeader("X-Response-Type", typeof(data));
+						resolve();
+					});					
 				}
 
 			}
@@ -176,7 +202,7 @@ broker.createService({
 
 					// Check the user role
 					if (route.opts.roles.indexOf(decoded.role) === -1)
-						return Promise.reject(new ForbiddenError());
+						return this.Promise.reject(new ForbiddenError());
 
 					// If authorization was succes, we set the user entity to ctx.meta
 					return ctx.call("auth.getUserByID", { id: decoded.id }).then(user => {
@@ -187,13 +213,13 @@ broker.createService({
 
 				.catch(err => {
 					if (err instanceof MoleculerError)
-						return Promise.reject(err);
+						return this.Promise.reject(err);
 
-					return Promise.reject(new UnAuthorizedError(ERR_INVALID_TOKEN));
+					return this.Promise.reject(new UnAuthorizedError(ERR_INVALID_TOKEN));
 				});
 
 			} else
-				return Promise.reject(new UnAuthorizedError(ERR_NO_TOKEN));
+				return this.Promise.reject(new UnAuthorizedError(ERR_NO_TOKEN));
 		}
 	}
 });

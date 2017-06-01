@@ -132,6 +132,12 @@ module.exports = {
 				route.parsers = parsers;
 			}
 
+			if (opts.onBeforeCall)
+				route.onBeforeCall = this.Promise.method(opts.onBeforeCall);
+
+			if (opts.onAfterCall)
+				route.onAfterCall = this.Promise.method(opts.onAfterCall);
+
 			// Create URL prefix
 			route.path = (this.settings.path || "") + (opts.path || "");
 			route.path = route.path || "/";
@@ -349,6 +355,16 @@ module.exports = {
 				return ctx;
 			})
 
+			// onBeforeCall handling
+			.then(ctx => {
+				if (route.onBeforeCall) {
+					return route.onBeforeCall.call(this, ctx, route, req, res).then(() => {
+						return ctx;
+					});
+				}
+				return ctx;
+			})
+
 			// Call the action
 			.then(ctx => {
 				return ctx.call(endpoint, params)
@@ -362,14 +378,22 @@ module.exports = {
 						if (ctx.requestID)
 							res.setHeader("Request-Id", ctx.requestID);
 
-						//try {
-						this.sendResponse(res, data, responseType);
-						//} catch(err) {
-							/* istanbul ignore next */
-						//	return this.Promise.reject(new InvalidResponseTypeError(typeof(data)));
-						//}
+						return Promise.resolve()
+							// onAfterCall handling
+							.then(() => {
+								if (route.onAfterCall)
+									return route.onAfterCall.call(this, ctx, route, req, res, data);
+							})
+							.then(() => {
+								//try {
+								this.sendResponse(res, data, responseType);
+								//} catch(err) {
+									/* istanbul ignore next */
+								//	return this.Promise.reject(new InvalidResponseTypeError(typeof(data)));
+								//}
 
-						ctx._metricFinish(null, ctx.metrics);
+								ctx._metricFinish(null, ctx.metrics);								
+							});
 					});
 			})
 
