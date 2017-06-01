@@ -9,19 +9,20 @@ The route of service has `onBeforeCall` and `onAfterCall` hooks. It can be async
 **Usage**
 ```js
 broker.createService(ApiGatewayService, {
-	settings: {
-		routes: [{
-			onBeforeCall(ctx, route, req, res) {
-				// Save request headers to context meta
-				ctx.meta.userAgent = req.headers["user-agent"];
-			},
+    settings: {
+        routes: [{
+            // Call before `broker.call`
+            onBeforeCall(ctx, route, req, res) {
+                // Save request headers to context meta
+                ctx.meta.userAgent = req.headers["user-agent"];
+            },
 
-			onAfterCall(ctx, route, req, res, data) {
-				// Async function which return with Promise
-				return doSomething(ctx, res, data);
-			}
-		}]
-	}
+            // Call after `broker.call` and before send back the response
+            onAfterCall(ctx, route, req, res, data) {
+                res.setHeader("X-Custom-Header", "123456");
+            }
+        }]
+    }
 });
 
 // Start server
@@ -42,9 +43,9 @@ You can use Moleculer-Web as a middleware for [ExpressJS](http://expressjs.com/)
 **Usage**
 ```js
 const svc = broker.createService(ApiGatewayService, {
-	settings: {
-		middleware: true
-	}
+    settings: {
+        middleware: true
+    }
 });
 
 // Create Express application
