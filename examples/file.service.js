@@ -1,6 +1,6 @@
 const fs = require("fs");
 const path = require("path");
-//const { CustomError } = require("moleculer").Errors;
+//const { MoleculerError } = require("moleculer").Errors;
 
 module.exports = {
 	name: "file",

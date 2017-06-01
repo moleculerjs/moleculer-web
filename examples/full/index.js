@@ -38,14 +38,16 @@
  * 
  */
 
-let fs	 				= require("fs");
-let path 				= require("path");
-let { ServiceBroker } 	= require("moleculer");
-let { CustomError } 	= require("moleculer").Errors;
-let ApiGatewayService 	= require("../../index");
+const fs	 				= require("fs");
+const path 					= require("path");
+const { ServiceBroker } 	= require("moleculer");
+const { MoleculerError } 	= require("moleculer").Errors;
+const { ForbiddenError, UnAuthorizedError, ERR_NO_TOKEN, ERR_INVALID_TOKEN } = require("../../errors");
+
+const ApiGatewayService 	= require("../../index");
 
 // Create broker
-let broker = new ServiceBroker({
+const broker = new ServiceBroker({
 	logger: console,
 	metrics: true,
 	statistics: true,
@@ -174,7 +176,7 @@ broker.createService({
 
 					// Check the user role
 					if (route.opts.roles.indexOf(decoded.role) === -1)
-						return Promise.reject(new CustomError("Forbidden!", 403));
+						return Promise.reject(new ForbiddenError());
 
 					// If authorization was succes, we set the user entity to ctx.meta
 					return ctx.call("auth.getUserByID", { id: decoded.id }).then(user => {
@@ -184,14 +186,14 @@ broker.createService({
 				})
 
 				.catch(err => {
-					if (err instanceof CustomError)
+					if (err instanceof MoleculerError)
 						return Promise.reject(err);
 
-					return Promise.reject(new CustomError("Unauthorized! Invalid token", 401));
+					return Promise.reject(new UnAuthorizedError(ERR_INVALID_TOKEN));
 				});
 
 			} else
-				return Promise.reject(new CustomError("Unauthorized! Missing token", 401));
+				return Promise.reject(new UnAuthorizedError(ERR_NO_TOKEN));
 		}
 	}
 });

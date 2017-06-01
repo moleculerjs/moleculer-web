@@ -7,7 +7,8 @@ const request = require("supertest");
 const express = require("express");
 const ApiGateway = require("../../src");
 const { ServiceBroker, Context } = require("moleculer");
-const { CustomError } = require("moleculer").Errors;
+const { MoleculerError } = require("moleculer").Errors;
+const { UnAuthorizedError, ERR_NO_TOKEN } = require("../../src/errors");
 
 function setup(settings) {
 	const broker = new ServiceBroker();
@@ -47,9 +48,12 @@ describe("Test default settings", () => {
 			.then(res => {
 				expect(res.body).toEqual({
 					"code": 501, 
-					"message": "Action 'other.action' is not available!", 
+					"message": "Service 'other.action' is not available!", 
 					"name": "ServiceNotFoundError",
-					"data": "other.action"
+					"type": null,
+					"data": {
+						action: "other.action"
+					}
 				});
 			});
 	});
@@ -289,7 +293,7 @@ describe("Test responses", () => {
 				expect(res.body).toEqual({
 					"code": 505, 
 					"message": "I'm dangerous", 
-					"name": "CustomError"
+					"name": "MoleculerError"
 				});
 			});
 	});	
@@ -485,9 +489,12 @@ describe("Test whitelist", () => {
 			.then(res => {
 				expect(res.body).toEqual({
 					code: 501, 
-					message: "Action 'test.greeter' is not available!", 
+					message: "Service 'test.greeter' is not available!", 
 					name: "ServiceNotFoundError",
-					data: "test.greeter"
+					type: null,
+					data: {
+						action: "test.greeter"
+					}
 				});
 			});			
 	});	
@@ -644,9 +651,12 @@ describe("Test alias & whitelist", () => {
 			.then(res => {
 				expect(res.body).toEqual({
 					code: 501, 
-					message: "Action 'test.hello' is not available!", 
+					message: "Service 'test.hello' is not available!", 
 					name: "ServiceNotFoundError",
-					data: "test.hello"
+					type: null,
+					data: {
+						action: "test.hello"
+					}
 				});
 			});
 	});	
@@ -724,6 +734,7 @@ describe("Test body-parsers", () => {
 			.then(res => {
 				expect(res.body).toEqual({
 					"code": 400,
+					"type": null,
 					"data": {
 						"body": "invalid",
 						"error": "Unexpected token i"
@@ -910,7 +921,7 @@ describe("Test authorization", () => {
 		const broker = new ServiceBroker();
 		broker.loadService("./test/services/test.service");
 
-		const authorize = jest.fn(() => Promise.reject(new CustomError("Unauthorized! Invalid token", 401)));
+		const authorize = jest.fn(() => Promise.reject(new UnAuthorizedError(ERR_NO_TOKEN)));
 		const service = broker.createService(ApiGateway, {
 			settings: {
 				routes: [{
@@ -927,13 +938,14 @@ describe("Test authorization", () => {
 
 		return request(server)
 			.get("/test/hello")
-			.expect(401)
+			//.expect(401)
 			.expect("Content-Type", "application/json")
 			.then(res => {
 				expect(res.body).toEqual({
+					"message": "Unauthorized", 
 					"code": 401, 
-					"message": "Unauthorized! Invalid token", 
-					"name": "CustomError"});
+					"type": "ERR_NO_TOKEN",
+					"name": "UnAuthorizedError"});
 				expect(authorize).toHaveBeenCalledTimes(1);
 				expect(authorize).toHaveBeenCalledWith(jasmine.any(Context), jasmine.any(Object), jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse));
 			});		

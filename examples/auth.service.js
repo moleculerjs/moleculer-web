@@ -6,9 +6,9 @@
 
 "use strict";
 
-const jwt 				= require("jsonwebtoken");
-const _ 				= require("lodash");
-const { CustomError } 	= require("moleculer").Errors;
+const jwt 					= require("jsonwebtoken");
+const _ 					= require("lodash");
+const { MoleculerError } 	= require("moleculer").Errors;
 
 const JWT_SECRET = "TOP SECRET!!!";
 
@@ -45,7 +45,7 @@ module.exports = {
 					return { token };
 				});
 			} else 
-				return Promise.reject(new CustomError("Invalid credentials", 400));
+				return Promise.reject(new MoleculerError("Invalid credentials", 400));
 		},
 
 		/**

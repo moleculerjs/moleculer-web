@@ -6,7 +6,7 @@ const path 		= require("path");
 const _ 		= require("lodash");
 const resumer	= require("resumer");
 
-const { CustomError } = require("moleculer").Errors;
+const { MoleculerError } = require("moleculer").Errors;
 
 module.exports = {
 	name: "test",
@@ -115,7 +115,7 @@ module.exports = {
 		streamWithError() {
 			const stream = resumer().queue("Stream data");
 			setTimeout(() => {
-				stream.emit("error", new CustomError("Something happened!"));
+				stream.emit("error", new MoleculerError("Something happened!"));
 				stream.end();
 			}, 100);
 
@@ -123,7 +123,7 @@ module.exports = {
 		},
 
 		error() {
-			throw new CustomError("I'm dangerous", 505);
+			throw new MoleculerError("I'm dangerous", 505);
 		}
 	}
 };

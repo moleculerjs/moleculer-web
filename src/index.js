@@ -275,7 +275,7 @@ module.exports = {
 				if (route.hasWhitelist) {
 					if (!this.checkWhitelist(route, actionName)) {
 						this.logger.debug(`  The '${actionName}' action is not in the whitelist!`);
-						return this.Promise.reject(new ServiceNotFoundError(`Action '${actionName}' is not available!`, actionName));
+						return this.Promise.reject(new ServiceNotFoundError(actionName));
 					}
 				}
 			})
@@ -314,7 +314,7 @@ module.exports = {
 						this.broker.validator.validate(params, endpoint.action.params);					
 				} else {
 					// Action is not available
-					return this.Promise.reject(new ServiceNotFoundError(`Action '${actionName}' is not available!`, actionName));
+					return this.Promise.reject(new ServiceNotFoundError(actionName));
 				}
 
 				return endpoint;
@@ -366,7 +366,7 @@ module.exports = {
 						this.sendResponse(res, data, responseType);
 						//} catch(err) {
 							/* istanbul ignore next */
-						//	return this.Promise.reject(new InvalidResponseType(typeof(data)));
+						//	return this.Promise.reject(new InvalidResponseTypeError(typeof(data)));
 						//}
 
 						ctx._metricFinish(null, ctx.metrics);
@@ -387,7 +387,7 @@ module.exports = {
 				// Return with the error
 				const code = _.isNumber(err.code) ? err.code : 500;
 				res.writeHead(code, headers);
-				const errObj = _.pick(err, ["name", "message", "code", "data"]);
+				const errObj = _.pick(err, ["name", "message", "code", "type", "data"]);
 				res.end(JSON.stringify(errObj, null, 2));
 
 				if (err.ctx)

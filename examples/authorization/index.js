@@ -17,7 +17,7 @@ let path 				= require("path");
 let { ServiceBroker } 	= require("moleculer");
 let ApiGatewayService 	= require("../../index");
 
-const { CustomError } = require("moleculer").Errors;
+const { UnAuthorizedError, ERR_NO_TOKEN, ERR_INVALID_TOKEN } = require("moleculer").Errors;
 
 // Create broker
 let broker = new ServiceBroker({
@@ -61,10 +61,10 @@ broker.createService({
 					return Promise.resolve(ctx);
 
 				} else 
-					return Promise.reject(new CustomError("Unauthorized! Invalid token", 401));
+					return Promise.reject(new UnAuthorizedError(ERR_INVALID_TOKEN));
 
 			} else
-				return Promise.reject(new CustomError("Unauthorized! Missing token", 401));
+				return Promise.reject(new UnAuthorizedError(ERR_NO_TOKEN));
 		}
 	}
 });
