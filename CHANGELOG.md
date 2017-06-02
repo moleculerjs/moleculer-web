@@ -10,12 +10,12 @@ It is possible to use RESTful aliases which routed to CRUD service actions.
 ```js
 broker.createService(ApiGatewayService, {
     settings: {
-		routes: [{
-			// RESTful aliases
-			aliases: {
-				"REST posts": "posts"
-			}
-		}]
+        routes: [{
+            // RESTful aliases
+            aliases: {
+                "REST posts": "posts"
+            }
+        }]
     }
 });
 
