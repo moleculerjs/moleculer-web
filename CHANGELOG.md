@@ -6,6 +6,7 @@
 ### Exposed error classes
 
 **Available errors:**
+
 | Class | Params | Description |
 | ----- | ------ | ----------- |
 |`UnAuthorizedError`|`type`, `data`| Unauthorized HTTP error (401) |
