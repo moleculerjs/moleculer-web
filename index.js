@@ -5,3 +5,4 @@
  */
 
 module.exports = require("./src");
+module.exports.Errors = require("./src/errors");

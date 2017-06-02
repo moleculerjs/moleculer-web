@@ -17,7 +17,7 @@ let path 				= require("path");
 let { ServiceBroker } 	= require("moleculer");
 let ApiGatewayService 	= require("../../index");
 
-const { UnAuthorizedError, ERR_NO_TOKEN, ERR_INVALID_TOKEN } = require("moleculer").Errors;
+const { UnAuthorizedError, ERR_NO_TOKEN, ERR_INVALID_TOKEN } = require("../../src/errors");
 
 // Create broker
 let broker = new ServiceBroker({

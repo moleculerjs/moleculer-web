@@ -5,10 +5,9 @@ const http = require("http");
 const path = require("path");
 const request = require("supertest");
 const express = require("express");
-const ApiGateway = require("../../src");
+const ApiGateway = require("../../index");
 const { ServiceBroker, Context } = require("moleculer");
-const { MoleculerError } = require("moleculer").Errors;
-const { UnAuthorizedError, ERR_NO_TOKEN } = require("../../src/errors");
+const { UnAuthorizedError, ERR_NO_TOKEN } = ApiGateway.Errors;
 
 function setup(settings) {
 	const broker = new ServiceBroker();
