@@ -1,3 +1,36 @@
+<a name="0.3.2"></a>
+# 0.3.2 (2017-06-02)
+
+## New
+
+### Exposed error classes
+
+**Available errors:**
+| Class | Params | Description |
+| ----- | ------ | ----------- |
+|`UnAuthorizedError`|`type`, `data`| Unauthorized HTTP error (401) |
+|`ForbiddenError`|`type`, `data`| Forbidden HTTP error (403) |
+|`BadRequestError`|`type`, `data`| Bad Request HTTP error (400) |
+
+**Type contants:**
+- `ERR_NO_TOKEN`
+- `ERR_INVALID_TOKEN`
+- `ERR_UNABLE_DECODE_PARAM`
+
+**Usage**
+```js
+const { UnAuthorizedError, ERR_NO_TOKEN } = require("moleculer-web").Errors;
+    ...
+    actions: {
+        update(ctx) {
+            if(!ctx.meta.user)
+                return Promise.reject(new UnAuthorizedError(ERR_NO_TOKEN));
+        }
+    }
+    ...
+```
+
+-----------------------------
 <a name="0.3.1"></a>
 # 0.3.1 (2017-06-02)
 
