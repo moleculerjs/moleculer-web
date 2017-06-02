@@ -120,7 +120,6 @@ module.exports = {
 					route.authorization = true;
 			}
 
-
 			// Handle whitelist
 			route.whitelist = opts.whitelist;
 			route.hasWhitelist = Array.isArray(route.whitelist);
@@ -148,47 +147,65 @@ module.exports = {
 			route.path = (this.settings.path || "") + (opts.path || "");
 			route.path = route.path || "/";
 
+			const createAliasedRoute = (action, matchPath) => {
+				let method = "*";
+				if (matchPath.indexOf(" ") !== -1) {
+					const p = matchPath.split(" ");
+					method = p[0];
+					matchPath = p[1];
+				}
+				if (matchPath.startsWith("/"))
+					matchPath = matchPath.slice(1);
+
+				let keys = [];
+				const re = pathToRegexp(matchPath, keys, {}); // Options: https://github.com/pillarjs/path-to-regexp#usage
+
+				this.logger.info(`  Alias: ${method} ${route.path + (route.path.endsWith("/") ? "": "/")}${matchPath} -> ${action}`);
+				return {
+					action,
+					method,
+					re, 
+					match: url => {
+						const m = re.exec(url);
+						if (!m) return false;
+
+						const params = {};
+
+						let key, param;
+						for (let i = 0; i < keys.length; i++) {
+							key = keys[i];
+							param = m[i + 1];
+							if (!param) continue;
+
+							params[key.name] = decodeParam(param);
+
+							if (key.repeat) 
+								params[key.name] = params[key.name].split(key.delimiter);
+						}
+
+						return params;
+					}
+				};
+			};
+
 			// Handle aliases
 			if (opts.aliases && Object.keys(opts.aliases).length > 0) {
 				route.aliases = [];
 				_.forIn(opts.aliases, (action, matchPath) => {
-					let method = "*";
-					if (matchPath.indexOf(" ") !== -1) {
+					if (matchPath.startsWith("REST")) {
 						const p = matchPath.split(" ");
-						method = p[0];
-						matchPath = p[1];
+						const pathName = p[1];
+
+						// Generate RESTful API. More info http://www.restapitutorial.com/
+						route.aliases.push(createAliasedRoute(`${action}.find`,   `GET ${pathName}`));
+						route.aliases.push(createAliasedRoute(`${action}.get`,	  `GET ${pathName}/:id`));
+						route.aliases.push(createAliasedRoute(`${action}.create`, `POST ${pathName}`));
+						route.aliases.push(createAliasedRoute(`${action}.update`, `PUT ${pathName}/:id`));
+						route.aliases.push(createAliasedRoute(`${action}.remove`, `DELETE ${pathName}/:id`));
+
+					} else {
+						route.aliases.push(createAliasedRoute(action, matchPath));
 					}
-					if (matchPath.startsWith("/"))
-						matchPath = matchPath.slice(1);
-
-					let keys = [];
-					const re = pathToRegexp(matchPath, keys, {}); // Options: https://github.com/pillarjs/path-to-regexp#usage
-
-					route.aliases.push({
-						action,
-						method,
-						re, 
-						match: url => {
-							const m = re.exec(url);
-							if (!m) return false;
-
-							const params = {};
-
-							let key, param;
-							for (let i = 0; i < keys.length; i++) {
-								key = keys[i];
-								param = m[i + 1];
-								if (!param) continue;
-
-								params[key.name] = decodeParam(param);
-
-								if (key.repeat) 
-									params[key.name] = params[key.name].split(key.delimiter);
-							}
-
-							return params;
-						}
-					});
 				});
 			}
 
