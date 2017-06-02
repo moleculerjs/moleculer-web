@@ -1,3 +1,40 @@
+<a name="0.3.1"></a>
+# 0.3.1 (2017-06-02)
+
+## New
+
+### RESTful routes
+It is possible to use RESTful aliases which routed to CRUD service actions.
+
+**Usage**
+```js
+broker.createService(ApiGatewayService, {
+    settings: {
+		routes: [{
+			// RESTful aliases
+			aliases: {
+				"REST posts": "posts"
+			}
+		}]
+    }
+});
+
+// Start server
+broker.start();
+```
+
+The `"REST posts": "posts"` will be extracted to these aliases:
+```js
+"GET posts":        "posts.find",
+"GET posts/:id":    "posts.get",
+"POST posts":       "posts.create",
+"PUT posts/:id":    "posts.update",
+"DELETE posts/:id": "posts.remove"				
+```
+
+Example: [examples/rest](/examples/rest)
+
+-----------------------------
 <a name="0.3.0"></a>
 # 0.3.0 (2017-06-01)
 
