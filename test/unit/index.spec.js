@@ -683,6 +683,100 @@ describe("Test alias", () => {
 	});		
 });
 
+describe("Test REST shorthand aliases", () => {
+	let broker;
+	let service;
+	let server;
+
+	beforeAll(() => {
+		[ broker, service, server] = setup({
+			routes: [{
+				path: "/api",
+				aliases: {
+					"REST posts": "posts"
+				}
+			}]
+		});
+		
+		broker.loadService("./test/services/posts.service");
+	});
+
+	
+	it("GET /api/posts", () => {
+		return request(server)
+			.get("/api/posts")
+			.expect(200)
+			.expect("Content-Type", "application/json")
+			.then(res => {
+				expect(res.body.length).toBe(5);
+			});
+	});
+
+
+	it("GET /api/posts/2", () => {
+		return request(server)
+			.get("/api/posts/2")
+			.expect(200)
+			.expect("Content-Type", "application/json")
+			.then(res => {
+				expect(res.body).toBeInstanceOf(Object);
+				expect(res.body.title).toBeDefined();
+				expect(res.body.id).toBe(2);
+			});
+	});		
+
+	it("POST /api/posts", () => {
+		return request(server)
+			.post("/api/posts")
+			.send({ id: 8, title: "Test", content: "Content" })
+			.expect(200)
+			.expect("Content-Type", "application/json")
+			.then(res => {
+				expect(res.body.id).toBe(8);
+				expect(res.body.title).toBe("Test");
+				expect(res.body.content).toBe("Content");
+			});
+	});		
+
+	it("PUT /api/posts/8", () => {
+		return request(server)
+			.put("/api/posts/8")
+			.send({ title: "Modified" })
+			.expect(200)
+			.expect("Content-Type", "application/json")
+			.then(res => {
+				expect(res.body.id).toBe(8);
+				expect(res.body.title).toBe("Modified");
+				expect(res.body.content).toBe("Content");
+			});
+	});		
+
+	it("GET /api/posts/8", () => {
+		return request(server)
+			.get("/api/posts/8")
+			.expect(200)
+			.expect("Content-Type", "application/json")
+			.then(res => {
+				expect(res.body.id).toBe(8);
+				expect(res.body.title).toBe("Modified");
+				expect(res.body.content).toBe("Content");
+			});
+	});		
+
+	it("DELETE /api/posts/8", () => {
+		return request(server)
+			.delete("/api/posts/8")
+			.expect(200);
+	});		
+
+	it("GET /api/posts/8", () => {
+		return request(server)
+			.get("/api/posts/8")
+			.expect(404);
+	});		
+	
+});
+
 describe("Test alias & whitelist", () => {
 	let broker;
 	let service;
