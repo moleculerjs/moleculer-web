@@ -10,6 +10,8 @@
 
 # Official API Gateway for Moleculer framework  [![NPM version](https://img.shields.io/npm/v/moleculer-web.svg)](https://www.npmjs.com/package/moleculer-web)
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/ice-services/moleculer-web.svg)](https://greenkeeper.io/)
+
 
 The `moleculer-web` is the official API gateway service for [Moleculer](https://github.com/ice-services/moleculer). Use it to publish your services.
 
