@@ -63,11 +63,12 @@ const upload = multer({ storage : storage}).single("myfile");
 mkdirp(uploadDir);
 // ----
 
-const ApiGatewayService 	= require("../../index");
+const ApiGatewayService = require("../../index");
 
 // Create broker
 const broker = new ServiceBroker({
 	logger: console,
+	//logLevel: "debug",
 	metrics: true,
 	statistics: true,
 	validation: true
@@ -260,6 +261,8 @@ broker.createService({
 				res.end();
 
 				this.logger.info("File uploaded!", req.file);
+
+				this.broker.emit("file.uploaded", res.file);
 			});
 
 		}
