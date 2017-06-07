@@ -96,7 +96,7 @@ module.exports = {
 			}
 		},
 
-		bufferJSON: {
+		bufferJson: {
 			responseType: "application/json",
 			handler(ctx) {
 				return Buffer.from("{ \"a\": 5 }");

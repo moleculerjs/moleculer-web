@@ -119,7 +119,11 @@ describe("Test responses", () => {
 	let server;
 
 	beforeAll(() => {
-		[ broker, service, server] = setup();
+		[ broker, service, server] = setup({
+			routes:[{
+				camelCaseNames: true
+			}]
+		});
 		broker.options.metrics = true;
 	});
 
@@ -134,9 +138,19 @@ describe("Test responses", () => {
 			});
 	});
 
-	it("GET /test/text with 'text/plain'", () => {
+	it("GET /test/textPlain with 'text/plain'", () => {
 		return request(server)
 			.get("/test/textPlain")
+			.expect(200)
+			.expect("Content-Type", "text/plain")
+			.then(res => {
+				expect(res.text).toEqual("Plain text");
+			});
+	});
+
+	it("GET /test/text-plain with 'text/plain'", () => {
+		return request(server)
+			.get("/test/text-plain")
 			.expect(200)
 			.expect("Content-Type", "text/plain")
 			.then(res => {
@@ -219,9 +233,9 @@ describe("Test responses", () => {
 			});
 	});
 
-	it("GET /test/bufferJSON", () => {
+	it("GET /test/bufferJson", () => {
 		return request(server)
-			.get("/test/bufferJSON")
+			.get("/test/bufferJson")
 			.expect(200)
 			.expect("Content-Type", "application/json")
 			.expect("Content-Length", "10")
