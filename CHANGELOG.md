@@ -3,8 +3,8 @@
 
 ## New
 
-### Function in aliases
-There is available to use custom function in aliases. In this case you got `req` & `res` and you should return with the response. Use it for example file uploads. You can find example in the [full example](examples/full/index.js)
+### Functions in aliases
+There is available to use custom function in aliases. In this case you got `req` & `res` and you should return with the response. Use it for example file uploads. You can find example in the [full example](examples/full/index.js).
 
 **Usage**
 ```js
@@ -19,7 +19,7 @@ There is available to use custom function in aliases. In this case you got `req`
     ...
 ```
 
-### `camelCaseNames` route setting
+### New `camelCaseNames` route setting
 There is a new `camelCaseNames` option in route setting. If it is true, the service will convert the received action name to [camelCase](https://lodash.com/docs/4.17.4#camelCase) name.
 
 **Usage**
