@@ -346,6 +346,10 @@ module.exports = {
 					}
 				}
 				actionName = actionName.replace(/\//g, ".");
+
+				if (route.opts.camelCaseNames) {
+					actionName = actionName.split(".").map(part => _.camelCase(part)).join(".");
+				}
 			})
 
 			// Whitelist check

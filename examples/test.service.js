@@ -29,6 +29,10 @@ module.exports = {
 					meta: ctx.meta
 				};
 			}
+		},
+
+		sayHi(ctx) {
+			return "Hi!";
 		}
 	}
 };

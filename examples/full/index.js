@@ -163,6 +163,9 @@ broker.createService({
 
 				authorization: false,
 
+				// Convert "say-hi" action -> "sayHi"
+				camelCaseNames: true,
+
 				// Action aliases
 				aliases: {
 					"login": "auth.login",
