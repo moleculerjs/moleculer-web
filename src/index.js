@@ -64,6 +64,10 @@ module.exports = {
 	 * Service created lifecycle event handler
 	 */
 	created() {
+		this.Promise.config({
+			cancellation: true
+		});
+
 		if (!this.settings.middleware) {
 			// Create HTTP or HTTPS server
 			if (this.settings.https && this.settings.https.key && this.settings.https.cert) {
@@ -160,7 +164,7 @@ module.exports = {
 				let keys = [];
 				const re = pathToRegexp(matchPath, keys, {}); // Options: https://github.com/pillarjs/path-to-regexp#usage
 
-				this.logger.info(`  Alias: ${method} ${route.path + (route.path.endsWith("/") ? "": "/")}${matchPath} -> ${action}`);
+				this.logger.info(`  Alias: ${method} ${route.path + (route.path.endsWith("/") ? "": "/")}${matchPath} -> ${_.isFunction(action) ? "<Function>" : action}`);
 				return {
 					action,
 					method,
@@ -323,7 +327,7 @@ module.exports = {
 			let params = {};
 			let endpoint;
 
-			return this.Promise.resolve()
+			const p = this.Promise.resolve()
 
 			// Resolve aliases
 			.then(() => {
@@ -333,7 +337,12 @@ module.exports = {
 						this.logger.debug(`  Alias: ${req.method} ${actionName} -> ${alias.action}`);
 						actionName = alias.action;
 						Object.assign(params, alias.params);
-						this.logger.debug("Params:", params);
+
+						if (_.isFunction(alias.action)) {
+							alias.action.call(this, route, req, res);
+
+							return p.cancel();
+						} 
 					}
 				}
 				actionName = actionName.replace(/\//g, ".");
@@ -480,6 +489,8 @@ module.exports = {
 				if (err.ctx)
 					err.ctx._metricFinish(null, err.ctx.metrics);
 			});
+
+			return p;
 		},
 
 		/**

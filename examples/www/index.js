@@ -72,7 +72,7 @@ broker.createService({
 				aliases: {
 					"add": "math.add",
 					"GET health": "$node.health",
-					"POST divide": "math.div",
+					"POST divide": "math.div"
 				},
 
 				// Use bodyparser modules

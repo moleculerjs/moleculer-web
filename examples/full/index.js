@@ -46,6 +46,22 @@ const path 					= require("path");
 const { ServiceBroker } 	= require("moleculer");
 const { MoleculerError } 	= require("moleculer").Errors;
 const { ForbiddenError, UnAuthorizedError, ERR_NO_TOKEN, ERR_INVALID_TOKEN } = require("../../src/errors");
+const multer  				= require("multer");
+const mkdirp  				= require("mkdirp").sync;
+
+// File upload storage with multer
+const uploadDir = path.join(__dirname, "./uploads");
+const storage = multer.diskStorage({
+	destination: (req, file, callback) => {
+		callback(null, uploadDir);
+	},
+	filename: (req, file, callback) => {
+		callback(null, file.originalname);
+	}
+});
+const upload = multer({ storage : storage}).single("myfile");
+mkdirp(uploadDir);
+// ----
 
 const ApiGatewayService 	= require("../../index");
 
@@ -75,10 +91,10 @@ broker.createService({
 		ip: "0.0.0.0",
 
 		// HTTPS server with certificate
-		https: {
+		/*https: {
 			key: fs.readFileSync(path.join(__dirname, "../ssl/key.pem")),
 			cert: fs.readFileSync(path.join(__dirname, "../ssl/cert.pem"))
-		},
+		},*/
 
 		// Exposed path prefix
 		path: "/api",
@@ -149,6 +165,9 @@ broker.createService({
 					"add/:a/:b": "math.add",
 					"GET sub": "math.sub",
 					"POST divide": "math.div",
+					"POST upload"(route, req, res) {
+						this.parseUploadedFile(route, req, res);
+					}
 				},
 
 				// Use bodyparser module
@@ -180,7 +199,7 @@ broker.createService({
 		// Folder to server assets (static files)
 		assets: {
 			// Root folder of assets
-			folder: "./examples/www/assets",
+			folder: "./examples/full/assets",
 			// Options to `server-static` module
 			options: {}
 		}
@@ -225,6 +244,24 @@ broker.createService({
 
 			} else
 				return this.Promise.reject(new UnAuthorizedError(ERR_NO_TOKEN));
+		},
+
+		parseUploadedFile(route, req, res) {
+			this.logger.info("Incoming file!");
+
+			upload(req, res, err => {
+				if (err) {
+					this.logger.error("Error uploading file!", err);
+					res.writeHead(500);
+					return res.end("Error uploading file!", err);
+				}
+
+				res.writeHead(201);
+				res.end();
+
+				this.logger.info("File uploaded!", req.file);
+			});
+
 		}
 	}
 });
