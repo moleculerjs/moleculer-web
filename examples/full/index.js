@@ -9,6 +9,7 @@
  *  - whitelist
  *  - alias
  *  - body-parsers
+ *  - file upload
  * 
  * Metrics, statistics, validation features of Moleculer is enabled.
  * 
@@ -38,6 +39,9 @@
  * 
  * 		Set the token to header and try again
  * 			https://localhost:4000/api/admin/~node/health
+ * 
+ *  - File upload:
+ * 		Open https://localhost:4000/upload.html in the browser and upload a file. The file will be placed to the "examples/full/uploads" folder.
  * 
  */
 
@@ -92,10 +96,10 @@ broker.createService({
 		ip: "0.0.0.0",
 
 		// HTTPS server with certificate
-		/*https: {
+		https: {
 			key: fs.readFileSync(path.join(__dirname, "../ssl/key.pem")),
 			cert: fs.readFileSync(path.join(__dirname, "../ssl/cert.pem"))
-		},*/
+		},
 
 		// Exposed path prefix
 		path: "/api",
