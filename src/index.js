@@ -69,7 +69,7 @@ module.exports = {
 		});
 
 		if (!this.settings.middleware) {
-			// Create HTTP or HTTPS server
+			// Create HTTP or HTTPS server (if not running as middleware)
 			if (this.settings.https && this.settings.https.key && this.settings.https.cert) {
 				this.server = https.createServer(this.settings.https, this.httpHandler);
 				this.isHTTPS = true;
@@ -118,7 +118,7 @@ module.exports = {
 			};
 			if (opts.authorization) {
 				if (!_.isFunction(this.authorize)) {
-					this.logger.warn("If you would like to use authorization, please add the 'authorize' method to the service!");
+					this.logger.warn("If you would like to use authorization, please define the 'authorize' method in the service!");
 					route.authorization = false;
 				} else
 					route.authorization = true;
@@ -141,9 +141,11 @@ module.exports = {
 				route.parsers = parsers;
 			}
 
+			// `onBeforeCall` handler
 			if (opts.onBeforeCall)
 				route.onBeforeCall = this.Promise.method(opts.onBeforeCall);
 
+			// `onBeforeCall` handler
 			if (opts.onAfterCall)
 				route.onAfterCall = this.Promise.method(opts.onAfterCall);
 
@@ -151,6 +153,7 @@ module.exports = {
 			route.path = (this.settings.path || "") + (opts.path || "");
 			route.path = route.path || "/";
 
+			// Helper for aliased routes
 			const createAliasedRoute = (action, matchPath) => {
 				let method = "*";
 				if (matchPath.indexOf(" ") !== -1) {
@@ -196,7 +199,7 @@ module.exports = {
 			if (opts.aliases && Object.keys(opts.aliases).length > 0) {
 				route.aliases = [];
 				_.forIn(opts.aliases, (action, matchPath) => {
-					if (matchPath.startsWith("REST")) {
+					if (matchPath.startsWith("REST ")) {
 						const p = matchPath.split(" ");
 						const pathName = p[1];
 
@@ -205,6 +208,7 @@ module.exports = {
 						route.aliases.push(createAliasedRoute(`${action}.get`,	  `GET ${pathName}/:id`));
 						route.aliases.push(createAliasedRoute(`${action}.create`, `POST ${pathName}`));
 						route.aliases.push(createAliasedRoute(`${action}.update`, `PUT ${pathName}/:id`));
+						//route.aliases.push(createAliasedRoute(`${action}.update`, `PATCH ${pathName}/:id`));
 						route.aliases.push(createAliasedRoute(`${action}.remove`, `DELETE ${pathName}/:id`));
 
 					} else {
@@ -222,9 +226,42 @@ module.exports = {
 		 * @param {HttpRequest} req 
 		 * @param {HttpResponse} res 
 		 */
-		send404(req, res) {
+		send404(res) {
 			res.writeHead(404);
 			res.end("Not found");
+		},
+
+		/**
+		 * Send 302 Redirect
+		 * 
+		 * @param {HttpResponse} res 
+		 * @param {String} url 
+		 */
+		sendRedirect(res, url) {
+			res.writeHead(302, {
+				"Location": url
+			});
+			res.end();
+		},
+
+		/**
+		 * Split the URL and resolve vars from querystring
+		 * 
+		 * @param {any} req 
+		 * @returns 
+		 */
+		processQueryString(req) {
+			// Split URL & query params
+			let url = req.url;
+			let query = {};
+			const questionIdx = req.url.indexOf("?", 1);
+			if (questionIdx !== -1) {
+				query = queryString.parse(req.url.substring(questionIdx + 1));
+				url = req.url.substring(0, questionIdx);
+			}
+			// req.query = query;
+
+			return {query, url};
 		},
 
 		/**
@@ -241,15 +278,7 @@ module.exports = {
 
 			try {
 				// Split URL & query params
-				let url;
-				let query;
-				const questionIdx = req.url.indexOf("?", 1);
-				if (questionIdx === -1) {
-					url = req.url;
-				} else {
-					query = queryString.parse(req.url.substring(questionIdx + 1));
-					url = req.url.substring(0, questionIdx);
-				}
+				let {query, url} = this.processQueryString(req);
 
 				// Trim trailing slash
 				if (url.endsWith("/"))
@@ -267,8 +296,29 @@ module.exports = {
 								urlPath = urlPath.slice(1);
 
 							urlPath = urlPath.replace(/~/, "$");
+							let actionName = urlPath;
 
-							return this.callAction(route, urlPath, req, res, query);
+							// Resolve aliases
+							if (route.aliases && route.aliases.length > 0) {
+								const alias = this.resolveAlias(route, urlPath, req.method);
+								if (alias) {
+									this.logger.debug(`  Alias: ${req.method} ${urlPath} -> ${alias.action}`);
+									actionName = alias.action;
+									Object.assign(query, alias.params);
+
+									// Custom Action handler
+									if (_.isFunction(alias.action)) {
+										return alias.action.call(this, route, req, res);
+									} 
+								}
+							}
+							actionName = actionName.replace(/\//g, ".");
+
+							if (route.opts.camelCaseNames) {
+								actionName = actionName.split(".").map(part => _.camelCase(part)).join(".");
+							}
+							
+							return this.callAction(route, actionName, req, res, query);
 						} 
 					}
 				}
@@ -277,7 +327,7 @@ module.exports = {
 				if (this.serve) {
 					this.serve(req, res, err => {
 						this.logger.debug(err);
-						this.send404(req, res);
+						this.send404(res);
 					});
 					return;
 				} 
@@ -286,7 +336,7 @@ module.exports = {
 					next();
 				} else {
 					// 404
-					this.send404(req, res);
+					this.send404(res);
 				}
 
 			} catch(err) {
@@ -314,43 +364,19 @@ module.exports = {
 		},
 
 		/**
-		 * Call an action with broker
+		 * Call an action via broker
 		 * 
 		 * @param {Object} route 		Route options
 		 * @param {String} actionName 	Name of action
 		 * @param {HttpRequest} req 	Request object
 		 * @param {HttpResponse} res 	Response object
-		 * @param {Object} query		Parsed query string
+		 * @param {Object} params		Merged query params + named parameters from URL
 		 * @returns {Promise}
 		 */
-		callAction(route, actionName, req, res, query) {
-			let params = {};
+		callAction(route, actionName, req, res, params) {
 			let endpoint;
 
 			const p = this.Promise.resolve()
-
-			// Resolve aliases
-			.then(() => {
-				if (route.aliases && route.aliases.length > 0) {
-					const alias = this.resolveAlias(route, actionName, req.method);
-					if (alias) {
-						this.logger.debug(`  Alias: ${req.method} ${actionName} -> ${alias.action}`);
-						actionName = alias.action;
-						Object.assign(params, alias.params);
-
-						if (_.isFunction(alias.action)) {
-							alias.action.call(this, route, req, res);
-
-							return p.cancel();
-						} 
-					}
-				}
-				actionName = actionName.replace(/\//g, ".");
-
-				if (route.opts.camelCaseNames) {
-					actionName = actionName.split(".").map(part => _.camelCase(part)).join(".");
-				}
-			})
 
 			// Whitelist check
 			.then(() => {
@@ -363,8 +389,7 @@ module.exports = {
 			})
 
 			// Parse body
-			.then(() => {
-				
+			.then(() => {				
 				if (["POST", "PUT", "PATCH"].indexOf(req.method) !== -1 && route.parsers && route.parsers.length > 0) {
 					return this.Promise.mapSeries(route.parsers, parser => {
 						return new this.Promise((resolve, reject) => {
@@ -382,9 +407,8 @@ module.exports = {
 
 			// Merge params
 			.then(() => {
-				Object.assign(params, query);
-				if (_.isObject(req.body)) 
-					Object.assign(params, req.body);
+				const body = _.isObject(req.body) ? req.body : {};
+				params = Object.assign({}, body, params);
 			})
 
 			// Resolve action by name
@@ -421,20 +445,20 @@ module.exports = {
 				return ctx;
 			})
 
-			// Authorization
+			// onBeforeCall handling
 			.then(ctx => {
-				if (route.authorization) {
-					return this.authorize(ctx, route, req, res).then(() => {
+				if (route.onBeforeCall) {
+					return route.onBeforeCall.call(this, ctx, route, req, res).then(() => {
 						return ctx;
 					});
 				}
 				return ctx;
 			})
 
-			// onBeforeCall handling
+			// Authorization
 			.then(ctx => {
-				if (route.onBeforeCall) {
-					return route.onBeforeCall.call(this, ctx, route, req, res).then(() => {
+				if (route.authorization) {
+					return this.authorize(ctx, route, req, res).then(() => {
 						return ctx;
 					});
 				}
@@ -475,7 +499,7 @@ module.exports = {
 
 			// Error handling
 			.catch(err => {				
-				this.logger.error("  Calling error!", err.name, ":", err.message, "\n", err.stack, "\nData:", err.data);
+				this.logger.error("  Request error!", err.name, ":", err.message, "\n", err.stack, "\nData:", err.data);
 				
 				const headers = { 
 					"Content-type": "application/json"					

@@ -1,3 +1,12 @@
+<a name="0.3.4"></a>
+# 0.3.4 (2017-06-xx)
+
+## Changes
+- changed order of param handling `ctx.params = Object.assign({}, body, query, params)`.
+- moved `onBeforeCall` before `authorize` in request flow. So you can also reach unauthorized requests in `onBeforeCall` handler.
+
+
+-----------------------------
 <a name="0.3.3"></a>
 # 0.3.3 (2017-06-07)
 

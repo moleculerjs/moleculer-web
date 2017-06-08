@@ -108,7 +108,7 @@ describe("Test default settings", () => {
 			.expect(200)
 			.expect("Content-Type", "application/json")
 			.then(res => {
-				expect(res.body).toBe("Hello Adam");
+				expect(res.body).toBe("Hello John");
 			});
 	});	
 });
