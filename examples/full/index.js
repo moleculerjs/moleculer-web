@@ -48,6 +48,7 @@
 const fs	 				= require("fs");
 const path 					= require("path");
 const { ServiceBroker } 	= require("moleculer");
+const NatsTransporter 		= require("moleculer").Transporters.NATS;
 const { MoleculerError } 	= require("moleculer").Errors;
 const { ForbiddenError, UnAuthorizedError, ERR_NO_TOKEN, ERR_INVALID_TOKEN } = require("../../src/errors");
 const multer  				= require("multer");
@@ -71,6 +72,7 @@ const ApiGatewayService = require("../../index");
 
 // Create broker
 const broker = new ServiceBroker({
+	transporter: new NatsTransporter(),
 	logger: console,
 	//logLevel: "debug",
 	metrics: true,
@@ -214,6 +216,12 @@ broker.createService({
 
 	},
 
+	events: {
+		"node.broken"(node) {
+			this.logger.warn(`The ${node.id} node is disconnected!`);
+		}
+	},
+
 	methods: {
 		/**
 		 * Authorize the request
@@ -236,7 +244,7 @@ broker.createService({
 					if (route.opts.roles.indexOf(decoded.role) === -1)
 						return this.Promise.reject(new ForbiddenError());
 
-					// If authorization was succes, we set the user entity to ctx.meta
+					// If authorization was success, we set the user entity to ctx.meta
 					return ctx.call("auth.getUserByID", { id: decoded.id }).then(user => {
 						ctx.meta.user = user;
 						this.logger.info("Logged in user", user);
