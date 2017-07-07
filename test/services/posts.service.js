@@ -22,10 +22,9 @@ module.exports = {
 	name: "posts",
 
 	actions: {
-		find: {
+		list: {
 			cache: true,
 			handler(ctx) {
-				// Clone the local list
 				return this.rows;
 			}
 		},

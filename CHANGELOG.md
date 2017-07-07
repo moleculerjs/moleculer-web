@@ -1,10 +1,13 @@
-<a name="0.3.4"></a>
-# 0.3.4 (2017-06-xx)
+<a name="0.4.0"></a>
+# 0.4.0 (2017-07-07)
+
+## Breaking changes
+- in the REST shorthand, the `GET /` calls the `list` action instead of `find`. The reason is `list` action in `moleculer-db` is support pagination
 
 ## Changes
 - changed order of param handling `ctx.params = Object.assign({}, body, query, params)`.
 - moved `onBeforeCall` before `authorize` in request flow. So you can also reach unauthorized requests in `onBeforeCall` handler.
-
+- the `sendResponse` method has new arguments: `sendResponse(ctx, route, req, res, data, responseType)`
 
 -----------------------------
 <a name="0.3.3"></a>

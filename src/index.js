@@ -204,7 +204,7 @@ module.exports = {
 						const pathName = p[1];
 
 						// Generate RESTful API. More info http://www.restapitutorial.com/
-						route.aliases.push(createAliasedRoute(`${action}.find`,   `GET ${pathName}`));
+						route.aliases.push(createAliasedRoute(`${action}.list`,   `GET ${pathName}`));
 						route.aliases.push(createAliasedRoute(`${action}.get`,	  `GET ${pathName}/:id`));
 						route.aliases.push(createAliasedRoute(`${action}.create`, `POST ${pathName}`));
 						route.aliases.push(createAliasedRoute(`${action}.update`, `PUT ${pathName}/:id`));
@@ -486,7 +486,7 @@ module.exports = {
 							})
 							.then(() => {
 								//try {
-								this.sendResponse(res, data, responseType);
+								this.sendResponse(ctx, route, req, res, data, responseType);
 								//} catch(err) {
 									/* istanbul ignore next */
 								//	return this.Promise.reject(new InvalidResponseTypeError(typeof(data)));
@@ -524,11 +524,14 @@ module.exports = {
 		/**
 		 * Convert data & send back to client
 		 * 
+		 * @param {Context} ctx
+		 * @param {Object} route 
+		 * @param {HttpIncomingRequest} req 
 		 * @param {HttpResponse} res 
 		 * @param {any} data 
 		 * @param {String|null} responseType 
 		 */
-		sendResponse(res, data, responseType) {
+		sendResponse(ctx, route, req, res, data, responseType) {
 			if (data == null) {
 				res.end();
 			}

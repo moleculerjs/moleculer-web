@@ -42,11 +42,11 @@ describe("Test default settings", () => {
 	it("GET /other/action", () => {
 		return request(server)
 			.get("/other/action")
-			.expect(501)
+			.expect(404)
 			.expect("Content-Type", "application/json")
 			.then(res => {
 				expect(res.body).toEqual({
-					"code": 501, 
+					"code": 404, 
 					"message": "Service 'other.action' is not available!", 
 					"name": "ServiceNotFoundError",
 					"type": null,
@@ -497,11 +497,11 @@ describe("Test whitelist", () => {
 	it("GET /api/test/greeter", () => {
 		return request(server)
 			.get("/api/test/greeter")
-			.expect(501)
+			.expect(404)
 			.expect("Content-Type", "application/json")
 			.then(res => {
 				expect(res.body).toEqual({
-					code: 501, 
+					code: 404, 
 					message: "Service 'test.greeter' is not available!", 
 					name: "ServiceNotFoundError",
 					type: null,
@@ -638,13 +638,13 @@ describe("Test alias", () => {
 	it("POST /api/greeter/Norbert", () => {
 		return request(server)
 			.post("/api/greeter/Norbert")
-			.expect(501)
+			.expect(404)
 			.expect("Content-Type", "application/json")
 			.then(res => {
 				expect(res.body).toEqual({
 					"name": "ServiceNotFoundError", 
 					"message": "Service 'greeter.Norbert' is not available!", 
-					"code": 501, 
+					"code": 404, 
 					"type": null,
 					"data": {"action": "greeter.Norbert"}
 				});
@@ -826,11 +826,11 @@ describe("Test alias & whitelist", () => {
 	it("GET /api/hello", () => {
 		return request(server)
 			.get("/api/hello")
-			.expect(501)
+			.expect(404)
 			.expect("Content-Type", "application/json")
 			.then(res => {
 				expect(res.body).toEqual({
-					code: 501, 
+					code: 404, 
 					message: "Service 'test.hello' is not available!", 
 					name: "ServiceNotFoundError",
 					type: null,
@@ -1001,7 +1001,7 @@ describe("Test multiple routes", () => {
 	it("GET /api1/test/hello", () => {
 		return request(server)
 			.get("/api1/test/hello")
-			.expect(501);
+			.expect(404);
 	});	
 
 	it("GET /api2/test/hello", () => {
@@ -1029,7 +1029,7 @@ describe("Test multiple routes", () => {
 		return request(server)
 			.get("/api2/math.add")
 			.query({ a: 5, b: 8 })
-			.expect(501);
+			.expect(404);
 	});	
 
 	it("GET /api1/main", () => {
