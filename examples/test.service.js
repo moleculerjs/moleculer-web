@@ -1,6 +1,7 @@
 "use strict";
 
 const _ = require("lodash");
+const { MoleculerError } = require("moleculer").Errors;
 
 module.exports = {
 	name: "test",
@@ -40,6 +41,15 @@ module.exports = {
 			handler(ctx) {
 				return "You cannot call this action via API Gateway!";
 			}
+		},
+
+		slow(ctx) {
+			let time = ctx.params.delay || 5000;
+			return this.Promise.resolve().delay(time).then(() => `Done after ${time / 1000} sec!`);
+		},
+
+		wrong(ctx) {
+			throw new MoleculerError("It is a wrong action! I always throw error!");
 		}
 	}
 };

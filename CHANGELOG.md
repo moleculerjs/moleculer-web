@@ -1,8 +1,9 @@
-<a name="0.4.1"></a>
-# 0.4.1 (2017-0x-xx)
+<a name="0.5.0"></a>
+# 0.5.0 (2017-0x-xx)
 
 ## New
-- Prohibited action with `publish: false` action properties
+
+### Prohibited action with `publish: false` action properties
 
 ```js
 module.exports = {
@@ -17,6 +18,26 @@ module.exports = {
 	}
 };
 ```
+
+### Calling options in routes
+The `route` has a `callOptions` property which is passed to `broker.call`. So you can set `timeout`, `retryCount` or `fallbackResponse` options for routes.
+
+```js
+broker.createService(ApiGatewayService, {
+    settings: {
+        routes: [{
+            
+            callOptions: {
+				timeout: 1000, // 1 sec
+                retryCount: 0
+			}
+
+        }]
+    }
+});
+```
+
+
 
 -----------------------------
 <a name="0.4.0"></a>

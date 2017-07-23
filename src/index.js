@@ -124,6 +124,13 @@ module.exports = {
 					route.authorization = true;
 			}
 
+			// Call options
+			route.callOptions = opts.callOptions;
+
+			// Fallback response handler
+			if (opts.fallbackResponse)
+				route.fallbackResponse = this.Promise.method(opts.fallbackResponse);
+
 			// Handle whitelist
 			route.whitelist = opts.whitelist;
 			route.hasWhitelist = Array.isArray(route.whitelist);
@@ -440,9 +447,8 @@ module.exports = {
 				};
 
 				// Create a new context to wrap the request
-				const ctx = this.broker.createNewContext(restAction, null, params, {
-					//timeout: 5 * 1000
-				});
+				const ctx = this.broker.createNewContext(restAction, null, params, route.callOptions || {});
+
 				ctx.requestID = ctx.id;
 				ctx._metricStart(ctx.metrics);
 				//ctx.endpoint = endpoint;
@@ -472,7 +478,7 @@ module.exports = {
 
 			// Call the action
 			.then(ctx => {
-				return ctx.call(endpoint, params)
+				return ctx.call(endpoint, params, route.callOptions || {})
 					.then(data => {
 						res.statusCode = 200;
 
@@ -503,24 +509,44 @@ module.exports = {
 			})
 
 			// Error handling
-			.catch(err => {				
-				this.logger.error("  Request error!", err.name, ":", err.message, "\n", err.stack, "\nData:", err.data);
-				
-				const headers = { 
-					"Content-type": "application/json"					
-				};
-				if (err.ctx) {
-					headers["Request-Id"] = err.ctx.id;
-				}
+			.catch(err => {	
+				return Promise.resolve(err)
+					.then(err => {
+						let ctx = err.ctx;
+						if (_.isFunction(route.fallbackResponse)) {
+							return route.fallbackResponse.call(this, err, route, err.ctx, req, res)
+								.then(data => {
+									if (data !== undefined)  {
+										this.sendResponse(ctx, route, req, res, data);
+										return null;
+									}
+									return null;
+								}).catch(err => err); // Throw further the new Error
+						}
+						return err;
+					})
+					.then(err => {
+						if (!err) 
+							return;
 
-				// Return with the error
-				const code = _.isNumber(err.code) ? err.code : 500;
-				res.writeHead(code, headers);
-				const errObj = _.pick(err, ["name", "message", "code", "type", "data"]);
-				res.end(JSON.stringify(errObj, null, 2));
+						this.logger.error("  Request error!", err.name, ":", err.message, "\n", err.stack, "\nData:", err.data);
+						
+						const headers = { 
+							"Content-type": "application/json"					
+						};
+						if (err.ctx) {
+							headers["Request-Id"] = err.ctx.id;
+						}
 
-				if (err.ctx)
-					err.ctx._metricFinish(null, err.ctx.metrics);
+						// Return with the error
+						const code = _.isNumber(err.code) ? err.code : 500;
+						res.writeHead(code, headers);
+						const errObj = _.pick(err, ["name", "message", "code", "type", "data"]);
+						res.end(JSON.stringify(errObj, null, 2));
+
+						if (err.ctx)
+							err.ctx._metricFinish(null, err.ctx.metrics);
+					});				
 			});
 
 			return p;
