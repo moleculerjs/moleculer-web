@@ -111,6 +111,24 @@ describe("Test default settings", () => {
 				expect(res.body).toBe("Hello John");
 			});
 	});	
+
+	it("GET /test/dangerZone", () => {
+		return request(server)
+			.get("/test/dangerZone")
+			.expect(404)
+			.expect("Content-Type", "application/json")
+			.then(res => {
+				expect(res.body).toEqual({
+					"code": 404, 
+					"message": "Service 'test.dangerZone' is not available!", 
+					"name": "ServiceNotFoundError",
+					"type": null,
+					"data": {
+						action: "test.dangerZone"
+					}
+				});
+			});
+	});	
 });
 
 describe("Test responses", () => {

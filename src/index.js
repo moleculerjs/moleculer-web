@@ -414,14 +414,19 @@ module.exports = {
 			// Resolve action by name
 			.then(() => {
 				endpoint = this.broker.getAction(actionName);
-				if (endpoint) {
-					// Validate params
-					if (this.broker.validator && endpoint.action.params)
-						this.broker.validator.validate(params, endpoint.action.params);					
-				} else {
+				if (!endpoint) {
 					// Action is not available
 					return this.Promise.reject(new ServiceNotFoundError(actionName));
 				}
+
+				if (endpoint.action.publish === false) {
+					// Action is not publishable
+					return this.Promise.reject(new ServiceNotFoundError(actionName));
+				}
+
+				// Validate params
+				if (this.broker.validator && endpoint.action.params)
+					this.broker.validator.validate(params, endpoint.action.params);			
 
 				return endpoint;
 			})

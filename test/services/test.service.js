@@ -34,6 +34,13 @@ module.exports = {
 			}
 		},
 
+		dangerZone: {
+			publish: false,
+			handler(ctx) {
+				return "Danger zone!";
+			}
+		},		
+
 		text(ctx) {
 			return "String text";
 		},

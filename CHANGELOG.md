@@ -1,3 +1,24 @@
+<a name="0.4.1"></a>
+# 0.4.1 (2017-0x-xx)
+
+## New
+- Prohibited action with `publish: false` action properties
+
+```js
+module.exports = {
+	name: "test",
+	actions: {
+		dangerZone: {
+			publish: false,
+			handler(ctx) {
+				return "You cannot call this action via API Gateway!";
+			}
+		}
+	}
+};
+```
+
+-----------------------------
 <a name="0.4.0"></a>
 # 0.4.0 (2017-07-07)
 

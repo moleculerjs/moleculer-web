@@ -33,6 +33,13 @@ module.exports = {
 
 		sayHi(ctx) {
 			return "Hi!";
+		},
+
+		dangerZone: {
+			publish: false,
+			handler(ctx) {
+				return "You cannot call this action via API Gateway!";
+			}
 		}
 	}
 };
