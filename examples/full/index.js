@@ -191,20 +191,6 @@ broker.createService({
 					//fallbackResponse: "Fallback response via callOptions"
 				},
 
-				fallbackResponse(err, route, ctx, req, res) {
-					this.logger.warn(`The request '${ctx.action.name}' is returned with error: ${err.message}. Returning with fallback response...`);
-
-					/* Return with a fallback data */
-					return "Fallback response: Fake done!";
-
-					/* Return with a new Error */
-					//return this.Promise.reject(new MoleculerError("Something wrong!"));
-
-					/* Send back the response directly */
-					//res.setHeader("Content-Type", "text/plain");
-					//res.end("Fallback response");
-				},
-
 				onBeforeCall(ctx, route, req, res) {
 					return new this.Promise(resolve => {
 						this.logger.info("async onBeforeCall in public");
