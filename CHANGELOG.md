@@ -37,8 +37,6 @@ broker.createService(ApiGatewayService, {
 });
 ```
 
-
-
 -----------------------------
 <a name="0.4.0"></a>
 # 0.4.0 (2017-07-07)
