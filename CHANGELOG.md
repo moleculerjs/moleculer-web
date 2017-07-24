@@ -29,7 +29,10 @@ broker.createService(ApiGatewayService, {
             
             callOptions: {
                 timeout: 1000, // 1 sec
-                retryCount: 0
+                retryCount: 0,
+                //fallbackResponse: { ... },
+                // or 
+                //fallbackResponse(ctx, err) { ... }
             }
 
         }]
