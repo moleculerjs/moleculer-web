@@ -7,15 +7,15 @@
 
 ```js
 module.exports = {
-	name: "test",
-	actions: {
-		dangerZone: {
-			publish: false,
-			handler(ctx) {
-				return "You cannot call this action via API Gateway!";
-			}
-		}
-	}
+    name: "test",
+    actions: {
+        dangerZone: {
+            publish: false,
+            handler(ctx) {
+                return "You cannot call this action via API Gateway!";
+            }
+        }
+    }
 };
 ```
 
@@ -28,9 +28,9 @@ broker.createService(ApiGatewayService, {
         routes: [{
             
             callOptions: {
-				timeout: 1000, // 1 sec
+                timeout: 1000, // 1 sec
                 retryCount: 0
-			}
+            }
 
         }]
     }
