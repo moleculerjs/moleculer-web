@@ -128,8 +128,9 @@ module.exports = {
 			route.callOptions = opts.callOptions;
 
 			// Fallback response handler
-			if (opts.fallbackResponse)
+			/*if (opts.fallbackResponse)
 				route.fallbackResponse = this.Promise.method(opts.fallbackResponse);
+			*/
 
 			// Handle whitelist
 			route.whitelist = opts.whitelist;
@@ -243,9 +244,10 @@ module.exports = {
 		 * 
 		 * @param {HttpResponse} res 
 		 * @param {String} url 
+		 * @param {Number} status code 
 		 */
-		sendRedirect(res, url) {
-			res.writeHead(302, {
+		sendRedirect(res, url, code = 302) {
+			res.writeHead(code, {
 				"Location": url
 			});
 			res.end();
@@ -386,168 +388,171 @@ module.exports = {
 			const p = this.Promise.resolve()
 
 			// Whitelist check
-			.then(() => {
-				if (route.hasWhitelist) {
-					if (!this.checkWhitelist(route, actionName)) {
-						this.logger.debug(`  The '${actionName}' action is not in the whitelist!`);
-						return this.Promise.reject(new ServiceNotFoundError(actionName));
+				.then(() => {
+					if (route.hasWhitelist) {
+						if (!this.checkWhitelist(route, actionName)) {
+							this.logger.debug(`  The '${actionName}' action is not in the whitelist!`);
+							return this.Promise.reject(new ServiceNotFoundError(actionName));
+						}
 					}
-				}
-			})
+				})
 
-			// Parse body
-			.then(() => {				
-				if (["POST", "PUT", "PATCH"].indexOf(req.method) !== -1 && route.parsers && route.parsers.length > 0) {
-					return this.Promise.mapSeries(route.parsers, parser => {
-						return new this.Promise((resolve, reject) => {
-							parser(req, res, err => {
-								if (err) {
-									return reject(new InvalidRequestBodyError(err.body, err.message));
-								}
+				// Parse body
+				.then(() => {				
+					if (["POST", "PUT", "PATCH"].indexOf(req.method) !== -1 && route.parsers && route.parsers.length > 0) {
+						return this.Promise.mapSeries(route.parsers, parser => {
+							return new this.Promise((resolve, reject) => {
+								parser(req, res, err => {
+									if (err) {
+										return reject(new InvalidRequestBodyError(err.body, err.message));
+									}
 
-								resolve();
+									resolve();
+								});
 							});
 						});
-					});
-				}
-			})
+					}
+				})
 
-			// Merge params
-			.then(() => {
-				const body = _.isObject(req.body) ? req.body : {};
-				params = Object.assign({}, body, params);
-			})
+				// Merge params
+				.then(() => {
+					const body = _.isObject(req.body) ? req.body : {};
+					params = Object.assign({}, body, params);
+				})
 
-			// Resolve action by name
-			.then(() => {
-				endpoint = this.broker.getAction(actionName);
-				if (!endpoint) {
+				// Resolve action by name
+				.then(() => {
+					endpoint = this.broker.getAction(actionName);
+					if (!endpoint) {
 					// Action is not available
-					return this.Promise.reject(new ServiceNotFoundError(actionName));
-				}
+						return this.Promise.reject(new ServiceNotFoundError(actionName));
+					}
 
-				if (endpoint.action.publish === false) {
+					if (endpoint.action.publish === false) {
 					// Action is not publishable
-					return this.Promise.reject(new ServiceNotFoundError(actionName));
-				}
+						return this.Promise.reject(new ServiceNotFoundError(actionName));
+					}
 
-				// Validate params
-				if (this.broker.validator && endpoint.action.params)
-					this.broker.validator.validate(params, endpoint.action.params);			
+					// Validate params
+					if (this.broker.validator && endpoint.action.params)
+						this.broker.validator.validate(params, endpoint.action.params);			
 
-				return endpoint;
-			})
+					return endpoint;
+				})
 
-			// Create a new context for request
-			.then(() => {
-				this.logger.info(`  Call '${actionName}' action with params:`, params);
+				// Create a new context for request
+				.then(() => {
+					this.logger.info(`  Call '${actionName}' action with params:`, params);
 
-				const restAction = {
-					name: this.name + ".rest"
-				};
+					const restAction = {
+						name: this.name + ".rest"
+					};
 
-				// Create a new context to wrap the request
-				const ctx = this.broker.createNewContext(restAction, null, params, route.callOptions || {});
+					// Create a new context to wrap the request
+					const ctx = this.broker.createNewContext(restAction, null, params, route.callOptions || {});
 
-				ctx.requestID = ctx.id;
-				ctx._metricStart(ctx.metrics);
-				//ctx.endpoint = endpoint;
+					ctx.requestID = ctx.id;
+					ctx._metricStart(ctx.metrics);
+					//ctx.endpoint = endpoint;
 
-				return ctx;
-			})
+					return ctx;
+				})
 
-			// onBeforeCall handling
-			.then(ctx => {
-				if (route.onBeforeCall) {
-					return route.onBeforeCall.call(this, ctx, route, req, res).then(() => {
-						return ctx;
-					});
-				}
-				return ctx;
-			})
+				// onBeforeCall handling
+				.then(ctx => {
+					if (route.onBeforeCall) {
+						return route.onBeforeCall.call(this, ctx, route, req, res).then(() => {
+							return ctx;
+						});
+					}
+					return ctx;
+				})
 
-			// Authorization
-			.then(ctx => {
-				if (route.authorization) {
-					return this.authorize(ctx, route, req, res).then(() => {
-						return ctx;
-					});
-				}
-				return ctx;
-			})
+				// Authorization
+				.then(ctx => {
+					if (route.authorization) {
+						return this.authorize(ctx, route, req, res).then(() => {
+							return ctx;
+						});
+					}
+					return ctx;
+				})
 
-			// Call the action
-			.then(ctx => {
-				return ctx.call(endpoint, params, route.callOptions || {})
-					.then(data => {
-						res.statusCode = 200;
+				// Call the action
+				.then(ctx => {
+					return ctx.call(endpoint, params, route.callOptions || {})
+						.then(data => {
+							res.statusCode = 200;
 
-						// Override responseType by action
-						const responseType = endpoint.action.responseType;
+							// Override responseType by action
+							const responseType = endpoint.action.responseType;
 
-						// Return with the response
-						if (ctx.requestID)
-							res.setHeader("Request-Id", ctx.requestID);
+							// Return with the response
+							if (ctx.requestID)
+								res.setHeader("Request-Id", ctx.requestID);
 
-						return Promise.resolve()
+							return Promise.resolve()
 							// onAfterCall handling
-							.then(() => {
-								if (route.onAfterCall)
-									return route.onAfterCall.call(this, ctx, route, req, res, data);
-							})
-							.then(() => {
+								.then(() => {
+									if (route.onAfterCall)
+										return route.onAfterCall.call(this, ctx, route, req, res, data);
+								})
+								.then(() => {
 								//try {
-								this.sendResponse(ctx, route, req, res, data, responseType);
-								//} catch(err) {
+									this.sendResponse(ctx, route, req, res, data, responseType);
+									//} catch(err) {
 									/* istanbul ignore next */
-								//	return this.Promise.reject(new InvalidResponseTypeError(typeof(data)));
-								//}
+									//	return this.Promise.reject(new InvalidResponseTypeError(typeof(data)));
+									//}
 
-								ctx._metricFinish(null, ctx.metrics);								
-							});
-					});
-			})
+									ctx._metricFinish(null, ctx.metrics);								
+								});
+						});
+				})
 
-			// Error handling
-			.catch(err => {	
-				return Promise.resolve(err)
-					.then(err => {
-						let ctx = err.ctx;
-						if (_.isFunction(route.fallbackResponse)) {
-							return route.fallbackResponse.call(this, err, route, err.ctx, req, res)
-								.then(data => {
-									if (data !== undefined)  {
-										this.sendResponse(ctx, route, req, res, data);
+				// Error handling
+				.catch(err => {	
+					return Promise.resolve(err)
+						/* Deprecated. Use `route.callOptions.fallbackResponse` instead.
+						.then(err => {
+							let ctx = err.ctx;
+							if (_.isFunction(route.fallbackResponse)) {
+								return route.fallbackResponse.call(this, err, route, err.ctx, req, res)
+									.then(data => {
+										if (data !== undefined)  {
+											this.sendResponse(ctx, route, req, res, data);
+											return null;
+										}
 										return null;
-									}
-									return null;
-								}).catch(err => err); // Throw further the new Error
-						}
-						return err;
-					})
-					.then(err => {
-						if (!err) 
-							return;
+									}).catch(err => err); // Throw further the new Error
+							}
+							return err;
+						})
+						*/
+						.then(err => {
+							/* istanbul ignore next */
+							if (!err) 
+								return;
 
-						this.logger.error("  Request error!", err.name, ":", err.message, "\n", err.stack, "\nData:", err.data);
+							this.logger.error("  Request error!", err.name, ":", err.message, "\n", err.stack, "\nData:", err.data);
 						
-						const headers = { 
-							"Content-type": "application/json"					
-						};
-						if (err.ctx) {
-							headers["Request-Id"] = err.ctx.id;
-						}
+							const headers = { 
+								"Content-type": "application/json"					
+							};
+							if (err.ctx) {
+								headers["Request-Id"] = err.ctx.id;
+							}
 
-						// Return with the error
-						const code = _.isNumber(err.code) ? err.code : 500;
-						res.writeHead(code, headers);
-						const errObj = _.pick(err, ["name", "message", "code", "type", "data"]);
-						res.end(JSON.stringify(errObj, null, 2));
+							// Return with the error
+							const code = _.isNumber(err.code) ? err.code : 500;
+							res.writeHead(code, headers);
+							const errObj = _.pick(err, ["name", "message", "code", "type", "data"]);
+							res.end(JSON.stringify(errObj, null, 2));
 
-						if (err.ctx)
-							err.ctx._metricFinish(null, err.ctx.metrics);
-					});				
-			});
+							if (err.ctx)
+								err.ctx._metricFinish(null, err.ctx.metrics);
+						});				
+				});
 
 			return p;
 		},

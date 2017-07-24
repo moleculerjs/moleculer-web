@@ -558,6 +558,10 @@ describe("Test alias", () => {
 	let service;
 	let server;
 
+	let customAlias = jest.fn((route, req, res) => {
+		res.end("Custom Alias");
+	});
+
 	beforeAll(() => {
 		[ broker, service, server] = setup({
 			routes: [{
@@ -569,7 +573,8 @@ describe("Test alias", () => {
 					"GET greeter/:name": "test.greeter",
 					"opt-test/:name?": "test.echo",
 					"/repeat-test/:args*": "test.echo",
-					"GET /": "test.hello"
+					"GET /": "test.hello",
+					"GET custom": customAlias
 				}
 			}]
 		});
@@ -710,6 +715,17 @@ describe("Test alias", () => {
 			.expect("Content-Type", "application/json")
 			.then(res => {
 				expect(res.body).toBe("Hello Moleculer");
+			});
+	});		
+
+	it("GET /api/custom", () => {
+		return request(server)
+			.get("/api/custom")
+			.expect(200)
+			.then(res => {
+				expect(res.text).toBe("Custom Alias");
+				expect(customAlias).toHaveBeenCalledTimes(1);
+				expect(customAlias).toHaveBeenCalledWith(service.routes[0], jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse));
 			});
 	});		
 });
