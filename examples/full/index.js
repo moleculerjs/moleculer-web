@@ -242,26 +242,27 @@ broker.createService({
 				let token = authValue.slice(7);
 
 				// Verify JWT token
-				return ctx.call("auth.verifyToken", { token }).then(decoded => {
-					//console.log("decoded data", decoded);
+				return ctx.call("auth.verifyToken", { token })
+					.then(decoded => {
+						//console.log("decoded data", decoded);
 
-					// Check the user role
-					if (route.opts.roles.indexOf(decoded.role) === -1)
-						return this.Promise.reject(new ForbiddenError());
+						// Check the user role
+						if (route.opts.roles.indexOf(decoded.role) === -1)
+							return this.Promise.reject(new ForbiddenError());
 
-					// If authorization was success, we set the user entity to ctx.meta
-					return ctx.call("auth.getUserByID", { id: decoded.id }).then(user => {
-						ctx.meta.user = user;
-						this.logger.info("Logged in user", user);
+						// If authorization was success, we set the user entity to ctx.meta
+						return ctx.call("auth.getUserByID", { id: decoded.id }).then(user => {
+							ctx.meta.user = user;
+							this.logger.info("Logged in user", user);
+						});
+					})
+
+					.catch(err => {
+						if (err instanceof MoleculerError)
+							return this.Promise.reject(err);
+
+						return this.Promise.reject(new UnAuthorizedError(ERR_INVALID_TOKEN));
 					});
-				})
-
-				.catch(err => {
-					if (err instanceof MoleculerError)
-						return this.Promise.reject(err);
-
-					return this.Promise.reject(new UnAuthorizedError(ERR_INVALID_TOKEN));
-				});
 
 			} else
 				return this.Promise.reject(new UnAuthorizedError(ERR_NO_TOKEN));
