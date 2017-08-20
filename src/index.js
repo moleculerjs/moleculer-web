@@ -17,6 +17,7 @@ const nanomatch  		= require("nanomatch");
 const isStream  		= require("isstream");
 const pathToRegexp 		= require("path-to-regexp");
 
+const { Context } = require("moleculer");
 const { ServiceNotFoundError } = require("moleculer").Errors;
 const { InvalidRequestBodyError, BadRequestError, ERR_UNABLE_DECODE_PARAM } = require("./errors");
 
@@ -55,7 +56,7 @@ module.exports = {
 				bodyParsers: {
 					json: true
 				}
-			}			
+			}
 		]
 
 	},
@@ -108,8 +109,8 @@ module.exports = {
 
 		/**
 		 * Create route object from options
-		 * 
-		 * @param {Object} opts 
+		 *
+		 * @param {Object} opts
 		 * @returns {Object}
 		 */
 		createRoute(opts) {
@@ -179,7 +180,7 @@ module.exports = {
 				return {
 					action,
 					method,
-					re, 
+					re,
 					match: url => {
 						const m = re.exec(url);
 						if (!m) return false;
@@ -194,7 +195,7 @@ module.exports = {
 
 							params[key.name] = decodeParam(param);
 
-							if (key.repeat) 
+							if (key.repeat)
 								params[key.name] = params[key.name].split(key.delimiter);
 						}
 
@@ -230,9 +231,9 @@ module.exports = {
 
 		/**
 		 * Send 404 response
-		 * 
-		 * @param {HttpRequest} req 
-		 * @param {HttpResponse} res 
+		 *
+		 * @param {HttpRequest} req
+		 * @param {HttpResponse} res
 		 */
 		send404(res) {
 			res.writeHead(404);
@@ -241,10 +242,10 @@ module.exports = {
 
 		/**
 		 * Send 302 Redirect
-		 * 
-		 * @param {HttpResponse} res 
-		 * @param {String} url 
-		 * @param {Number} status code 
+		 *
+		 * @param {HttpResponse} res
+		 * @param {String} url
+		 * @param {Number} status code
 		 */
 		sendRedirect(res, url, code = 302) {
 			res.writeHead(code, {
@@ -255,9 +256,9 @@ module.exports = {
 
 		/**
 		 * Split the URL and resolve vars from querystring
-		 * 
-		 * @param {any} req 
-		 * @returns 
+		 *
+		 * @param {any} req
+		 * @returns
 		 */
 		processQueryString(req) {
 			// Split URL & query params
@@ -275,11 +276,11 @@ module.exports = {
 
 		/**
 		 * HTTP request handler
-		 * 
-		 * @param {HttpRequest} req 
-		 * @param {HttpResponse} res 
+		 *
+		 * @param {HttpRequest} req
+		 * @param {HttpResponse} res
 		 * @param {Function} Call next middleware (for Express)
-		 * @returns 
+		 * @returns
 		 */
 		httpHandler(req, res, next) {
 			this.logger.debug("");
@@ -318,7 +319,7 @@ module.exports = {
 									// Custom Action handler
 									if (_.isFunction(alias.action)) {
 										return alias.action.call(this, route, req, res);
-									} 
+									}
 								}
 							}
 							actionName = actionName.replace(/\//g, ".");
@@ -326,9 +327,9 @@ module.exports = {
 							if (route.opts.camelCaseNames) {
 								actionName = actionName.split(".").map(part => _.camelCase(part)).join(".");
 							}
-							
+
 							return this.callAction(route, actionName, req, res, query);
-						} 
+						}
 					}
 				}
 
@@ -339,7 +340,7 @@ module.exports = {
 						this.send404(res);
 					});
 					return;
-				} 
+				}
 
 				if (next) {
 					next();
@@ -359,14 +360,14 @@ module.exports = {
 				/* istanbul ignore next */
 				res.writeHead(500);
 				/* istanbul ignore next */
-				res.end("Server error! " + err.message);				
+				res.end("Server error! " + err.message);
 			}
 		},
 
 		/**
 		 * Middleware for ExpressJS
-		 * 
-		 * @returns 
+		 *
+		 * @returns
 		 */
 		express() {
 			return (req, res, next) => this.httpHandler(req, res, next);
@@ -374,7 +375,7 @@ module.exports = {
 
 		/**
 		 * Call an action via broker
-		 * 
+		 *
 		 * @param {Object} route 		Route options
 		 * @param {String} actionName 	Name of action
 		 * @param {HttpRequest} req 	Request object
@@ -398,7 +399,7 @@ module.exports = {
 				})
 
 				// Parse body
-				.then(() => {				
+				.then(() => {
 					if (["POST", "PUT", "PATCH"].indexOf(req.method) !== -1 && route.parsers && route.parsers.length > 0) {
 						return this.Promise.mapSeries(route.parsers, parser => {
 							return new this.Promise((resolve, reject) => {
@@ -435,7 +436,7 @@ module.exports = {
 
 					// Validate params
 					if (this.broker.validator && endpoint.action.params)
-						this.broker.validator.validate(params, endpoint.action.params);			
+						this.broker.validator.validate(params, endpoint.action.params);
 
 					return endpoint;
 				})
@@ -449,7 +450,7 @@ module.exports = {
 					};
 
 					// Create a new context to wrap the request
-					const ctx = this.broker.createNewContext(restAction, null, params, route.callOptions || {});
+					const ctx = Context.create(this.broker, restAction, null, params, route.callOptions || {});
 
 					ctx.requestID = ctx.id;
 					ctx._metricStart(ctx.metrics);
@@ -505,13 +506,13 @@ module.exports = {
 									//	return this.Promise.reject(new InvalidResponseTypeError(typeof(data)));
 									//}
 
-									ctx._metricFinish(null, ctx.metrics);								
+									ctx._metricFinish(null, ctx.metrics);
 								});
 						});
 				})
 
 				// Error handling
-				.catch(err => {	
+				.catch(err => {
 					return Promise.resolve(err)
 						/* Deprecated. Use `route.callOptions.fallbackResponse` instead.
 						.then(err => {
@@ -531,13 +532,13 @@ module.exports = {
 						*/
 						.then(err => {
 							/* istanbul ignore next */
-							if (!err) 
+							if (!err)
 								return;
 
 							this.logger.error("  Request error!", err.name, ":", err.message, "\n", err.stack, "\nData:", err.data);
-						
-							const headers = { 
-								"Content-type": "application/json"					
+
+							const headers = {
+								"Content-type": "application/json"
 							};
 							if (err.ctx) {
 								headers["Request-Id"] = err.ctx.id;
@@ -551,7 +552,7 @@ module.exports = {
 
 							if (err.ctx)
 								err.ctx._metricFinish(null, err.ctx.metrics);
-						});				
+						});
 				});
 
 			return p;
@@ -559,13 +560,13 @@ module.exports = {
 
 		/**
 		 * Convert data & send back to client
-		 * 
+		 *
 		 * @param {Context} ctx
-		 * @param {Object} route 
-		 * @param {HttpIncomingRequest} req 
-		 * @param {HttpResponse} res 
-		 * @param {any} data 
-		 * @param {String|null} responseType 
+		 * @param {Object} route
+		 * @param {HttpIncomingRequest} req
+		 * @param {HttpResponse} res
+		 * @param {any} data
+		 * @param {String|null} responseType
 		 */
 		sendResponse(ctx, route, req, res, data, responseType) {
 			if (data == null) {
@@ -576,24 +577,24 @@ module.exports = {
 				res.setHeader("Content-Type", responseType || "application/octet-stream");
 				res.setHeader("Content-Length", data.length);
 				res.end(data);
-			} 
+			}
 			// Buffer from JSON
 			else if (_.isObject(data) && data.type == "Buffer") {
 				const buf = Buffer.from(data);
 				res.setHeader("Content-Type", responseType || "application/octet-stream");
 				res.setHeader("Content-Length", buf.length);
 				res.end(buf);
-			} 
+			}
 			// Stream
 			else if (isStream(data)) {
 				res.setHeader("Content-Type", responseType || "application/octet-stream");
 				data.pipe(res);
-			} 
+			}
 			// Object or Array
 			else if (_.isObject(data) || Array.isArray(data)) {
 				res.setHeader("Content-Type", responseType || "application/json");
 				res.end(JSON.stringify(data));
-			} 
+			}
 			// Other
 			else {
 				if (!responseType) {
@@ -606,14 +607,14 @@ module.exports = {
 					else
 						res.end(data.toString());
 				}
-			}			
+			}
 		},
 
 		/**
 		 * Check the action name in whitelist
-		 * 
-		 * @param {Object} route 
-		 * @param {String} action 
+		 *
+		 * @param {Object} route
+		 * @param {String} action
 		 * @returns {Boolean}
 		 */
 		checkWhitelist(route, action) {
@@ -629,10 +630,10 @@ module.exports = {
 
 		/**
 		 * Resolve alias names
-		 * 
-		 * @param {Object} route 
-		 * @param {String} url 
-		 * @param {string} [method="GET"] 
+		 *
+		 * @param {Object} route
+		 * @param {String} url
+		 * @param {string} [method="GET"]
 		 * @returns {String} Resolved actionName
 		 */
 		resolveAlias(route, url, method = "GET") {
@@ -662,12 +663,12 @@ module.exports = {
 
 		/* istanbul ignore next */
 		this.server.listen(this.settings.port, this.settings.ip, err => {
-			if (err) 
+			if (err)
 				return this.logger.error("API Gateway listen error!", err);
 
 			const addr = this.server.address();
 			this.logger.info(`API Gateway listening on ${this.isHTTPS ? "https" : "http"}://${addr.address}:${addr.port}`);
-		});		
+		});
 	},
 
 	/**
@@ -680,10 +681,10 @@ module.exports = {
 		if (this.server.listening) {
 			/* istanbul ignore next */
 			this.server.close(err => {
-				if (err) 
+				if (err)
 					return this.logger.error("API Gateway close error!", err);
 
-				this.logger.info("API Gateway stopped!");			
+				this.logger.info("API Gateway stopped!");
 			});
 		}
 	},
