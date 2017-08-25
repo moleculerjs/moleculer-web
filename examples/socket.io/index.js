@@ -1,34 +1,14 @@
 "use strict";
 
 /**
- * This example uses API Gateway as a RESTful API server with caching.
+ * This example uses API Gateway & Socket.IO for websocket connections.
  *
  * Example:
  *
- *  - Get all posts  ( Please not if you call it again, it will come from cache! )
- * 		GET http://localhost:3000/posts
+ * Open http://localhost:3000/ in your browser. The page is loaded from
+ * the `assets` folder. The page contains a button named "Call math.add via websocket". If you push the button, the browser emits a websocket event to the API Gateway service. It executes the request and send back the response to the browser via websocket of course.
  *
- *  - Create a new post  ( it will clear the cache )
- * 		POST http://localhost:3000/posts
- *    Body
- * 		{
- * 			"title": "New post via REST",
- * 			"content": "Moleculer is awesome!",
- * 			"id": 11
- * 		}
- *
- *  - Get a post by ID  ( Please not if you call it again, it will come from cache! )
- * 		GET http://localhost:3000/posts/11
- *
- *  - Update a post by ID  ( it will clear the cache )
- * 		PUT http://localhost:3000/posts/11
- * 		{
- * 			"title": "Modified post",
- * 			"content": "New content"
- * 		}
- *
- *  - Remove a post by ID  ( it will clear the cache )
- * 		DELETE http://localhost:3000/posts/11
+ * Otherwise the service subscribe to all events, what will send to the browser, so if you push the button you will see the metrics events in your browser.
  *
  */
 
