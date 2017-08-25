@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Document</title>
+</head>
+<body>
+	<!-- img src="images/logo.png" /-->
+	<h1>Hello Moleculer</h1>
+
+	<button onclick="callMath()">Call `math.add` via websocket</button>
+	<div>
+		<pre id="res"></pre>
+	</div>
+	<hr/>
+	<div id="events">
+	</div>
+
+	<script src="/socket.io/socket.io.js"></script>
+	<script>
+		var socket = io();
+
+		socket.on("connect", function() {
+			console.log("Websocket connection established!");
+		});
+
+		socket.on("event", function(data){
+			console.log(data);
+			var el = document.createElement("div");
+			el.textContent = "'" + data.event + "' event received!";
+			document.getElementById("events").appendChild(el);
+		});
+
+		window.socket = socket;
+
+		function callMath() {
+			let a = Math.round(Math.random() * 100);
+			let b = Math.round(Math.random() * 100);
+			socket.emit("call", {
+				action: "math.add",
+				params: {
+					a: a,
+					b: b
+				}
+			}, res => {
+				document.getElementById("res").textContent = "" + a + " + " + b + " = " + JSON.stringify(res, null, 4);
+			});
+		}
+	</script>
+</body>
+</html>

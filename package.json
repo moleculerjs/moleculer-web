@@ -43,6 +43,7 @@
     "nodemon": "1.11.0",
     "npm-check": "5.4.5",
     "resumer": "0.0.0",
+    "socket.io": "2.0.3",
     "supertest": "3.0.0"
   },
   "peerDependencies": {
