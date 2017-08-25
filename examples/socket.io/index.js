@@ -81,7 +81,7 @@ broker.createService({
 			this.logger.info("Client connected via websocket!");
 
 			client.on("call", ({ action, params, opts }, done) => {
-				this.logger.info("Received message from client!");
+				this.logger.info("Received request from client! Action:", action, ", Params:", params);
 
 				this.broker.call(action, params, opts)
 					.then(res => {
