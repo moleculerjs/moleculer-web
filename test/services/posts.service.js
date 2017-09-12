@@ -38,7 +38,7 @@ module.exports = {
 				const post = this.findByID(ctx.params.id);
 				if (post)
 					return post;
-				
+
 				return Promise.reject(new MoleculerError("Post not found!", 404));
 			}
 		},
@@ -86,7 +86,7 @@ module.exports = {
 		},
 
 		clearCache() {
-			this.broker.emitLocal("cache.clean", this.name + ".*");
+			this.broker.emit("cache.clean", this.name + ".*");
 		}
 	},
 

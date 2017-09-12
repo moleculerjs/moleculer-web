@@ -18,7 +18,7 @@ const isStream  		= require("isstream");
 const pathToRegexp 		= require("path-to-regexp");
 
 const { Context } = require("moleculer");
-const { ServiceNotFoundError } = require("moleculer").Errors;
+const { ServiceNotFoundError, ServiceNotAvailable } = require("moleculer").Errors;
 const { InvalidRequestBodyError, BadRequestError, ERR_UNABLE_DECODE_PARAM } = require("./errors");
 
 function decodeParam(param) {
@@ -423,14 +423,25 @@ module.exports = {
 
 				// Resolve action by name
 				.then(() => {
-					endpoint = this.broker.getAction(actionName);
-					if (!endpoint) {
-					// Action is not available
+					/*const epList = this.broker.registry.getActionEndpoints(actionName);
+					if (!epList) {
+						// Action is not available
 						return this.Promise.reject(new ServiceNotFoundError(actionName));
 					}
 
+					endpoint = epList.next();
+					*/
+					endpoint = this.broker.findNextActionEndpoint(actionName);
+					if (endpoint.then)
+						return endpoint;
+
+					if (!endpoint) {
+						// Action is not available
+						return this.Promise.reject(new ServiceNotAvailable(actionName));
+					}
+
 					if (endpoint.action.publish === false) {
-					// Action is not publishable
+						// Action is not publishable
 						return this.Promise.reject(new ServiceNotFoundError(actionName));
 					}
 
@@ -450,7 +461,7 @@ module.exports = {
 					};
 
 					// Create a new context to wrap the request
-					const ctx = Context.create(this.broker, restAction, null, params, route.callOptions || {});
+					const ctx = Context.create(this.broker, restAction, this.broker.nodeID, params, route.callOptions || {});
 
 					ctx.requestID = ctx.id;
 					ctx._metricStart(ctx.metrics);

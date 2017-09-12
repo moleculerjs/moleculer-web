@@ -6,7 +6,7 @@ const path 		= require("path");
 const _ 		= require("lodash");
 const resumer	= require("resumer");
 
-const { MoleculerError } = require("moleculer").Errors;
+const { MoleculerServerError } = require("moleculer").Errors;
 
 module.exports = {
 	name: "test",
@@ -39,7 +39,7 @@ module.exports = {
 			handler(ctx) {
 				return "Danger zone!";
 			}
-		},		
+		},
 
 		text(ctx) {
 			return "String text";
@@ -59,7 +59,7 @@ module.exports = {
 		numberPlain: {
 			responseType: "text/plain",
 			handler(ctx) {
-				return 123;	
+				return 123;
 			}
 		},
 
@@ -83,13 +83,13 @@ module.exports = {
 
 		function(ctx) {
 			return () => {};
-		},		
+		},
 
-		nothing(ctx) {},		
-		
+		nothing(ctx) {},
+
 		null(ctx) {
 			return null;
-		},		
+		},
 
 		buffer: {
 			handler(ctx) {
@@ -122,7 +122,7 @@ module.exports = {
 		streamWithError() {
 			const stream = resumer().queue("Stream data");
 			setTimeout(() => {
-				stream.emit("error", new MoleculerError("Something happened!"));
+				stream.emit("error", new MoleculerServerError("Something happened!"));
 				stream.end();
 			}, 100);
 
@@ -130,7 +130,7 @@ module.exports = {
 		},
 
 		error() {
-			throw new MoleculerError("I'm dangerous", 505);
+			throw new MoleculerServerError("I'm dangerous", 505);
 		}
 	}
 };

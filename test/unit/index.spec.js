@@ -10,13 +10,13 @@ const { ServiceBroker, Context } = require("moleculer");
 const { UnAuthorizedError, ERR_NO_TOKEN } = ApiGateway.Errors;
 
 function setup(settings) {
-	const broker = new ServiceBroker();
+	const broker = new ServiceBroker({ nodeID: undefined });
 	broker.loadService("./test/services/test.service");
 
 	const service = broker.createService(ApiGateway, {
 		settings
 	});
-	const server = service.server;	
+	const server = service.server;
 
 	return [broker, service, server];
 }
@@ -46,12 +46,13 @@ describe("Test default settings", () => {
 			.expect("Content-Type", "application/json")
 			.then(res => {
 				expect(res.body).toEqual({
-					"code": 404, 
-					"message": "Service 'other.action' is not available!", 
+					"code": 404,
+					"message": "Service 'other.action' is not found.",
 					"name": "ServiceNotFoundError",
 					"type": null,
 					"data": {
-						action: "other.action"
+						action: "other.action",
+						nodeID: undefined
 					}
 				});
 			});
@@ -87,7 +88,7 @@ describe("Test default settings", () => {
 			.then(res => {
 				expect(res.body).toBe("Hello John");
 			});
-	});	
+	});
 
 	it("POST /test/greeter with body", () => {
 		return request(server)
@@ -98,7 +99,7 @@ describe("Test default settings", () => {
 			.then(res => {
 				expect(res.body).toBe("Hello Adam");
 			});
-	});	
+	});
 
 	it("POST /test/greeter with query & body", () => {
 		return request(server)
@@ -110,7 +111,7 @@ describe("Test default settings", () => {
 			.then(res => {
 				expect(res.body).toBe("Hello John");
 			});
-	});	
+	});
 
 	it("GET /test/dangerZone", () => {
 		return request(server)
@@ -119,16 +120,17 @@ describe("Test default settings", () => {
 			.expect("Content-Type", "application/json")
 			.then(res => {
 				expect(res.body).toEqual({
-					"code": 404, 
-					"message": "Service 'test.dangerZone' is not available!", 
+					"code": 404,
+					"message": "Service 'test.dangerZone' is not found.",
 					"name": "ServiceNotFoundError",
 					"type": null,
 					"data": {
-						action: "test.dangerZone"
+						action: "test.dangerZone",
+						nodeID: undefined
 					}
 				});
 			});
-	});	
+	});
 });
 
 describe("Test responses", () => {
@@ -270,7 +272,7 @@ describe("Test responses", () => {
 			.then(res => {
 				expect(Buffer.from(res.body).toString("utf8")).toEqual("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis in faucibus sapien, vitae aliquet nisi. Vivamus quis finibus tortor.");
 			});
-	});	
+	});
 
 	/*it("GET /test/streamWithError", () => {
 		return request(server)
@@ -284,7 +286,7 @@ describe("Test responses", () => {
 					"name": "CustomError"
 				});
 			});
-	});*/	
+	});*/
 
 	it("GET /test/nothing", () => {
 		return request(server)
@@ -322,12 +324,12 @@ describe("Test responses", () => {
 			.then(res => {
 				expect(res.header["request-id"]).toBeDefined();
 				expect(res.body).toEqual({
-					"code": 505, 
-					"message": "I'm dangerous", 
-					"name": "MoleculerError"
+					"code": 505,
+					"message": "I'm dangerous",
+					"name": "MoleculerServerError"
 				});
 			});
-	});	
+	});
 });
 
 describe("Test with `path` prefix", () => {
@@ -387,7 +389,7 @@ describe("Test only assets", () => {
 			.expect("Content-Type", "text/html; charset=UTF-8")
 			.then(res => {
 				expect(res.text).toBe(fs.readFileSync(path.join(__dirname, "..", "assets", "index.html"), "utf8"));
-			});		
+			});
 	});
 
 	it("GET /lorem.txt", () => {
@@ -397,7 +399,7 @@ describe("Test only assets", () => {
 			.expect("Content-Type", "text/plain; charset=UTF-8")
 			.then(res => {
 				expect(res.text).toBe("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis in faucibus sapien, vitae aliquet nisi. Vivamus quis finibus tortor.");
-			});		
+			});
 	});
 
 	it("GET /test/hello", () => {
@@ -407,7 +409,7 @@ describe("Test only assets", () => {
 			.then(res => {
 				expect(res.body).toEqual({});
 			});
-	});	
+	});
 
 });
 
@@ -434,7 +436,7 @@ describe("Test assets & API route", () => {
 			.expect("Content-Type", "text/html; charset=UTF-8")
 			.then(res => {
 				expect(res.text).toBe(fs.readFileSync(path.join(__dirname, "..", "assets", "index.html"), "utf8"));
-			});		
+			});
 	});
 
 	it("GET /lorem.txt", () => {
@@ -444,7 +446,7 @@ describe("Test assets & API route", () => {
 			.expect("Content-Type", "text/plain; charset=UTF-8")
 			.then(res => {
 				expect(res.text).toBe("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis in faucibus sapien, vitae aliquet nisi. Vivamus quis finibus tortor.");
-			});		
+			});
 	});
 
 	it("GET /test/hello", () => {
@@ -455,7 +457,7 @@ describe("Test assets & API route", () => {
 			.then(res => {
 				expect(res.body).toBe("Hello Moleculer");
 			});
-	});	
+	});
 
 });
 
@@ -475,7 +477,7 @@ describe("Test whitelist", () => {
 				]
 			}]
 		});
-		
+
 		broker.loadService("./test/services/math.service");
 	});
 
@@ -487,7 +489,7 @@ describe("Test whitelist", () => {
 			.then(res => {
 				expect(res.body).toBe("Hello Moleculer");
 			});
-	});	
+	});
 
 	it("GET /api/test/json", () => {
 		return request(server)
@@ -497,7 +499,7 @@ describe("Test whitelist", () => {
 			.then(res => {
 				expect(res.body).toEqual({ id: 1, name: "Eddie" });
 			});
-	});	
+	});
 
 	it("GET /api/test/jsonArray", () => {
 		return request(server)
@@ -510,7 +512,7 @@ describe("Test whitelist", () => {
 					{ id: 2, name: "Jane" },
 				]);
 			});
-	});	
+	});
 
 	it("GET /api/test/greeter", () => {
 		return request(server)
@@ -519,16 +521,17 @@ describe("Test whitelist", () => {
 			.expect("Content-Type", "application/json")
 			.then(res => {
 				expect(res.body).toEqual({
-					code: 404, 
-					message: "Service 'test.greeter' is not available!", 
+					code: 404,
+					message: "Service 'test.greeter' is not found.",
 					name: "ServiceNotFoundError",
 					type: null,
 					data: {
-						action: "test.greeter"
+						action: "test.greeter",
+						nodeID: undefined
 					}
 				});
-			});			
-	});	
+			});
+	});
 
 	it("GET /api/math.add", () => {
 		return request(server)
@@ -539,7 +542,7 @@ describe("Test whitelist", () => {
 			.then(res => {
 				expect(res.body).toBe(13);
 			});
-	});	
+	});
 
 	it("GET /api/math.sub", () => {
 		return request(server)
@@ -550,7 +553,7 @@ describe("Test whitelist", () => {
 			.then(res => {
 				expect(res.body).toBe(-3);
 			});
-	});	
+	});
 });
 
 describe("Test alias", () => {
@@ -578,11 +581,11 @@ describe("Test alias", () => {
 				}
 			}]
 		});
-		
+
 		broker.loadService("./test/services/math.service");
 	});
 
-	
+
 	it("GET /api/math.add", () => {
 		return request(server)
 			.get("/api/math.add")
@@ -604,7 +607,7 @@ describe("Test alias", () => {
 			.then(res => {
 				expect(res.body).toBe(13);
 			});
-	});		
+	});
 
 	it("POST /api/add", () => {
 		return request(server)
@@ -615,7 +618,7 @@ describe("Test alias", () => {
 			.then(res => {
 				expect(res.body).toBe(13);
 			});
-	});		
+	});
 
 	it("GET /api/test/hello", () => {
 		return request(server)
@@ -625,7 +628,7 @@ describe("Test alias", () => {
 			.then(res => {
 				expect(res.body).toBe("Hello Moleculer");
 			});
-	});	
+	});
 
 	it("GET /api/hello", () => {
 		return request(server)
@@ -635,7 +638,7 @@ describe("Test alias", () => {
 			.then(res => {
 				expect(res.body).toBe("Hello Moleculer");
 			});
-	});	
+	});
 
 	it("POST /api/hello", () => {
 		return request(server)
@@ -645,8 +648,8 @@ describe("Test alias", () => {
 			.expect("Content-Type", "application/json")
 			.then(res => {
 				expect(res.body).toBe("Hello Ben");
-			});		
-	});	
+			});
+	});
 
 	it("GET /api/greeter/Norbert", () => {
 		return request(server)
@@ -655,8 +658,8 @@ describe("Test alias", () => {
 			.expect("Content-Type", "application/json")
 			.then(res => {
 				expect(res.body).toBe("Hello Norbert");
-			});		
-	});	
+			});
+	});
 
 	it("POST /api/greeter/Norbert", () => {
 		return request(server)
@@ -665,14 +668,14 @@ describe("Test alias", () => {
 			.expect("Content-Type", "application/json")
 			.then(res => {
 				expect(res.body).toEqual({
-					"name": "ServiceNotFoundError", 
-					"message": "Service 'greeter.Norbert' is not available!", 
-					"code": 404, 
+					"name": "ServiceNotFoundError",
+					"message": "Service 'greeter.Norbert' is not found.",
+					"code": 404,
 					"type": null,
-					"data": {"action": "greeter.Norbert"}
+					"data": {"action": "greeter.Norbert", nodeID: undefined}
 				});
-			});		
-	});	
+			});
+	});
 
 	it("GET opt-test/:name? with name", () => {
 		return request(server)
@@ -683,8 +686,8 @@ describe("Test alias", () => {
 				expect(res.body.params).toEqual({
 					name: "John"
 				});
-			});		
-	});	
+			});
+	});
 
 	it("GET opt-test/:name? without name", () => {
 		return request(server)
@@ -693,8 +696,8 @@ describe("Test alias", () => {
 			.expect("Content-Type", "application/json")
 			.then(res => {
 				expect(res.body.params).toEqual({});
-			});		
-	});	
+			});
+	});
 
 	it("GET repeat-test/:args?", () => {
 		return request(server)
@@ -705,7 +708,7 @@ describe("Test alias", () => {
 				expect(res.body.params).toEqual({
 					args: ["John", "Jane", "Adam", "Walter"]
 				});
-			});		
+			});
 	});
 
 	it("GET /api/", () => {
@@ -716,7 +719,7 @@ describe("Test alias", () => {
 			.then(res => {
 				expect(res.body).toBe("Hello Moleculer");
 			});
-	});		
+	});
 
 	it("GET /api/custom", () => {
 		return request(server)
@@ -727,7 +730,7 @@ describe("Test alias", () => {
 				expect(customAlias).toHaveBeenCalledTimes(1);
 				expect(customAlias).toHaveBeenCalledWith(service.routes[0], jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse));
 			});
-	});		
+	});
 });
 
 describe("Test REST shorthand aliases", () => {
@@ -744,11 +747,11 @@ describe("Test REST shorthand aliases", () => {
 				}
 			}]
 		});
-		
+
 		broker.loadService("./test/services/posts.service");
 	});
 
-	
+
 	it("GET /api/posts", () => {
 		return request(server)
 			.get("/api/posts")
@@ -770,7 +773,7 @@ describe("Test REST shorthand aliases", () => {
 				expect(res.body.title).toBeDefined();
 				expect(res.body.id).toBe(2);
 			});
-	});		
+	});
 
 	it("POST /api/posts", () => {
 		return request(server)
@@ -783,7 +786,7 @@ describe("Test REST shorthand aliases", () => {
 				expect(res.body.title).toBe("Test");
 				expect(res.body.content).toBe("Content");
 			});
-	});		
+	});
 
 	it("PUT /api/posts/8", () => {
 		return request(server)
@@ -796,7 +799,7 @@ describe("Test REST shorthand aliases", () => {
 				expect(res.body.title).toBe("Modified");
 				expect(res.body.content).toBe("Content");
 			});
-	});		
+	});
 
 	it("GET /api/posts/8", () => {
 		return request(server)
@@ -808,20 +811,20 @@ describe("Test REST shorthand aliases", () => {
 				expect(res.body.title).toBe("Modified");
 				expect(res.body.content).toBe("Content");
 			});
-	});		
+	});
 
 	it("DELETE /api/posts/8", () => {
 		return request(server)
 			.delete("/api/posts/8")
 			.expect(200);
-	});		
+	});
 
 	it("GET /api/posts/8", () => {
 		return request(server)
 			.get("/api/posts/8")
 			.expect(404);
-	});		
-	
+	});
+
 });
 
 describe("Test alias & whitelist", () => {
@@ -842,7 +845,7 @@ describe("Test alias & whitelist", () => {
 				}
 			}]
 		});
-		
+
 		broker.loadService("./test/services/math.service");
 	});
 
@@ -855,7 +858,7 @@ describe("Test alias & whitelist", () => {
 			.then(res => {
 				expect(res.body).toBe(13);
 			});
-	});		
+	});
 
 	it("GET /api/hello", () => {
 		return request(server)
@@ -864,16 +867,17 @@ describe("Test alias & whitelist", () => {
 			.expect("Content-Type", "application/json")
 			.then(res => {
 				expect(res.body).toEqual({
-					code: 404, 
-					message: "Service 'test.hello' is not available!", 
+					code: 404,
+					message: "Service 'test.hello' is not found.",
 					name: "ServiceNotFoundError",
 					type: null,
 					data: {
-						action: "test.hello"
+						action: "test.hello",
+						nodeID: undefined
 					}
 				});
 			});
-	});	
+	});
 
 });
 
@@ -890,7 +894,7 @@ describe("Test body-parsers", () => {
 			routes: [{
 				bodyParsers: null
 			}]
-		});		
+		});
 
 		return request(server)
 			.post("/test.greeter")
@@ -909,7 +913,7 @@ describe("Test body-parsers", () => {
 					"name": "ValidationError"
 				});*/
 			});
-	});	
+	});
 
 	it("POST /api/test.gretter with JSON parser", () => {
 		[ broker, service, server] = setup({
@@ -918,7 +922,7 @@ describe("Test body-parsers", () => {
 					json: true
 				}
 			}]
-		});		
+		});
 
 		return request(server)
 			.post("/test.greeter")
@@ -928,7 +932,7 @@ describe("Test body-parsers", () => {
 			.then(res => {
 				expect(res.body).toBe("Hello John");
 			});
-	});	
+	});
 
 	it("POST /api/test.gretter with JSON parser & invalid JSON", () => {
 		[ broker, service, server] = setup({
@@ -937,7 +941,7 @@ describe("Test body-parsers", () => {
 					json: true
 				}
 			}]
-		});		
+		});
 
 		return request(server)
 			.post("/test.greeter")
@@ -951,14 +955,14 @@ describe("Test body-parsers", () => {
 					"type": null,
 					"data": {
 						"body": "invalid",
-						"error": "Unexpected token i"
+						"error": "Unexpected token i in JSON at position 0"
 					},
 					"message": "Invalid request body",
 					"name": "InvalidRequestBodyError"
 				});
 			});
-	});	
-	
+	});
+
 
 	it("POST /api/test.gretter with JSON parser & urlEncoded body", () => {
 		[ broker, service, server] = setup({
@@ -967,14 +971,14 @@ describe("Test body-parsers", () => {
 					json: true
 				}
 			}]
-		});		
+		});
 
 		return request(server)
 			.post("/test.greeter")
 			.set("Content-Type", "application/x-www-form-urlencoded")
 			.send({ name: "Bill" })
 			.expect(422);
-	});		
+	});
 
 	it("POST /api/test.gretter with urlencoder parser", () => {
 		[ broker, service, server] = setup({
@@ -983,7 +987,7 @@ describe("Test body-parsers", () => {
 					urlencoded: { extended: true }
 				}
 			}]
-		});		
+		});
 
 		return request(server)
 			.post("/test.greeter")
@@ -994,7 +998,7 @@ describe("Test body-parsers", () => {
 			.then(res => {
 				expect(res.body).toBe("Hello Adam");
 			});
-	});		
+	});
 
 
 });
@@ -1028,7 +1032,7 @@ describe("Test multiple routes", () => {
 				}
 			]
 		});
-		
+
 		broker.loadService("./test/services/math.service");
 	});
 
@@ -1036,7 +1040,7 @@ describe("Test multiple routes", () => {
 		return request(server)
 			.get("/api1/test/hello")
 			.expect(404);
-	});	
+	});
 
 	it("GET /api2/test/hello", () => {
 		return request(server)
@@ -1046,7 +1050,7 @@ describe("Test multiple routes", () => {
 			.then(res => {
 				expect(res.body).toBe("Hello Moleculer");
 			});
-	});	
+	});
 
 	it("GET /api1/math.add", () => {
 		return request(server)
@@ -1057,14 +1061,14 @@ describe("Test multiple routes", () => {
 			.then(res => {
 				expect(res.body).toBe(13);
 			});
-	});	
+	});
 
 	it("GET /api2/math.add", () => {
 		return request(server)
 			.get("/api2/math.add")
 			.query({ a: 5, b: 8 })
 			.expect(404);
-	});	
+	});
 
 	it("GET /api1/main", () => {
 		return request(server)
@@ -1075,7 +1079,7 @@ describe("Test multiple routes", () => {
 			.then(res => {
 				expect(res.body).toBe(13);
 			});
-	});	
+	});
 
 	it("GET /api2/main", () => {
 		return request(server)
@@ -1086,7 +1090,7 @@ describe("Test multiple routes", () => {
 			.then(res => {
 				expect(res.body).toBe("Hello Thomas");
 			});
-	});	
+	});
 });
 
 describe("Test onBeforeCall & onAfterCall", () => {
@@ -1111,7 +1115,7 @@ describe("Test onBeforeCall & onAfterCall", () => {
 				}]
 			}
 		});
-		const server = service.server;	
+		const server = service.server;
 
 		expect(service.routes[0].onBeforeCall).toBeDefined();
 		expect(service.routes[0].onAfterCall).toBeDefined();
@@ -1129,10 +1133,10 @@ describe("Test onBeforeCall & onAfterCall", () => {
 				expect(afterCall).toHaveBeenCalledTimes(1);
 				expect(afterCall).toHaveBeenCalledWith(jasmine.any(Context), jasmine.any(Object), jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse), "Hello Moleculer");
 				expect(afterCall.mock.calls[0][0].meta.custom).toBe("John");
-			});		
-	});	
+			});
+	});
 
-});	
+});
 
 describe("Test authorization", () => {
 
@@ -1144,7 +1148,7 @@ describe("Test authorization", () => {
 		})[1];
 
 		expect(service.routes[0].authorization).toBe(false);
-	});	
+	});
 
 	it("should return with data", () => {
 		const broker = new ServiceBroker();
@@ -1161,7 +1165,7 @@ describe("Test authorization", () => {
 				authorize
 			}
 		});
-		const server = service.server;	
+		const server = service.server;
 
 		expect(service.routes[0].authorization).toBe(true);
 
@@ -1173,8 +1177,8 @@ describe("Test authorization", () => {
 				expect(res.body).toBe("Hello Moleculer");
 				expect(authorize).toHaveBeenCalledTimes(1);
 				expect(authorize).toHaveBeenCalledWith(jasmine.any(Context), jasmine.any(Object), jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse));
-			});		
-	});	
+			});
+	});
 
 	it("should give back error", () => {
 		const broker = new ServiceBroker();
@@ -1191,7 +1195,7 @@ describe("Test authorization", () => {
 				authorize
 			}
 		});
-		const server = service.server;	
+		const server = service.server;
 
 		expect(service.routes[0].authorization).toBe(true);
 
@@ -1201,14 +1205,14 @@ describe("Test authorization", () => {
 			.expect("Content-Type", "application/json")
 			.then(res => {
 				expect(res.body).toEqual({
-					"message": "Unauthorized", 
-					"code": 401, 
+					"message": "Unauthorized",
+					"code": 401,
 					"type": "ERR_NO_TOKEN",
 					"name": "UnAuthorizedError"});
 				expect(authorize).toHaveBeenCalledTimes(1);
 				expect(authorize).toHaveBeenCalledWith(jasmine.any(Context), jasmine.any(Object), jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse));
-			});		
-	});	
+			});
+	});
 
 });
 
@@ -1230,7 +1234,7 @@ describe("Test lifecycle events", () => {
 				https: {
 					key: fs.readFileSync(path.join(__dirname, "..", "..", "examples", "ssl", "key.pem")),
 					cert: fs.readFileSync(path.join(__dirname, "..", "..", "examples", "ssl", "cert.pem"))
-				},				
+				},
 			}
 		});
 		expect(service.isHTTPS).toBe(true);
@@ -1247,7 +1251,7 @@ describe("Test lifecycle events", () => {
 
 		expect(server.listen).toHaveBeenCalledTimes(1);
 		expect(server.listen).toHaveBeenCalledWith(service.settings.port, service.settings.ip, jasmine.any(Function));
-	});	
+	});
 
 	it("`stopped`", () => {
 		const broker = new ServiceBroker();
@@ -1264,7 +1268,7 @@ describe("Test lifecycle events", () => {
 		expect(server.close).toHaveBeenCalledWith(jasmine.any(Function));
 
 		oldClose.call(server);
-	});	
+	});
 });
 
 describe("Test middleware mode", () => {
@@ -1307,7 +1311,7 @@ describe("Test middleware mode", () => {
 				expect(res.body).toBe("Hello Moleculer");
 				expect(nextHandler).toHaveBeenCalledTimes(0);
 			});
-	});		
+	});
 
 	it("GET /missing", () => {
 		return request(app)
@@ -1317,5 +1321,5 @@ describe("Test middleware mode", () => {
 				expect(res.text).toBe("OK");
 				expect(nextHandler).toHaveBeenCalledTimes(1);
 			});
-	});		
+	});
 });
