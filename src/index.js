@@ -423,22 +423,9 @@ module.exports = {
 
 				// Resolve action by name
 				.then(() => {
-					/*const epList = this.broker.registry.getActionEndpoints(actionName);
-					if (!epList) {
-						// Action is not available
-						return this.Promise.reject(new ServiceNotFoundError(actionName));
-					}
-
-					endpoint = epList.next();
-					*/
 					endpoint = this.broker.findNextActionEndpoint(actionName);
-					if (endpoint.then)
-						return endpoint;
-
-					if (!endpoint) {
-						// Action is not available
-						return this.Promise.reject(new ServiceNotAvailable(actionName));
-					}
+					if (endpoint instanceof Error)
+						return this.Promise.reject(endpoint);
 
 					if (endpoint.action.publish === false) {
 						// Action is not publishable
