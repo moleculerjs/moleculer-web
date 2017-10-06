@@ -128,6 +128,14 @@ module.exports = {
 			// Call options
 			route.callOptions = opts.callOptions;
 
+			// CORS
+			if (this.settings.cors || opts.cors) {
+				// Merge cors settings
+				route.cors = Object.assign({}, this.settings.cors, opts.cors);
+			} else {
+				route.cors = null;
+			}
+
 			// Fallback response handler
 			/*if (opts.fallbackResponse)
 				route.fallbackResponse = this.Promise.method(opts.fallbackResponse);
@@ -490,6 +498,9 @@ module.exports = {
 							if (ctx.requestID)
 								res.setHeader("Request-Id", ctx.requestID);
 
+							// CORS
+							this.writeCorsHeaders(route, res);
+
 							return Promise.resolve()
 							// onAfterCall handling
 								.then(() => {
@@ -535,16 +546,16 @@ module.exports = {
 
 							this.logger.error("  Request error!", err.name, ":", err.message, "\n", err.stack, "\nData:", err.data);
 
-							const headers = {
-								"Content-type": "application/json"
-							};
+							res.setHeader("Content-type", "application/json");
+
 							if (err.ctx) {
-								headers["Request-Id"] = err.ctx.id;
+								res.setHeader("Request-Id", err.ctx.id);
 							}
+							this.writeCorsHeaders(route, res);
 
 							// Return with the error
 							const code = _.isNumber(err.code) ? err.code : 500;
-							res.writeHead(code, headers);
+							res.writeHead(code);
 							const errObj = _.pick(err, ["name", "message", "code", "type", "data"]);
 							res.end(JSON.stringify(errObj, null, 2));
 
@@ -606,6 +617,65 @@ module.exports = {
 						res.end(data.toString());
 				}
 			}
+		},
+
+		/**
+		 * Write CORS header
+		 *
+		 * TODO:
+		 *   Vary
+		 *   OPTIONS
+		 * 	 Access-Control-Request-Method
+		 * 	 Access-Control-Request-Headers
+		 *
+		 * @param {Object} route
+		 * @param {HttpResponse} res
+		 */
+		writeCorsHeaders(route, res) {
+			if (!route.cors) return;
+
+			// Access-Control-Allow-Origin
+			if (!route.cors.origin || route.cors.origin === "*") {
+				res.setHeader("Access-Control-Allow-Origin", "*");
+			} else if (_.isString(route.cors.origin)) {
+				res.setHeader("Access-Control-Allow-Origin", route.cors.origin);
+				res.setHeader("Vary", "Origin");
+			} else if (Array.isArray(route.cors.origin)) {
+				res.setHeader("Access-Control-Allow-Origin", route.cors.origin.join(", "));
+				res.setHeader("Vary", "Origin");
+			}
+
+			// Access-Control-Allow-Methods
+			if (_.isString(route.cors.methods)) {
+				res.setHeader("Access-Control-Allow-Methods", route.cors.methods);
+			} else if (Array.isArray(route.cors.methods)) {
+				res.setHeader("Access-Control-Allow-Methods", route.cors.methods.join(", "));
+			}
+
+			// Access-Control-Allow-Credentials
+			if (route.cors.credentials === true) {
+				res.setHeader("Access-Control-Allow-Credentials", "true");
+			}
+
+			// Access-Control-Allow-Headers
+			if (_.isString(route.cors.allowedHeaders)) {
+				res.setHeader("Access-Control-Allow-Headers", route.cors.allowedHeaders);
+			} else if (Array.isArray(route.cors.allowedHeaders)) {
+				res.setHeader("Access-Control-Allow-Headers", route.cors.allowedHeaders.join(", "));
+			}
+
+			// Access-Control-Expose-Headers
+			if (_.isString(route.cors.exposedHeaders)) {
+				res.setHeader("Access-Control-Expose-Headers", route.cors.exposedHeaders);
+			} else if (Array.isArray(route.cors.exposedHeaders)) {
+				res.setHeader("Access-Control-Expose-Headers", route.cors.exposedHeaders.join(", "));
+			}
+
+			// Access-Control-Max-Age
+			if (route.cors.maxAge) {
+				res.setHeader("Access-Control-Max-Age", route.cors.maxAge.toString());
+			}
+
 		},
 
 		/**
