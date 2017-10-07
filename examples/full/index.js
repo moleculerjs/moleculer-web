@@ -113,6 +113,12 @@ broker.createService({
 			maxAge: null
 		},
 
+		// Rate limiter
+		rateLimit: {
+			window: 10 * 1000,
+			limit: 10,
+			headers: true
+		},
 
 		// Exposed path prefix
 		path: "/api",

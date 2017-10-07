@@ -19,7 +19,9 @@ const pathToRegexp 		= require("path-to-regexp");
 
 const { Context } = require("moleculer");
 const { ServiceNotFoundError, ServiceNotAvailable } = require("moleculer").Errors;
-const { InvalidRequestBodyError, BadRequestError, ERR_UNABLE_DECODE_PARAM } = require("./errors");
+const { InvalidRequestBodyError, BadRequestError, RateLimitExceeded, ERR_UNABLE_DECODE_PARAM } = require("./errors");
+
+const MemoryStore		= require("./memory-store");
 
 function decodeParam(param) {
 	try {
@@ -131,12 +133,35 @@ module.exports = {
 			// CORS
 			if (this.settings.cors || opts.cors) {
 				// Merge cors settings
-				route.cors = Object.assign({
+				route.cors = Object.assign({}, {
 					origin: "*",
 					methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE"]
 				}, this.settings.cors, opts.cors);
 			} else {
 				route.cors = null;
+			}
+
+			// Rate limiter (Inspired by https://github.com/dotcypress/micro-ratelimit/)
+			if (this.settings.rateLimit) {
+				let opts = Object.assign({}, {
+					window: 10 * 1000,
+					limit: 10,
+					headers: false,
+					key: (req) => {
+						return req.headers["x-forwarded-for"] ||
+							req.connection.remoteAddress ||
+							req.socket.remoteAddress ||
+							req.connection.socket.remoteAddress;
+					}
+				}, this.settings.rateLimit);
+
+				route.rateLimit = opts;
+
+				if (opts.StoreFactory)
+					route.rateLimit.store = new opts.StoreFactory(opts.window, opts);
+				else
+					route.rateLimit.store = new MemoryStore(opts.window, opts);
+
 			}
 
 			// Fallback response handler
@@ -399,12 +424,35 @@ module.exports = {
 
 			const p = this.Promise.resolve()
 
-			// Whitelist check
+				// Whitelist check
 				.then(() => {
 					if (route.hasWhitelist) {
 						if (!this.checkWhitelist(route, actionName)) {
 							this.logger.debug(`  The '${actionName}' action is not in the whitelist!`);
 							return this.Promise.reject(new ServiceNotFoundError(actionName));
+						}
+					}
+				})
+
+				// Rate limiter
+				.then(() => {
+					if (route.rateLimit) {
+						const opts = route.rateLimit;
+						const store = route.rateLimit.store;
+
+						const key = opts.key(req);
+						if (!key)
+							/* istanbul ignore next */
+							return;
+
+						const remaining = opts.limit - store.inc(key);
+						if (opts.headers) {
+							res.setHeader("X-Rate-Limit-Limit", opts.limit);
+							res.setHeader("X-Rate-Limit-Remaining", Math.max(0, remaining));
+							res.setHeader("X-Rate-Limit-Reset", store.resetTime);
+						}
+						if (remaining < 0) {
+							return this.Promise.reject(new RateLimitExceeded());
 						}
 					}
 				})
@@ -474,7 +522,8 @@ module.exports = {
 
 				// Create a new context for request
 				.then(() => {
-					this.logger.info(`  Call '${actionName}' action with params:`, params);
+					this.logger.info(`  Call '${actionName}' action`);
+					this.logger.debug("  Params:", params);
 
 					const restAction = {
 						name: this.name + ".rest"
@@ -482,10 +531,7 @@ module.exports = {
 
 					// Create a new context to wrap the request
 					const ctx = Context.create(this.broker, restAction, this.broker.nodeID, params, route.callOptions || {});
-
-					ctx.requestID = ctx.id;
 					ctx._metricStart(ctx.metrics);
-					//ctx.endpoint = endpoint;
 
 					return ctx;
 				})
@@ -521,7 +567,7 @@ module.exports = {
 
 							// Return with the response
 							if (ctx.requestID)
-								res.setHeader("Request-Id", ctx.requestID);
+								res.setHeader("X-Request-ID", ctx.requestID);
 
 							return Promise.resolve()
 							// onAfterCall handling
@@ -530,12 +576,7 @@ module.exports = {
 										return route.onAfterCall.call(this, ctx, route, req, res, data);
 								})
 								.then(() => {
-								//try {
 									this.sendResponse(ctx, route, req, res, data, responseType);
-									//} catch(err) {
-									/* istanbul ignore next */
-									//	return this.Promise.reject(new InvalidResponseTypeError(typeof(data)));
-									//}
 
 									ctx._metricFinish(null, ctx.metrics);
 								});
@@ -571,7 +612,7 @@ module.exports = {
 							res.setHeader("Content-type", "application/json");
 
 							if (err.ctx) {
-								res.setHeader("Request-Id", err.ctx.id);
+								res.setHeader("X-Request-ID", err.ctx.id);
 							}
 
 							// Return with the error
@@ -638,14 +679,13 @@ module.exports = {
 						res.end(data.toString());
 				}
 			}
+
+			this.logger.info(`  Response for '${ctx.action.name}' action`);
+			this.logger.debug("  Data:", data);
 		},
 
 		/**
 		 * Write CORS header
-		 *
-		 * TODO:
-		 *   Vary
-		 * 	 Access-Control-Request-Method
 		 *
 		 * @param {Object} route
 		 * @param {HttpIncomingRequest} req
