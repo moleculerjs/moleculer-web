@@ -687,8 +687,10 @@ module.exports = {
 				} else {
 					// AllowedHeaders doesn't specified, so we send back from req headers
 					const allowedHeaders = req.headers["access-control-request-headers"];
-					res.setHeader("Vary", "Access-Control-Request-Headers");
-					res.setHeader("Access-Control-Allow-Headers", allowedHeaders);
+					if (allowedHeaders) {
+						res.setHeader("Vary", "Access-Control-Request-Headers");
+						res.setHeader("Access-Control-Allow-Headers", allowedHeaders);
+					}
 				}
 
 				// Access-Control-Allow-Methods

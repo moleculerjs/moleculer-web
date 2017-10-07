@@ -1093,6 +1093,162 @@ describe("Test multiple routes", () => {
 	});
 });
 
+describe("Test CORS", () => {
+	let broker;
+	let service;
+	let server;
+
+	beforeAll(() => {
+	});
+
+	it("with default settings", () => {
+		[ broker, service, server] = setup({
+			cors: {}
+		});
+
+		return request(server)
+			.get("/test/hello")
+			.expect(200)
+			.expect("Content-Type", "application/json")
+			.expect("Access-Control-Allow-Origin", "*")
+			//.expect("Access-Control-Allow-Credentials", "*")
+			//.expect("Access-Control-Expose-Headers", "*")
+			.then(res => expect(res.body).toBe("Hello Moleculer"));
+	});
+
+	it("with custom global settings (string)", () => {
+		[ broker, service, server] = setup({
+			cors: {
+				origin: "http://localhost:3000",
+				exposedHeaders: "X-Response-Time",
+				credentials: true
+			}
+		});
+
+		return request(server)
+			.get("/test/hello")
+			.expect(200)
+			.expect("Content-Type", "application/json")
+			.expect("Access-Control-Allow-Origin", "http://localhost:3000")
+			.expect("Access-Control-Allow-Credentials", "true")
+			.expect("Access-Control-Expose-Headers", "X-Response-Time")
+			.then(res => expect(res.body).toBe("Hello Moleculer"));
+	});
+
+	it("with custom global settings (array)", () => {
+		[ broker, service, server] = setup({
+			cors: {
+				origin: ["http://localhost:3000", "https://localhost:4000"],
+				exposedHeaders: ["X-Custom-Header", "X-Response-Time"],
+				credentials: true
+			}
+		});
+
+		return request(server)
+			.get("/test/hello")
+			.expect(200)
+			.expect("Content-Type", "application/json")
+			.expect("Access-Control-Allow-Origin", "http://localhost:3000, https://localhost:4000")
+			.expect("Access-Control-Allow-Credentials", "true")
+			.expect("Access-Control-Expose-Headers", "X-Custom-Header, X-Response-Time")
+			.then(res => expect(res.body).toBe("Hello Moleculer"));
+	});
+
+	it("with custom route settings", () => {
+		[ broker, service, server] = setup({
+			cors: {
+				origin: ["http://localhost:3000", "https://localhost:4000"],
+				exposedHeaders: ["X-Custom-Header", "X-Response-Time"],
+				credentials: true
+			},
+			routes: [{
+				cors: {
+					origin: "http://test-server",
+					credentials: false,
+					exposedHeaders: ["X-Response-Time"]
+				}
+			}]
+		});
+
+		return request(server)
+			.get("/test/hello")
+			.expect(200)
+			.expect("Content-Type", "application/json")
+			.expect("Access-Control-Allow-Origin", "http://test-server")
+			.expect("Access-Control-Expose-Headers", "X-Response-Time")
+			.then(res => expect(res.body).toBe("Hello Moleculer"));
+	});
+
+	it("preflight request with custom route settings", () => {
+		[ broker, service, server] = setup({
+			cors: {
+				origin: ["http://localhost:3000"],
+				exposedHeaders: ["X-Custom-Header", "X-Response-Time"]
+			},
+			routes: [{
+				cors: {
+					origin: "http://test-server",
+					credentials: true,
+					allowedHeaders: "X-Rate-Limiting",
+					methods: ["GET", "POST", "DELETE"],
+					maxAge: 3600
+				}
+			}]
+		});
+
+		return request(server)
+			.options("/test/hello")
+			.set("Access-Control-Request-Method", "GET")
+			.expect(204)
+			.expect("Access-Control-Allow-Origin", "http://test-server")
+			.expect("Access-Control-Allow-Headers", "X-Rate-Limiting")
+			.expect("Access-Control-Allow-Methods", "GET, POST, DELETE")
+			.expect("Access-Control-Allow-Credentials", "true")
+			.expect("Access-Control-Expose-Headers", "X-Custom-Header, X-Response-Time")
+			.expect("Access-Control-Max-Age", "3600")
+			.expect("Vary", "Origin")
+			.then(res => expect(res.text).toBe(""));
+	});
+
+	it("preflight request with default settings", () => {
+		[ broker, service, server] = setup({
+			cors: {
+				allowedHeaders: ["X-Custom-Header", "X-Response-Time"]
+			}
+		});
+
+		return request(server)
+			.options("/test/hello")
+			.set("Access-Control-Request-Method", "GET")
+			.expect(204)
+			.expect("Access-Control-Allow-Origin", "*")
+			.expect("Access-Control-Allow-Headers", "X-Custom-Header, X-Response-Time")
+			.then(res => expect(res.text).toBe(""));
+	});
+
+	it("preflight request with 'Access-Control-Request-Headers'", () => {
+		[ broker, service, server] = setup({
+			cors: {
+				origin: "http://localhost:3000",
+				exposedHeaders: ["X-Custom-Header", "X-Response-Time"],
+				methods: "GET",
+			}
+		});
+
+		return request(server)
+			.options("/test/hello")
+			.set("Access-Control-Request-Method", "GET")
+			.set("Access-Control-Request-Headers", "X-Rate-Limiting")
+			.expect(204)
+			.expect("Access-Control-Allow-Origin", "http://localhost:3000")
+			.expect("Access-Control-Allow-Headers", "X-Rate-Limiting")
+			.expect("Access-Control-Allow-Methods", "GET")
+			.expect("Access-Control-Expose-Headers", "X-Custom-Header, X-Response-Time")
+			.expect("Vary", "Access-Control-Request-Headers")
+			.then(res => expect(res.text).toBe(""));
+	});
+});
+
 describe("Test onBeforeCall & onAfterCall", () => {
 
 	it("should call handlers", () => {
