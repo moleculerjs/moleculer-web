@@ -10,39 +10,39 @@
  *  - alias
  *  - body-parsers
  *  - file upload
- * 
+ *
  * Metrics, statistics, validation features of Moleculer is enabled.
- * 
+ *
  * Example:
- * 	
+ *
  *  - Open index.html
  * 		https://localhost:4000
- * 	
+ *
  *  - Access to assets
  * 		https://localhost:4000/images/logo.png
- * 	
+ *
  *  - API: Add two numbers (use alias name)
  * 		https://localhost:4000/api/add?a=25&b=13
- * 
+ *
  * 	- or with named parameters
  * 		https://localhost:4000/api/add/25/13
- * 	
+ *
  *  - API: Divide two numbers with validation
  * 		https://localhost:4000/api/math/div?a=25&b=13
  * 		https://localhost:4000/api/math/div?a=25      <-- Throw validation error because `b` is missing
- * 
+ *
  *  - Authorization:
- * 		https://localhost:4000/api/admin/~node/health  <-- Throw `Unauthorized` because no `Authorization` header	
- * 
+ * 		https://localhost:4000/api/admin/~node/health  <-- Throw `Unauthorized` because no `Authorization` header
+ *
  * 		First you have to login . You will get a token and set it to the `Authorization` key in header
  * 			https://localhost:4000/api/login?username=admin&password=admin
- * 
+ *
  * 		Set the token to header and try again
  * 			https://localhost:4000/api/admin/~node/health
- * 
+ *
  *  - File upload:
  * 		Open https://localhost:4000/upload.html in the browser and upload a file. The file will be placed to the "examples/full/uploads" folder.
- * 
+ *
  */
 
 const fs	 				= require("fs");
@@ -89,7 +89,7 @@ broker.loadServices(path.join(__dirname, ".."), "*.service.js");
 // Load API Gateway
 broker.createService({
 	mixins: ApiGatewayService,
-	
+
 	settings: {
 		// Exposed port
 		port: 4000,
@@ -103,13 +103,24 @@ broker.createService({
 			cert: fs.readFileSync(path.join(__dirname, "../ssl/cert.pem"))
 		},
 
+		// Global CORS settings
+		cors: {
+			origin: "*",
+			methods: ["GET", "OPTIONS", "POST", "PUT", "DELETE"],
+			allowedHeaders: "*",
+			//exposedHeaders: "*",
+			credentials: true,
+			maxAge: null
+		},
+
+
 		// Exposed path prefix
 		path: "/api",
 
 		routes: [
 
 			/**
-			 * This route demonstrates a protected `/api/admin` path to access `users.*` & internal actions. 
+			 * This route demonstrates a protected `/api/admin` path to access `users.*` & internal actions.
 			 * To access them, you need to login first & use the received token in header
 			 */
 			{
@@ -121,6 +132,12 @@ broker.createService({
 					"users.*",
 					"$node.*"
 				],
+
+				// Route CORS settings
+				cors: {
+					origin: ["https://localhost:4000"],
+					methods: ["GET", "OPTIONS", "POST"],
+				},
 
 				authorization: true,
 
@@ -140,12 +157,12 @@ broker.createService({
 				onBeforeCall(ctx, route, req, res) {
 					this.logger.info("onBeforeCall in protected route");
 					ctx.meta.authToken = req.headers["authorization"];
-				},	
+				},
 
 				onAfterCall(ctx, route, req, res, data) {
 					this.logger.info("onAfterCall in protected route");
 					res.setHeader("X-Custom-Header", "Authorized path");
-				}							
+				}
 			},
 
 			/**
@@ -205,7 +222,7 @@ broker.createService({
 					return new this.Promise(resolve => {
 						res.setHeader("X-Response-Type", typeof(data));
 						resolve();
-					});					
+					});
 				}
 
 			}
@@ -230,10 +247,10 @@ broker.createService({
 	methods: {
 		/**
 		 * Authorize the request
-		 * 
-		 * @param {Context} ctx 
+		 *
+		 * @param {Context} ctx
 		 * @param {Object} route
-		 * @param {IncomingRequest} req 
+		 * @param {IncomingRequest} req
 		 * @returns {Promise}
 		 */
 		authorize(ctx, route, req) {
