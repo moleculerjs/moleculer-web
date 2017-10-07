@@ -119,7 +119,7 @@ module.exports = {
 			};
 			if (opts.authorization) {
 				if (!_.isFunction(this.authorize)) {
-					this.logger.warn("If you would like to use authorization, please define the 'authorize' method in the service!");
+					this.logger.warn("Please define 'authorize' method in the service to authorization.");
 					route.authorization = false;
 				} else
 					route.authorization = true;
@@ -131,7 +131,10 @@ module.exports = {
 			// CORS
 			if (this.settings.cors || opts.cors) {
 				// Merge cors settings
-				route.cors = Object.assign({}, this.settings.cors, opts.cors);
+				route.cors = Object.assign({
+					origin: "*",
+					methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE"]
+				}, this.settings.cors, opts.cors);
 			} else {
 				route.cors = null;
 			}
@@ -406,6 +409,28 @@ module.exports = {
 					}
 				})
 
+				// CORS headers
+				.then(() => {
+					if (route.cors) {
+						if (req.method == "OPTIONS" && req.headers["access-control-request-method"]) {
+							// Preflight request
+							this.writeCorsHeaders(route, req, res, true);
+
+							// 204 - No content
+							res.writeHead(204, {
+								"Content-Length": "0"
+							});
+							res.end();
+
+							// Break the chain
+							return Promise.reject();
+						}
+
+						// Set CORS headers to `res`
+						this.writeCorsHeaders(route, req, res, true);
+					}
+				})
+
 				// Parse body
 				.then(() => {
 					if (["POST", "PUT", "PATCH"].indexOf(req.method) !== -1 && route.parsers && route.parsers.length > 0) {
@@ -498,9 +523,6 @@ module.exports = {
 							if (ctx.requestID)
 								res.setHeader("Request-Id", ctx.requestID);
 
-							// CORS
-							this.writeCorsHeaders(route, res);
-
 							return Promise.resolve()
 							// onAfterCall handling
 								.then(() => {
@@ -551,7 +573,6 @@ module.exports = {
 							if (err.ctx) {
 								res.setHeader("Request-Id", err.ctx.id);
 							}
-							this.writeCorsHeaders(route, res);
 
 							// Return with the error
 							const code = _.isNumber(err.code) ? err.code : 500;
@@ -624,14 +645,14 @@ module.exports = {
 		 *
 		 * TODO:
 		 *   Vary
-		 *   OPTIONS
 		 * 	 Access-Control-Request-Method
-		 * 	 Access-Control-Request-Headers
 		 *
 		 * @param {Object} route
+		 * @param {HttpIncomingRequest} req
 		 * @param {HttpResponse} res
+		 * @param {Boolean} isPreFlight
 		 */
-		writeCorsHeaders(route, res) {
+		writeCorsHeaders(route, req, res, isPreFlight) {
 			if (!route.cors) return;
 
 			// Access-Control-Allow-Origin
@@ -645,23 +666,9 @@ module.exports = {
 				res.setHeader("Vary", "Origin");
 			}
 
-			// Access-Control-Allow-Methods
-			if (_.isString(route.cors.methods)) {
-				res.setHeader("Access-Control-Allow-Methods", route.cors.methods);
-			} else if (Array.isArray(route.cors.methods)) {
-				res.setHeader("Access-Control-Allow-Methods", route.cors.methods.join(", "));
-			}
-
 			// Access-Control-Allow-Credentials
 			if (route.cors.credentials === true) {
 				res.setHeader("Access-Control-Allow-Credentials", "true");
-			}
-
-			// Access-Control-Allow-Headers
-			if (_.isString(route.cors.allowedHeaders)) {
-				res.setHeader("Access-Control-Allow-Headers", route.cors.allowedHeaders);
-			} else if (Array.isArray(route.cors.allowedHeaders)) {
-				res.setHeader("Access-Control-Allow-Headers", route.cors.allowedHeaders.join(", "));
 			}
 
 			// Access-Control-Expose-Headers
@@ -671,11 +678,31 @@ module.exports = {
 				res.setHeader("Access-Control-Expose-Headers", route.cors.exposedHeaders.join(", "));
 			}
 
-			// Access-Control-Max-Age
-			if (route.cors.maxAge) {
-				res.setHeader("Access-Control-Max-Age", route.cors.maxAge.toString());
-			}
+			if (isPreFlight) {
+				// Access-Control-Allow-Headers
+				if (_.isString(route.cors.allowedHeaders)) {
+					res.setHeader("Access-Control-Allow-Headers", route.cors.allowedHeaders);
+				} else if (Array.isArray(route.cors.allowedHeaders)) {
+					res.setHeader("Access-Control-Allow-Headers", route.cors.allowedHeaders.join(", "));
+				} else {
+					// AllowedHeaders doesn't specified, so we send back from req headers
+					const allowedHeaders = req.headers["access-control-request-headers"];
+					res.setHeader("Vary", "Access-Control-Request-Headers");
+					res.setHeader("Access-Control-Allow-Headers", allowedHeaders);
+				}
 
+				// Access-Control-Allow-Methods
+				if (_.isString(route.cors.methods)) {
+					res.setHeader("Access-Control-Allow-Methods", route.cors.methods);
+				} else if (Array.isArray(route.cors.methods)) {
+					res.setHeader("Access-Control-Allow-Methods", route.cors.methods.join(", "));
+				}
+
+				// Access-Control-Max-Age
+				if (route.cors.maxAge) {
+					res.setHeader("Access-Control-Max-Age", route.cors.maxAge.toString());
+				}
+			}
 		},
 
 		/**
