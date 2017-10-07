@@ -5,6 +5,7 @@ const http = require("http");
 const path = require("path");
 const request = require("supertest");
 const express = require("express");
+const lolex = require("lolex");
 const ApiGateway = require("../../index");
 const { ServiceBroker, Context } = require("moleculer");
 const { UnAuthorizedError, ERR_NO_TOKEN } = ApiGateway.Errors;
@@ -153,7 +154,7 @@ describe("Test responses", () => {
 			.expect(200)
 			.expect("Content-Type", "application/json")
 			.then(res => {
-				expect(res.header["request-id"]).toBeDefined();
+				expect(res.header["x-request-id"]).toBeDefined();
 				expect(res.body).toEqual("String text");
 			});
 	});
@@ -322,7 +323,7 @@ describe("Test responses", () => {
 			.expect(505)
 			.expect("Content-Type", "application/json")
 			.then(res => {
-				expect(res.header["request-id"]).toBeDefined();
+				expect(res.header["x-request-id"]).toBeDefined();
 				expect(res.body).toEqual({
 					"code": 505,
 					"message": "I'm dangerous",
@@ -1246,6 +1247,104 @@ describe("Test CORS", () => {
 			.expect("Access-Control-Expose-Headers", "X-Custom-Header, X-Response-Time")
 			.expect("Vary", "Access-Control-Request-Headers")
 			.then(res => expect(res.text).toBe(""));
+	});
+});
+
+describe("Test Rate Limiter", () => {
+	let broker;
+	let service;
+	let server;
+	let clock;
+
+	beforeAll(() => {
+		clock = lolex.install();
+
+		[ broker, service, server] = setup({
+			rateLimit: {
+				window: 10000,
+				limit: 3,
+				headers: true
+			}
+		});
+	});
+
+	afterAll(() => {
+		clock.uninstall();
+	});
+
+	it("with headers #1", () => {
+		return request(server)
+			.get("/test/hello")
+			.expect(200)
+			.expect("Content-Type", "application/json")
+			.expect("X-Rate-Limit-Limit", "3")
+			.expect("X-Rate-Limit-Remaining", "2")
+			.expect("X-Rate-Limit-Reset", "10000")
+			.then(res => expect(res.body).toBe("Hello Moleculer"));
+	});
+
+	it("with headers #2", () => {
+		return request(server)
+			.get("/test/hello")
+			.expect(200)
+			.expect("Content-Type", "application/json")
+			.expect("X-Rate-Limit-Limit", "3")
+			.expect("X-Rate-Limit-Remaining", "1")
+			.expect("X-Rate-Limit-Reset", "10000")
+			.then(res => expect(res.body).toBe("Hello Moleculer"));
+	});
+
+	it("with headers #3", () => {
+		return request(server)
+			.get("/test/hello")
+			.expect(200)
+			.expect("Content-Type", "application/json")
+			.expect("X-Rate-Limit-Limit", "3")
+			.expect("X-Rate-Limit-Remaining", "0")
+			.expect("X-Rate-Limit-Reset", "10000")
+			.then(res => expect(res.body).toBe("Hello Moleculer"));
+	});
+
+	it("with headers #4", () => {
+		return request(server)
+			.get("/test/hello")
+			.expect(429)
+			.expect("Content-Type", "application/json")
+			.expect("X-Rate-Limit-Limit", "3")
+			.expect("X-Rate-Limit-Remaining", "0")
+			.expect("X-Rate-Limit-Reset", "10000")
+			.then(res => expect(res.body).toEqual({
+				code: 429,
+				message: "Rate limit exceeded",
+				name: "RateLimitExceeded"
+			}));
+	});
+
+	it("with headers #5", () => {
+		clock.tick(11 * 1000);
+
+		return request(server)
+			.get("/test/hello")
+			.expect(200)
+			.expect("Content-Type", "application/json")
+			.expect("X-Rate-Limit-Limit", "3")
+			.expect("X-Rate-Limit-Remaining", "2")
+			.expect("X-Rate-Limit-Reset", "20000")
+			.then(res => expect(res.body).toBe("Hello Moleculer"));
+	});
+
+	it("Test StoreFactory", () => {
+		let factory = jest.fn();
+		[ broker, service, server] = setup({
+			rateLimit: {
+				window: 10000,
+				limit: 3,
+				StoreFactory: factory
+			}
+		});
+
+		expect(factory).toHaveBeenCalledTimes(1);
+		expect(factory).toHaveBeenCalledWith(10000, service.routes[0].rateLimit);
 	});
 });
 

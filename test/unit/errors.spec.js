@@ -1,7 +1,7 @@
 "use strict";
 
 let errors = require("../../src/errors");
-
+let { MoleculerClientError } = require("moleculer").Errors;
 
 describe("Test Errors", () => {
 
@@ -64,6 +64,19 @@ describe("Test Errors", () => {
 		expect(err.type).toBe("ERR_NO_REQUEST_BODY");
 		expect(err.name).toBe("BadRequestError");
 		expect(err.message).toBe("Bad request");
+		expect(err.data).toEqual({ a: 5});
+	});
+
+	it("test RateLimitExceeded", () => {
+		let err = new errors.RateLimitExceeded("ERR_RATE_LIMIT", { a: 5 });
+		expect(err).toBeDefined();
+		expect(err).toBeInstanceOf(Error);
+		expect(err).toBeInstanceOf(MoleculerClientError);
+		expect(err).toBeInstanceOf(errors.RateLimitExceeded);
+		expect(err.code).toBe(429);
+		expect(err.type).toBe("ERR_RATE_LIMIT");
+		expect(err.name).toBe("RateLimitExceeded");
+		expect(err.message).toBe("Rate limit exceeded");
 		expect(err.data).toEqual({ a: 5});
 	});
 });

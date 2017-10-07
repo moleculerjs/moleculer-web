@@ -442,6 +442,7 @@ module.exports = {
 
 						const key = opts.key(req);
 						if (!key)
+							/* istanbul ignore next */
 							return;
 
 						const remaining = opts.limit - store.inc(key);
