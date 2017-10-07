@@ -448,7 +448,7 @@ module.exports = {
 						if (opts.headers) {
 							res.setHeader("X-Rate-Limit-Limit", opts.limit);
 							res.setHeader("X-Rate-Limit-Remaining", Math.max(0, remaining));
-							//res.setHeader("X-Rate-Limit-Reset", reset); // ?
+							res.setHeader("X-Rate-Limit-Reset", store.resetTime);
 						}
 						if (remaining < 0) {
 							return this.Promise.reject(new RateLimitExceeded());
