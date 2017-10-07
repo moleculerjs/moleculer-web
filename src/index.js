@@ -643,10 +643,6 @@ module.exports = {
 		/**
 		 * Write CORS header
 		 *
-		 * TODO:
-		 *   Vary
-		 * 	 Access-Control-Request-Method
-		 *
 		 * @param {Object} route
 		 * @param {HttpIncomingRequest} req
 		 * @param {HttpResponse} res
