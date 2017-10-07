@@ -144,8 +144,8 @@ module.exports = {
 			// Rate limiter (Inspired by https://github.com/dotcypress/micro-ratelimit/)
 			if (this.settings.rateLimit) {
 				let opts = Object.assign({}, {
-					window: 10 * 1000,
-					limit: 10,
+					window: 60 * 1000,
+					limit: 30,
 					headers: false,
 					key: (req) => {
 						return req.headers["x-forwarded-for"] ||
