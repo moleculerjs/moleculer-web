@@ -3,6 +3,7 @@
 
 ## New
 - add CORS headers
+- add Rate limiter
 
 -----------------------------
 <a name="0.5.0"></a>

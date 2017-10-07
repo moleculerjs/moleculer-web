@@ -21,6 +21,7 @@ The `moleculer-web` is the official API gateway service for [Moleculer](https://
 * whitelist
 * multiple body parsers (json, urlencoded)
 * CORS headers
+* Rate limiter
 * before & after call hooks
 * Buffer & Stream handling
 * middleware mode (use as a middleware with Express)
