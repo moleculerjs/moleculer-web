@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "nodemon examples/index.js",
     "demo": "node examples/index.js",
-    "bench": "node benchmark/index.js",
+    "bench": "nodemon benchmarks/index.js",
+    "perf": "node --inspect --expose-gc benchmarks/index.js",
     "ci": "jest --watch",
     "test": "jest --coverage",
     "lint": "eslint --ext=.js src test",
