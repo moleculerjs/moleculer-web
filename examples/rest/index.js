@@ -62,7 +62,10 @@ broker.createService({
 				"PUT posts/:id": "posts.update",
 				"DELETE posts/:id": "posts.remove"
 				*/
-			}
+			},
+
+			// Disable direct URLs (`/posts/find` or `/posts.find`)
+			blockDirectCall: true
 		}]
 	}
 });

@@ -356,6 +356,9 @@ module.exports = {
 									if (_.isFunction(alias.action)) {
 										return alias.action.call(this, route, req, res);
 									}
+								} else if (route.opts.blockDirectCall) {
+									// Blocking direct access
+									break;
 								}
 							}
 							actionName = actionName.replace(/\//g, ".");
