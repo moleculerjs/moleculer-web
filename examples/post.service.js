@@ -22,7 +22,7 @@ module.exports = {
 	name: "posts",
 
 	actions: {
-		find: {
+		list: {
 			cache: true,
 			handler(ctx) {
 				// Clone the local list
@@ -39,7 +39,7 @@ module.exports = {
 				const post = this.findByID(ctx.params.id);
 				if (post)
 					return post;
-				
+
 				return Promise.reject(new MoleculerError("Post not found!", 404));
 			}
 		},
