@@ -23,6 +23,9 @@ const { InvalidRequestBodyError, BadRequestError, RateLimitExceeded, ERR_UNABLE_
 
 const MemoryStore		= require("./memory-store");
 
+const MAPPING_POLICY_ALL		= "all";
+const MAPPING_POLICY_RESTRICT	= "restrict";
+
 function decodeParam(param) {
 	try {
 		return decodeURIComponent(param);
@@ -262,6 +265,8 @@ module.exports = {
 				});
 			}
 
+			route.mappingPolicy = opts.mappingPolicy || MAPPING_POLICY_ALL;
+
 			return route;
 		},
 
@@ -356,7 +361,7 @@ module.exports = {
 									if (_.isFunction(alias.action)) {
 										return alias.action.call(this, route, req, res);
 									}
-								} else if (route.opts.blockDirectCall) {
+								} else if (route.mappingPolicy == MAPPING_POLICY_RESTRICT) {
 									// Blocking direct access
 									break;
 								}

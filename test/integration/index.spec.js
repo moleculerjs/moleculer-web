@@ -1094,6 +1094,110 @@ describe("Test multiple routes", () => {
 	});
 });
 
+describe("Test mappingPolicy route option", () => {
+	let broker;
+	let service;
+	let server;
+
+	describe("'all' option", () => {
+		beforeAll(() => {
+			[ broker, service, server] = setup({
+				routes: [
+					{
+						path: "/api",
+						whitelist: [
+							"math.*"
+						],
+						aliases: {
+							"add": "math.add"
+						},
+						// mappingPolicy: "all" (default value)
+					}
+				]
+			});
+
+			broker.loadService("./test/services/math.service");
+		});
+
+		it("GET /api/math.add", () => {
+			return request(server)
+				.get("/api/math.add")
+				.query({ a: 5, b: 8 })
+				.expect(200)
+				.expect("Content-Type", "application/json")
+				.then(res => {
+					expect(res.body).toBe(13);
+				});
+		});
+
+		it("GET /api/math/add", () => {
+			return request(server)
+				.get("/api/math/add")
+				.query({ a: 5, b: 8 })
+				.expect(200)
+				.expect("Content-Type", "application/json")
+				.then(res => {
+					expect(res.body).toBe(13);
+				});
+		});
+
+		it("GET /api/add", () => {
+			return request(server)
+				.get("/api/add")
+				.query({ a: 5, b: 8 })
+				.expect(200)
+				.expect("Content-Type", "application/json")
+				.then(res => {
+					expect(res.body).toBe(13);
+				});
+		});
+	});
+
+	describe("'restrict' option", () => {
+		beforeAll(() => {
+			[ broker, service, server] = setup({
+				routes: [
+					{
+						path: "/api",
+						whitelist: [
+							"math.*"
+						],
+						aliases: {
+							"add": "math.add"
+						},
+						mappingPolicy: "restrict"
+					}
+				]
+			});
+
+			broker.loadService("./test/services/math.service");
+		});
+
+		it("GET /api/math.add", () => {
+			return request(server)
+				.get("/api/math.add")
+				.expect(404);
+		});
+
+		it("GET /api/math/add", () => {
+			return request(server)
+				.get("/api/math/add")
+				.expect(404);
+		});
+
+		it("GET /api/add", () => {
+			return request(server)
+				.get("/api/add")
+				.query({ a: 5, b: 8 })
+				.expect(200)
+				.expect("Content-Type", "application/json")
+				.then(res => {
+					expect(res.body).toBe(13);
+				});
+		});
+	});
+});
+
 describe("Test CORS", () => {
 	let broker;
 	let service;

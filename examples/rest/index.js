@@ -65,7 +65,7 @@ broker.createService({
 			},
 
 			// Disable direct URLs (`/posts/find` or `/posts.find`)
-			blockDirectCall: true
+			mappingPolicy: "restrict"
 		}]
 	}
 });
