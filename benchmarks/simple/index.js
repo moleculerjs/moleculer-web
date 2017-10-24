@@ -14,7 +14,7 @@ broker.createService({
 	name: "test",
 	actions: {
 		hello() {
-			return "Hello Moleculer";
+			return "Hello";
 		}
 	}
 });
