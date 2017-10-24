@@ -18,7 +18,7 @@ const isStream  		= require("isstream");
 const pathToRegexp 		= require("path-to-regexp");
 
 const { Context } = require("moleculer");
-const { ServiceNotFoundError, ServiceNotAvailable } = require("moleculer").Errors;
+const { ServiceNotFoundError } = require("moleculer").Errors;
 const { InvalidRequestBodyError, BadRequestError, RateLimitExceeded, ERR_UNABLE_DECODE_PARAM } = require("./errors");
 
 const MemoryStore		= require("./memory-store");
