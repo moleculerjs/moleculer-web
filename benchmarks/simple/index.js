@@ -23,4 +23,5 @@ broker.createService({
 broker.createService(ApiService);
 
 // Start server
-broker.start();
+broker.start()
+	.then(() => console.log("Test URL: http://localhost:3000/test/hello"));
