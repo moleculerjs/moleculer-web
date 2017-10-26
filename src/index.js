@@ -99,13 +99,6 @@ module.exports = {
 			});*/
 		}
 
-		// Create static server middleware
-		if (this.settings.assets) {
-			const opts = this.settings.assets.options || {};
-			opts.fallthrough = false;
-			this.serve = serveStatic(this.settings.assets.folder, opts);
-		}
-
 		// Process routes
 		if (Array.isArray(this.settings.routes)) {
 			this.routes = this.settings.routes.map(route => this.createRoute(route));
@@ -170,6 +163,14 @@ module.exports = {
 					route.rateLimit.store = new MemoryStore(opts.window, opts);
 
 			}
+
+			// Static server middleware
+			if (opts.assets) {
+				const o = opts.assets.options || {};
+				o.fallthrough = false;
+				route.serveStatic = serveStatic(opts.assets.folder, o);
+			}
+
 
 			// Fallback response handler
 			/*if (opts.fallbackResponse)
@@ -335,7 +336,7 @@ module.exports = {
 				let {query, url} = this.processQueryString(req);
 
 				// Trim trailing slash
-				if (url.endsWith("/"))
+				if (url.length > 1 && url.endsWith("/"))
 					url = url.slice(0, -1);
 
 				// Check the URL is an API request
@@ -344,6 +345,16 @@ module.exports = {
 						const route = this.routes[i];
 
 						if (url.startsWith(route.path)) {
+
+							// Serve assets static files
+							if (route.serveStatic) {
+								route.serveStatic(req, res, err => {
+									this.logger.debug(err);
+									this.send404(res);
+								});
+								return;
+							}
+
 							// Resolve action name
 							let urlPath = url.slice(route.path.length);
 							if (urlPath.startsWith("/"))
@@ -378,15 +389,6 @@ module.exports = {
 							return this.callAction(route, actionName, req, res, query);
 						}
 					}
-				}
-
-				// Serve assets static files
-				if (this.serve) {
-					this.serve(req, res, err => {
-						this.logger.debug(err);
-						this.send404(res);
-					});
-					return;
 				}
 
 				if (next) {
