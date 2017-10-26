@@ -1,3 +1,11 @@
+<a name="0.5.3"></a>
+# 0.5.3 (2017-xx-xx)
+
+## New
+- `logRequestParams` setting to log the request parameters. Use log level value i.e. `"debug"`, `"info"` or `null` to disable.
+- `logResponseData` setting to log the response data. Use log level value i.e. `"debug"`, `"info"` or `null` to disable.
+
+-----------------------------
 <a name="0.5.2"></a>
 # 0.5.2 (2017-10-24)
 
