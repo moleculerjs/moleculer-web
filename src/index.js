@@ -62,8 +62,12 @@ module.exports = {
 					json: true
 				}
 			}
-		]
+		],
 
+		// Log the request ctx.params with "debug" level
+		logRequestParams: "debug",
+		// Don't log the response data
+		logResponseData: null
 	},
 
 	/**
@@ -324,8 +328,7 @@ module.exports = {
 		 * @returns
 		 */
 		httpHandler(req, res, next) {
-			this.logger.debug("");
-			this.logger.debug(`${req.method} ${req.url}`);
+			this.logger.info(`${req.method} ${req.url}`);
 
 			try {
 				// Split URL & query params
@@ -531,7 +534,8 @@ module.exports = {
 				// Create a new context for request
 				.then(() => {
 					this.logger.info(`  Call '${actionName}' action`);
-					this.logger.debug("  Params:", params);
+					if (this.settings.logRequestParams && this.settings.logRequestParams in this.logger)
+						this.logger[this.settings.logRequestParams]("  Params:", params);
 
 					const restAction = {
 						name: this.name + ".rest"
@@ -688,8 +692,10 @@ module.exports = {
 				}
 			}
 
-			this.logger.info(`  Response for '${ctx.action.name}' action`);
-			this.logger.debug("  Data:", data);
+			if (this.settings.logResponseData && this.settings.logResponseData in this.logger) {
+				this.logger[this.settings.logResponseData](`  Response for '${ctx.action.name}' action`);
+				this.logger[this.settings.logResponseData]("  Data:", data);
+			}
 		},
 
 		/**
