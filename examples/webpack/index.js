@@ -25,18 +25,6 @@ broker.createService({
 
 		routes: [
 			{
-				path: "/",
-
-				// Folder to server assets (static files)
-				assets: {
-					// Root folder of assets
-					folder: path.join(__dirname, "public"),
-					// Options to `server-static` module
-					options: {}
-				},
-
-			},
-			{
 				path: "/api",
 
 				// Whitelist of actions (array of string mask or regex)
@@ -59,6 +47,28 @@ broker.createService({
 					urlencoded: { extended: true }
 				}
 
+			},
+			{
+				path: "/",
+
+				use: [
+					function (route, req, res) {
+						this.logger.info("req.url:", req.url);
+						this.logger.info("res.statusCode:", res.statusCode);
+						//return this.Promise.resolve().delay(1000);
+					},
+					webpackMiddleware(),
+					webpackHotMiddleware()
+				],
+
+				// Serve assets (static files)
+				assets: {
+					// Root folder of assets
+					folder: path.join(__dirname, "public"),
+					// Options to `server-static` module
+					options: {}
+				},
+
 			}
 		],
 	}
@@ -66,3 +76,65 @@ broker.createService({
 
 // Start server
 broker.start();
+
+function webpackMiddleware() {
+	const webpack	 			= require("webpack");
+	const devMiddleware 		= require("webpack-dev-middleware");
+	//const hotMiddleware 		= require("webpack-hot-middleware");
+
+	const config 				= require("./webpack.config");
+	const compiler 				= webpack(config);
+
+	const instance = devMiddleware(compiler, {
+		//noInfo: true,
+		log: console.log,
+		publicPath: config.output.publicPath,
+		headers: { "Access-Control-Allow-Origin": "*" },
+		stats: "errors-only"
+		//stats: {colors: true}
+	});
+
+	return function webpackMiddleware(route, req, res) {
+		const p = new this.Promise((resolve, reject) => {
+			instance.waitUntilValid(resolve);
+			compiler.plugin("failed", reject);
+		})
+			.then(() => instance(req, res, () => {}))
+			.then(() => {
+				if (res.headersSent)
+					p.cancel();
+			});
+
+		return p;
+	};
+}
+
+function webpackHotMiddleware() {
+	const webpack	 			= require("webpack");
+	const hotMiddleware 		= require("webpack-hot-middleware");
+
+	const config 				= require("./webpack.config");
+	const compiler 				= webpack(config);
+
+	const instance = hotMiddleware(compiler, {
+		log: console.log,
+	});
+
+	return function webpackHotMiddleware(route, req, res) {
+		let p = this.Promise.resolve()
+			.then(() => new this.Promise((resolve, reject) => {
+				let wasNext = false;
+				instance(req, res, () => {
+					this.logger.info("next");
+					wasNext = true;
+					resolve();
+				});
+				this.logger.info("next2");
+				if (!wasNext)
+					p.cancel();
+				resolve();
+			}));
+
+		return p;
+	};
+}

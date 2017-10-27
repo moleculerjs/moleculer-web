@@ -18,7 +18,7 @@
 
 <style lang="scss" scoped>
 	h1 {
-		color: blue;
+		color: red;
 	}
 
 	h2 {

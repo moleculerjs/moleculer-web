@@ -45,6 +45,7 @@ module.exports = {
 
 	// Default settings
 	settings: {
+		// Middleware mode for ExpressJS
 		middleware: false,
 
 		// Exposed port
@@ -53,6 +54,7 @@ module.exports = {
 		// Exposed IP
 		ip: process.env.IP || "0.0.0.0",
 
+		// Routes
 		routes: [
 			{
 				// Path prefix to this route
@@ -64,9 +66,10 @@ module.exports = {
 			}
 		],
 
-		// Log the request ctx.params with "debug" level
+		// Log the request ctx.params (default to "debug" level)
 		logRequestParams: "debug",
-		// Don't log the response data
+
+		// Log the response data (default to disable)
 		logResponseData: null
 	},
 
@@ -130,6 +133,17 @@ module.exports = {
 			// Call options
 			route.callOptions = opts.callOptions;
 
+			// Middlewares
+			if (opts.use && Array.isArray(opts.use) && opts.use.length > 0) {
+
+				const uses = opts.use.map(fn => this.Promise.method(fn));
+
+				route.callMiddlewares = (req, res) => {
+					return uses
+						.reduce((p, fn) => p.then(() => fn.call(this, route, req, res)), this.Promise.resolve());
+				};
+			}
+
 			// CORS
 			if (this.settings.cors || opts.cors) {
 				// Merge cors settings
@@ -167,7 +181,6 @@ module.exports = {
 			// Static server middleware
 			if (opts.assets) {
 				const o = opts.assets.options || {};
-				o.fallthrough = false;
 				route.serveStatic = serveStatic(opts.assets.folder, o);
 			}
 
@@ -278,12 +291,16 @@ module.exports = {
 		/**
 		 * Send 404 response
 		 *
-		 * @param {HttpRequest} req
 		 * @param {HttpResponse} res
+		 * @param {Function} next - `next` callback in middleware mode
 		 */
-		send404(res) {
-			res.writeHead(404);
-			res.end("Not found");
+		send404(res, next) {
+			if (next)
+				next();
+			else {
+				res.writeHead(404);
+				res.end("Not found");
+			}
 		},
 
 		/**
@@ -339,64 +356,84 @@ module.exports = {
 				if (url.length > 1 && url.endsWith("/"))
 					url = url.slice(0, -1);
 
-				// Check the URL is an API request
+				// Check the URL
 				if (this.routes && this.routes.length > 0) {
 					for(let i = 0; i < this.routes.length; i++) {
 						const route = this.routes[i];
 
 						if (url.startsWith(route.path)) {
 
+							// Create Promise-chain
+							let p = this.Promise.resolve();
+
+							// Middlewares
+							if (route.callMiddlewares) {
+								req.locals = req.locals || {};
+								p = p.then(() => route.callMiddlewares(req, res));
+							}
+
 							// Serve assets static files
 							if (route.serveStatic) {
-								route.serveStatic(req, res, err => {
-									this.logger.debug(err);
-									this.send404(res);
+								p = p.then(() => {
+									route.serveStatic(req, res, () => this.send404(res, next));
 								});
-								return;
-							}
 
-							// Resolve action name
-							let urlPath = url.slice(route.path.length);
-							if (urlPath.startsWith("/"))
-								urlPath = urlPath.slice(1);
+							} else {
+								// Try to call action
+								p = p.then(() => {
+									// Resolve action name
+									let urlPath = url.slice(route.path.length);
+									if (urlPath.startsWith("/"))
+										urlPath = urlPath.slice(1);
 
-							urlPath = urlPath.replace(/~/, "$");
-							let actionName = urlPath;
+									urlPath = urlPath.replace(/~/, "$");
+									let actionName = urlPath;
 
-							// Resolve aliases
-							if (route.aliases && route.aliases.length > 0) {
-								const alias = this.resolveAlias(route, urlPath, req.method);
-								if (alias) {
-									this.logger.debug(`  Alias: ${req.method} ${urlPath} -> ${alias.action}`);
-									actionName = alias.action;
-									Object.assign(query, alias.params);
+									// Resolve aliases
+									if (route.aliases && route.aliases.length > 0) {
+										const alias = this.resolveAlias(route, urlPath, req.method);
+										if (alias) {
+											this.logger.debug(`  Alias: ${req.method} ${urlPath} -> ${alias.action}`);
+											actionName = alias.action;
+											Object.assign(query, alias.params);
 
-									// Custom Action handler
-									if (_.isFunction(alias.action)) {
-										return alias.action.call(this, route, req, res);
+											// Custom Action handler
+											if (_.isFunction(alias.action)) {
+												return alias.action.call(this, route, req, res);
+											}
+										} else if (route.mappingPolicy == MAPPING_POLICY_RESTRICT) {
+											// Blocking direct access
+											return this.send404(res, next);
+										}
 									}
-								} else if (route.mappingPolicy == MAPPING_POLICY_RESTRICT) {
-									// Blocking direct access
-									break;
-								}
-							}
-							actionName = actionName.replace(/\//g, ".");
+									actionName = actionName.replace(/\//g, ".");
 
-							if (route.opts.camelCaseNames) {
-								actionName = actionName.split(".").map(part => _.camelCase(part)).join(".");
+									if (route.opts.camelCaseNames) {
+										actionName = actionName.split(".").map(part => _.camelCase(part)).join(".");
+									}
+
+									return this.callAction(route, actionName, req, res, query);
+								});
 							}
 
-							return this.callAction(route, actionName, req, res, query);
+							// Error handler
+							p.catch(err => {
+								this.logger.error("Route handler error!", err);
+
+								if (next)
+									return next(err);
+
+								res.writeHead(500);
+								res.end("Server error! " + err.message);
+							});
+
+							return;
 						}
 					}
 				}
 
-				if (next) {
-					next();
-				} else {
-					// 404
-					this.send404(res);
-				}
+				// If no route, send 404
+				this.send404(res, next);
 
 			} catch(err) {
 				/* istanbul ignore next */
@@ -404,7 +441,7 @@ module.exports = {
 
 				/* istanbul ignore next */
 				if (next)
-					return next();
+					return next(err);
 
 				/* istanbul ignore next */
 				res.writeHead(500);

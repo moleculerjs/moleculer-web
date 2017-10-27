@@ -5,7 +5,7 @@ module.exports = {
 	devtool: "#inline-source-map",
 
 	entry: {
-		app: path.join(__dirname, "client", "main.js")
+		app: ["webpack-hot-middleware/client", path.join(__dirname, "client", "main.js")]
 	},
 
 	output: {
@@ -15,6 +15,8 @@ module.exports = {
 	},
 
 	plugins: [
+		new webpack.HotModuleReplacementPlugin(),
+		new webpack.NoEmitOnErrorsPlugin()
 	],
 
 	module: {
