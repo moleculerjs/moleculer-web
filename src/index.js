@@ -136,11 +136,16 @@ module.exports = {
 			// Middlewares
 			if (opts.use && Array.isArray(opts.use) && opts.use.length > 0) {
 
-				const uses = opts.use.map(fn => this.Promise.method(fn));
+				route.middlewares = opts.use.map(fn => this.Promise.method(fn));
 
-				route.callMiddlewares = (req, res) => {
-					return uses
-						.reduce((p, fn) => p.then(() => fn.call(this, route, req, res)), this.Promise.resolve());
+				route.callMiddlewares = (req, res, next) => {
+					const nextFn = i => {
+						if (i >= route.middlewares.length)
+							return next.call(this, req, res);
+						route.middlewares[i].call(this, req, res, () => nextFn(i+1));
+					};
+
+					return nextFn(0);
 				};
 			}
 
@@ -181,7 +186,7 @@ module.exports = {
 			// Static server middleware
 			if (opts.assets) {
 				const o = opts.assets.options || {};
-				route.serveStatic = serveStatic(opts.assets.folder, o);
+				route.middlewares.push(serveStatic(opts.assets.folder, o));
 			}
 
 
@@ -363,69 +368,59 @@ module.exports = {
 
 						if (url.startsWith(route.path)) {
 
-							// Create Promise-chain
-							let p = this.Promise.resolve();
+							let callServices = () => {
+								// Resolve action name
+								let urlPath = url.slice(route.path.length);
+								if (urlPath.startsWith("/"))
+									urlPath = urlPath.slice(1);
+
+								urlPath = urlPath.replace(/~/, "$");
+								let actionName = urlPath;
+
+								// Resolve aliases
+								if (route.aliases && route.aliases.length > 0) {
+									const alias = this.resolveAlias(route, urlPath, req.method);
+									if (alias) {
+										this.logger.debug(`  Alias: ${req.method} ${urlPath} -> ${alias.action}`);
+										actionName = alias.action;
+										Object.assign(query, alias.params);
+
+										// Custom Action handler
+										if (_.isFunction(alias.action)) {
+											return alias.action.call(this, route, req, res);
+										}
+									} else if (route.mappingPolicy == MAPPING_POLICY_RESTRICT) {
+										// Blocking direct access
+										return this.send404(res, next);
+									}
+								}
+								actionName = actionName.replace(/\//g, ".");
+
+								if (route.opts.camelCaseNames) {
+									actionName = actionName.split(".").map(part => _.camelCase(part)).join(".");
+								}
+
+								return this.callAction(route, actionName, req, res, query);
+							};
 
 							// Middlewares
 							if (route.callMiddlewares) {
 								req.locals = req.locals || {};
-								p = p.then(() => route.callMiddlewares(req, res));
-							}
+								route.callMiddlewares(req, res, (req, res, err) => {
+									if (err) {
+										this.logger.error("Middleware error!", err);
 
-							// Serve assets static files
-							if (route.serveStatic) {
-								p = p.then(() => {
-									route.serveStatic(req, res, () => this.send404(res, next));
+										if (next)
+											return next(err);
+
+										res.writeHead(500);
+										res.end("Server error! " + err.message);
+									}
+									callServices();
 								});
-
 							} else {
-								// Try to call action
-								p = p.then(() => {
-									// Resolve action name
-									let urlPath = url.slice(route.path.length);
-									if (urlPath.startsWith("/"))
-										urlPath = urlPath.slice(1);
-
-									urlPath = urlPath.replace(/~/, "$");
-									let actionName = urlPath;
-
-									// Resolve aliases
-									if (route.aliases && route.aliases.length > 0) {
-										const alias = this.resolveAlias(route, urlPath, req.method);
-										if (alias) {
-											this.logger.debug(`  Alias: ${req.method} ${urlPath} -> ${alias.action}`);
-											actionName = alias.action;
-											Object.assign(query, alias.params);
-
-											// Custom Action handler
-											if (_.isFunction(alias.action)) {
-												return alias.action.call(this, route, req, res);
-											}
-										} else if (route.mappingPolicy == MAPPING_POLICY_RESTRICT) {
-											// Blocking direct access
-											return this.send404(res, next);
-										}
-									}
-									actionName = actionName.replace(/\//g, ".");
-
-									if (route.opts.camelCaseNames) {
-										actionName = actionName.split(".").map(part => _.camelCase(part)).join(".");
-									}
-
-									return this.callAction(route, actionName, req, res, query);
-								});
+								callServices();
 							}
-
-							// Error handler
-							p.catch(err => {
-								this.logger.error("Route handler error!", err);
-
-								if (next)
-									return next(err);
-
-								res.writeHead(500);
-								res.end("Server error! " + err.message);
-							});
 
 							return;
 						}

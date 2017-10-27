@@ -9,7 +9,7 @@
 	export default {
 		data() {
 			return {
-				title: "Hello Webpack!",
+				title: "Hello Webpack!!!",
 				subTitle: "Hello Moleculer!"
 			}
 		}
@@ -18,7 +18,7 @@
 
 <style lang="scss" scoped>
 	h1 {
-		color: red;
+		color: blue;
 	}
 
 	h2 {

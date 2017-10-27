@@ -58,14 +58,21 @@ broker.createService({
 			{
 				path: "/",
 
+				// Middlewares
 				use: [
-					function (route, req, res) {
+					/*function (req, res, next) {
 						this.logger.info("req.url:", req.url);
 						this.logger.info("res.statusCode:", res.statusCode);
-						//return this.Promise.resolve().delay(1000);
-					},
-					webpackMiddleware(),
-					webpackHotMiddleware()
+						next();
+					},*/
+					devMiddleware(compiler, {
+						noInfo: true,
+						publicPath: config.output.publicPath,
+						headers: { "Access-Control-Allow-Origin": "*" }
+					}),
+					hotMiddleware(compiler, {
+						log: broker.logger.info
+					})
 				],
 
 				// Serve assets (static files)
@@ -83,49 +90,3 @@ broker.createService({
 
 // Start server
 broker.start();
-
-function webpackMiddleware() {
-	const instance = devMiddleware(compiler, {
-		noInfo: true,
-		publicPath: config.output.publicPath,
-		headers: { "Access-Control-Allow-Origin": "*" }
-	});
-
-	return function webpackMiddleware(route, req, res) {
-		const p = new this.Promise((resolve, reject) => {
-			instance.waitUntilValid(resolve);
-			compiler.plugin("failed", reject);
-		})
-			.then(() => instance(req, res, () => {}))
-			.then(() => {
-				if (res.headersSent)
-					p.cancel();
-			});
-
-		return p;
-	};
-}
-
-function webpackHotMiddleware() {
-	const instance = hotMiddleware(compiler, {
-		log: broker.logger.info
-	});
-
-	return function webpackHotMiddleware(route, req, res) {
-		let p = this.Promise.resolve()
-			.then(() => new this.Promise((resolve, reject) => {
-				let wasNext = false;
-				instance(req, res, () => {
-					this.logger.info("next");
-					wasNext = true;
-					resolve();
-				});
-				this.logger.info("next2");
-				if (!wasNext)
-					p.cancel();
-				resolve();
-			}));
-
-		return p;
-	};
-}
