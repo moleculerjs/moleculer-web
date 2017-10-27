@@ -1,10 +1,6 @@
-import Vue from "vue";
-import App from "./App";
+var div = document.querySelector("#counter");
 
-new Vue({
-	el: "#app",
-	components: {
-		App
-	},
-	render: h => h("app")
-});
+var counter = 1;
+setInterval(function() {
+	div.textContent = "Counter " + counter++;
+}, 1000);

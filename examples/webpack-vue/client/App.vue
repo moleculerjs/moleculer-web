@@ -9,7 +9,7 @@
 	export default {
 		data() {
 			return {
-				title: "Hello Webpack!",
+				title: "Hello Webpack!!!",
 				subTitle: "Hello Moleculer!"
 			}
 		}
