@@ -95,11 +95,12 @@ module.exports = {
 			this.server.on("error", err => {
 				this.logger.error("Server error", err);
 			});
+		}
 
-			/*this.server.on("connection", socket => {
-				// Disable Nagle algorithm https://nodejs.org/dist/latest-v6.x/docs/api/net.html#net_socket_setnodelay_nodelay
-				socket.setNoDelay(true);
-			});*/
+		// Create static server middleware
+		if (this.settings.assets) {
+			const opts = this.settings.assets.options || {};
+			this.serve = serveStatic(this.settings.assets.folder, opts);
 		}
 
 		// Process routes
@@ -119,8 +120,10 @@ module.exports = {
 		 * @returns {Object}
 		 */
 		createRoute(opts) {
+			this.logger.info(`Register route to '${opts.path}'`);
 			let route = {
-				opts
+				opts,
+				middlewares: []
 			};
 			if (opts.authorization) {
 				if (!_.isFunction(this.authorize)) {
@@ -148,6 +151,8 @@ module.exports = {
 
 					return nextFn(0);
 				};
+
+				this.logger.info(`  Registered ${route.middlewares.length} middlewares.`);
 			}
 
 			// CORS
@@ -183,13 +188,6 @@ module.exports = {
 					route.rateLimit.store = new MemoryStore(opts.window, opts);
 
 			}
-
-			// Static server middleware
-			if (opts.assets) {
-				const o = opts.assets.options || {};
-				route.middlewares.push(serveStatic(opts.assets.folder, o));
-			}
-
 
 			// Fallback response handler
 			/*if (opts.fallbackResponse)
@@ -426,6 +424,15 @@ module.exports = {
 							return;
 						}
 					}
+				}
+
+				// Serve assets static files
+				if (this.serve) {
+					this.serve(req, res, err => {
+						this.logger.debug(err);
+						this.send404(res, next);
+					});
+					return;
 				}
 
 				// If no route, send 404

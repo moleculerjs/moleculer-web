@@ -12,7 +12,7 @@
 			"program": "${workspaceRoot}\\examples\\index.js",
 			"cwd": "${workspaceRoot}",
 			"env": {
-				"PORT": "4000"
+				"PORT": "3000"
 			},
 			"args": [
 				"webpack"

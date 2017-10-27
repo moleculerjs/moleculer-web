@@ -11,6 +11,8 @@ let ApiService 			= require("../../index");
 const webpack	 		= require("webpack");
 const devMiddleware 	= require("webpack-dev-middleware");
 const hotMiddleware 	= require("webpack-hot-middleware");
+const compression		= require("compression");
+const serveStatic 		= require("serve-static");
 
 const config 			= require("./webpack.config");
 const compiler 			= webpack(config);
@@ -56,6 +58,14 @@ broker.createService({
 
 			},
 			{
+				path: "/assets",
+
+				// Middlewares
+				use: [
+					serveStatic(path.join(__dirname, "..", "www", "assets"))
+				],
+			},
+			{
 				path: "/",
 
 				// Middlewares
@@ -66,6 +76,7 @@ broker.createService({
 						//next(new Error("Something went wrong"));
 						next();
 					},
+					compression(),
 					devMiddleware(compiler, {
 						noInfo: true,
 						publicPath: config.output.publicPath,
@@ -73,18 +84,10 @@ broker.createService({
 					}),
 					hotMiddleware(compiler, {
 						log: broker.logger.info
-					})
+					}),
+					serveStatic(path.join(__dirname, "public"))
 				],
-
-				// Serve assets (static files)
-				assets: {
-					// Root folder of assets
-					folder: path.join(__dirname, "public"),
-					// Options to `server-static` module
-					options: {}
-				},
-
-			}
+			},
 		],
 	}
 });
