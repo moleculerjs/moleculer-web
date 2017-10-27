@@ -34,9 +34,19 @@ describe("Test default settings", () => {
 	it("GET /", () => {
 		return request(server)
 			.get("/")
-			.expect(404, "Not found")
+			.expect(404)
+			.expect("Content-Type", "application/json")
 			.then(res => {
-				expect(res.body).toEqual({});
+				expect(res.body).toEqual({
+					"code": 404,
+					"message": "Service '' is not found.",
+					"name": "ServiceNotFoundError",
+					"type": null,
+					"data": {
+						action: "",
+						nodeID: undefined
+					}
+				});
 			});
 	});
 
