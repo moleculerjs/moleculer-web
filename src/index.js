@@ -136,13 +136,14 @@ module.exports = {
 			// Middlewares
 			if (opts.use && Array.isArray(opts.use) && opts.use.length > 0) {
 
-				route.middlewares = opts.use.map(fn => this.Promise.method(fn));
+				route.middlewares = opts.use;
 
 				route.callMiddlewares = (req, res, next) => {
-					const nextFn = i => {
-						if (i >= route.middlewares.length)
-							return next.call(this, req, res);
-						route.middlewares[i].call(this, req, res, () => nextFn(i+1));
+					const nextFn = (i, err) => {
+						if (i >= route.middlewares.length || err)
+							return next.call(this, req, res, err);
+
+						route.middlewares[i].call(this, req, res, err => nextFn(i + 1, err));
 					};
 
 					return nextFn(0);
@@ -368,7 +369,7 @@ module.exports = {
 
 						if (url.startsWith(route.path)) {
 
-							let callServices = () => {
+							let nextCall = () => {
 								// Resolve action name
 								let urlPath = url.slice(route.path.length);
 								if (urlPath.startsWith("/"))
@@ -403,7 +404,7 @@ module.exports = {
 								return this.callAction(route, actionName, req, res, query);
 							};
 
-							// Middlewares
+							// Call middlewares
 							if (route.callMiddlewares) {
 								req.locals = req.locals || {};
 								route.callMiddlewares(req, res, (req, res, err) => {
@@ -414,12 +415,12 @@ module.exports = {
 											return next(err);
 
 										res.writeHead(500);
-										res.end("Server error! " + err.message);
+										return res.end("Server error! " + err.message);
 									}
-									callServices();
+									nextCall();
 								});
 							} else {
-								callServices();
+								nextCall();
 							}
 
 							return;

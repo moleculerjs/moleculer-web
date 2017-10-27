@@ -60,11 +60,12 @@ broker.createService({
 
 				// Middlewares
 				use: [
-					/*function (req, res, next) {
+					function (req, res, next) {
 						this.logger.info("req.url:", req.url);
 						this.logger.info("res.statusCode:", res.statusCode);
+						//next(new Error("Something went wrong"));
 						next();
-					},*/
+					},
 					devMiddleware(compiler, {
 						noInfo: true,
 						publicPath: config.output.publicPath,
