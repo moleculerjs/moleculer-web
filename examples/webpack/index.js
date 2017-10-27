@@ -8,6 +8,13 @@ let path 				= require("path");
 let { ServiceBroker } 	= require("moleculer");
 let ApiService 			= require("../../index");
 
+const webpack	 		= require("webpack");
+const devMiddleware 	= require("webpack-dev-middleware");
+const hotMiddleware 	= require("webpack-hot-middleware");
+
+const config 			= require("./webpack.config");
+const compiler 			= webpack(config);
+
 // Create broker
 let broker = new ServiceBroker({
 	logger: console
@@ -78,20 +85,10 @@ broker.createService({
 broker.start();
 
 function webpackMiddleware() {
-	const webpack	 			= require("webpack");
-	const devMiddleware 		= require("webpack-dev-middleware");
-	//const hotMiddleware 		= require("webpack-hot-middleware");
-
-	const config 				= require("./webpack.config");
-	const compiler 				= webpack(config);
-
 	const instance = devMiddleware(compiler, {
-		//noInfo: true,
-		log: console.log,
+		noInfo: true,
 		publicPath: config.output.publicPath,
-		headers: { "Access-Control-Allow-Origin": "*" },
-		stats: "errors-only"
-		//stats: {colors: true}
+		headers: { "Access-Control-Allow-Origin": "*" }
 	});
 
 	return function webpackMiddleware(route, req, res) {
@@ -110,14 +107,8 @@ function webpackMiddleware() {
 }
 
 function webpackHotMiddleware() {
-	const webpack	 			= require("webpack");
-	const hotMiddleware 		= require("webpack-hot-middleware");
-
-	const config 				= require("./webpack.config");
-	const compiler 				= webpack(config);
-
 	const instance = hotMiddleware(compiler, {
-		log: console.log,
+		log: broker.logger.info
 	});
 
 	return function webpackHotMiddleware(route, req, res) {
