@@ -36,6 +36,10 @@ module.exports = {
 			return "Hi!";
 		},
 
+		utf(ctx) {
+			return "ÉÁŰŐÚÖÜÓÍ éáűőúöüóí";
+		},
+
 		dangerZone: {
 			publish: false,
 			handler(ctx) {
