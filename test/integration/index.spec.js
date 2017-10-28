@@ -275,11 +275,23 @@ describe("Test responses", () => {
 			});
 	});
 
+	it("GET /test/customHeader", () => {
+		return request(server)
+			.get("/test/customHeader")
+			.expect(200)
+			.expect("Content-Type", "application/json; charset=utf-8")
+			.expect("X-Custom-Header", "working")
+			.then(res => {
+				expect(res.body).toEqual("CustomHeader");
+			});
+	});
+
 	it("GET /test/stream", () => {
 		return request(server)
 			.get("/test/stream")
 			.expect(200)
 			.expect("Content-Type", "application/octet-stream")
+			.expect("Content-Disposition", "attachment; filename=\"stream-lorem.txt\"")
 			.then(res => {
 				expect(Buffer.from(res.body).toString("utf8")).toEqual("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis in faucibus sapien, vitae aliquet nisi. Vivamus quis finibus tortor.");
 			});

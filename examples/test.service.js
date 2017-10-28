@@ -58,13 +58,18 @@ module.exports = {
 			throw new MoleculerError("It is a wrong action! I always throw error!");
 		},
 
-		stream() {
-			const stream = fs.createReadStream(path.join(__dirname, "..", "test", "assets", "lorem.txt"), "utf8");
-			setTimeout(() => {
-				stream.read(1024);
-			}, 100);
+		stream: {
+			responseHeaders: {
+				"Content-Disposition": "attachment; filename=\"stream-lorem.txt\""
+			},
+			handler() {
+				const stream = fs.createReadStream(path.join(__dirname, "..", "test", "assets", "lorem.txt"), "utf8");
+				setTimeout(() => {
+					stream.read(1024);
+				}, 100);
 
-			return stream;
+				return stream;
+			}
 		},
 	}
 };

@@ -11,6 +11,7 @@ const https 			= require("https");
 const queryString 		= require("querystring");
 
 const _ 				= require("lodash");
+const chalk 			= require("chalk");
 const bodyParser 		= require("body-parser");
 const serveStatic 		= require("serve-static");
 const nanomatch  		= require("nanomatch");
@@ -293,11 +294,11 @@ module.exports = {
 		 * @param {HttpResponse} res
 		 * @param {Function} next - `next` callback in middleware mode
 		 */
-		send404(res, next) {
+		send404(req, res, next) {
 			if (next)
 				return next();
 
-			this.sendError(res, new MoleculerError("Not found", 404));
+			this.sendError(req, res, new MoleculerError("Not found", 404));
 		},
 
 		/**
@@ -307,13 +308,15 @@ module.exports = {
 		 * @param {Error} err
 		 * @param {Function} next - `next` callback in middleware mode
 		 */
-		sendError(res, err, next) {
+		sendError(req, res, err, next) {
 			if (next)
 				return next(err);
 
 			if (!err || !(err instanceof Error)) {
 				res.writeHead(500);
 				res.end("Internal Server Error");
+
+				this.logResponse(req, res);
 				return;
 			}
 
@@ -324,6 +327,8 @@ module.exports = {
 			res.writeHead(code);
 			const errObj = _.pick(err, ["name", "message", "code", "type", "data"]);
 			res.end(JSON.stringify(errObj, null, 2));
+
+			this.logResponse(req, res);
 		},
 
 		/**
@@ -369,7 +374,7 @@ module.exports = {
 		 * @returns
 		 */
 		httpHandler(req, res, next) {
-			this.logger.info(`${req.method} ${req.url}`);
+			this.logRequest(req);
 
 			try {
 				// Split URL & query params
@@ -409,7 +414,7 @@ module.exports = {
 										}
 									} else if (route.mappingPolicy == MAPPING_POLICY_RESTRICT) {
 										// Blocking direct access
-										return this.send404(res, next);
+										return this.send404(req, res, next);
 									}
 								}
 								actionName = actionName.replace(/\//g, ".");
@@ -427,7 +432,7 @@ module.exports = {
 								route.callMiddlewares(req, res, (req, res, err) => {
 									if (err) {
 										this.logger.error("Middleware error!", err);
-										return this.sendError(res, err, next);
+										return this.sendError(req, res, err, next);
 									}
 									nextCall();
 								});
@@ -444,17 +449,17 @@ module.exports = {
 				if (this.serve) {
 					this.serve(req, res, err => {
 						this.logger.debug(err);
-						this.send404(res, next);
+						this.send404(req, res, next);
 					});
 					return;
 				}
 
 				// If no route, send 404
-				this.send404(res, next);
+				this.send404(req, res, next);
 
 			} catch(err) {
 				this.logger.error("Handler error!", err);
-				return this.sendError(res, err, next);
+				return this.sendError(req, res, err, next);
 			}
 		},
 
@@ -621,9 +626,6 @@ module.exports = {
 						.then(data => {
 							res.statusCode = 200;
 
-							// Override responseType by action
-							const responseType = endpoint.action.responseType;
-
 							// Return with the response
 							if (ctx.requestID)
 								res.setHeader("X-Request-ID", ctx.requestID);
@@ -637,9 +639,11 @@ module.exports = {
 										return route.onAfterCall.call(this, ctx, route, req, res, data);
 								})
 								.then(() => {
-									this.sendResponse(ctx, route, req, res, data, responseType);
+									this.sendResponse(ctx, route, req, res, data, endpoint.action);
 
 									ctx._metricFinish(null, ctx.metrics);
+
+									this.logResponse(req, res, ctx, data);
 								});
 						});
 				})
@@ -655,11 +659,13 @@ module.exports = {
 					this.logger.error("  Request error!", err.name, ":", err.message, "\n", err.stack, "\nData:", err.data);
 
 					// Return with the error
-					this.sendError(res, err);
+					this.sendError(req, res, err);
 
 					// Finish the context
 					if (err.ctx)
 						err.ctx._metricFinish(null, err.ctx.metrics);
+
+					this.logResponse(req, res, err.ctx);
 				});
 
 			return p;
@@ -675,12 +681,22 @@ module.exports = {
 		 * @param {any} data
 		 * @param {String|null} responseType
 		 */
-		sendResponse(ctx, route, req, res, data, responseType) {
-			if (data == null) {
-				res.end();
+		sendResponse(ctx, route, req, res, data, action) {
+			if (data == null)
+				return res.end();
+
+			// Override responseType by action
+			const responseType = action.responseType;
+
+			// Custom headers
+			if (action.responseHeaders) {
+				Object.keys(action.responseHeaders).forEach(key => {
+					res.setHeader(key, action.responseHeaders[key]);
+				});
 			}
+
 			// Buffer
-			else if (Buffer.isBuffer(data)) {
+			if (Buffer.isBuffer(data)) {
 				res.setHeader("Content-Type", responseType || "application/octet-stream");
 				res.setHeader("Content-Length", data.length);
 				res.end(data);
@@ -715,11 +731,57 @@ module.exports = {
 						res.end(data.toString());
 				}
 			}
+		},
+
+		/**
+		 * Log the request
+		 *
+		 * @param {HttpIncomingRequest} req
+		 */
+		logRequest(req) {
+			this.logger.info(`=> ${chalk.bold(req.method)} ${req.url}`);
+		},
+
+		/**
+		 * Return with colored status code
+		 *
+		 * @param {any} code
+		 * @returns
+		 */
+		coloringStatusCode(code) {
+			if (code >= 500)
+				return chalk.red(code);
+			if (code >= 400 && code < 500)
+				return chalk.yellow(code);
+			if (code >= 300 && code < 400)
+				return chalk.blue(code);
+			if (code >= 200 && code < 300)
+				return chalk.green(code);
+			return code;
+		},
+
+		/**
+		 * Log the response
+		 *
+		 * @param {HttpIncomingRequest} req
+		 * @param {HttpResponse} res
+		 * @param {Context} ctx
+		 * @param {any} data
+		 */
+		logResponse(req, res, ctx, data) {
+			let time = "";
+			if (ctx && ctx.duration) {
+				if (ctx.duration > 1000)
+					time = chalk.grey(`[+${Number(ctx.duration / 1000).toFixed(3)}s]`);
+				else
+					time = chalk.grey(`[+${Number(ctx.duration).toFixed(3)}ms]`);
+			}
+			this.logger.info(`<= ${this.coloringStatusCode(res.statusCode)} ${req.method} ${req.url} ${time}`);
 
 			if (this.settings.logResponseData && this.settings.logResponseData in this.logger) {
-				this.logger[this.settings.logResponseData](`  Response for '${ctx.action.name}' action`);
 				this.logger[this.settings.logResponseData]("  Data:", data);
 			}
+			this.logger.info("");
 		},
 
 		/**

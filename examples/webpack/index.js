@@ -36,10 +36,13 @@ broker.createService({
 
 		routes: [
 			{
-				path: "/",
+				path: "/asd",
 
 				// Middlewares
 				use: [
+					/*function(req, res, next) {
+						next(new Error("Hiba"));
+					},*/
 					compression(),
 					devMiddleware(compiler, {
 						noInfo: true,

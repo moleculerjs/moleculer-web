@@ -109,13 +109,27 @@ module.exports = {
 			}
 		},
 
-		stream() {
-			const stream = fs.createReadStream(path.join(__dirname, "..", "assets", "lorem.txt"), "utf8");
-			setTimeout(() => {
-				stream.read(1024);
-			}, 100);
+		customHeader: {
+			responseHeaders: {
+				"X-Custom-Header": "working"
+			},
+			handler() {
+				return "CustomHeader";
+			}
+		},
 
-			return stream;
+		stream: {
+			responseHeaders: {
+				"Content-Disposition": "attachment; filename=\"stream-lorem.txt\""
+			},
+			handler() {
+				const stream = fs.createReadStream(path.join(__dirname, "..", "assets", "lorem.txt"), "utf8");
+				setTimeout(() => {
+					stream.read(1024);
+				}, 100);
+
+				return stream;
+			}
 		},
 
 		streamWithError() {
