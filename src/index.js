@@ -18,7 +18,7 @@ const isStream  		= require("isstream");
 const pathToRegexp 		= require("path-to-regexp");
 
 const { Context } = require("moleculer");
-const { ServiceNotFoundError } = require("moleculer").Errors;
+const { MoleculerError, ServiceNotFoundError } = require("moleculer").Errors;
 const { InvalidRequestBodyError, BadRequestError, RateLimitExceeded, ERR_UNABLE_DECODE_PARAM } = require("./errors");
 
 const MemoryStore		= require("./memory-store");
@@ -297,8 +297,7 @@ module.exports = {
 			if (next)
 				return next();
 
-			res.writeHead(404);
-			res.end("Not found");
+			this.sendError(res, new MoleculerError("Not found", 404));
 		},
 
 		/**
@@ -312,7 +311,7 @@ module.exports = {
 			if (next)
 				return next(err);
 
-			if (!err) {
+			if (!err || !(err instanceof Error)) {
 				res.writeHead(500);
 				res.end("Server error");
 				return;
@@ -650,10 +649,10 @@ module.exports = {
 					if (!err)
 						return;
 
-					this.logger.error("  Request error!", err.name, ":", err.message, "\n", err.stack, "\nData:", err.data);
-
 					if (err.ctx)
 						res.setHeader("X-Request-ID", err.ctx.id);
+
+					this.logger.error("  Request error!", err.name, ":", err.message, "\n", err.stack, "\nData:", err.data);
 
 					// Return with the error
 					this.sendError(res, err);

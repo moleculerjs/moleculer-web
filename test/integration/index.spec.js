@@ -358,13 +358,29 @@ describe("Test with `path` prefix", () => {
 	it("GET /", () => {
 		return request(server)
 			.get("/")
-			.expect(404, "Not found");
+			.expect(404)
+			.expect("Content-Type", "application/json; charset=utf-8")
+			.then(res => {
+				expect(res.body).toEqual({
+					code: 404,
+					message: "Not found",
+					name: "MoleculerError"
+				});
+			});
 	});
 
 	it("GET /test/hello", () => {
 		return request(server)
 			.get("/test/hello")
-			.expect(404, "Not found");
+			.expect(404)
+			.expect("Content-Type", "application/json; charset=utf-8")
+			.then(res => {
+				expect(res.body).toEqual({
+					code: 404,
+					message: "Not found",
+					name: "MoleculerError"
+				});
+			});
 	});
 
 	it("GET /my-api/test/hello", () => {
@@ -416,10 +432,16 @@ describe("Test only assets", () => {
 	it("GET /test/hello", () => {
 		return request(server)
 			.get("/test/hello")
-			.expect(404, "Not found")
+			.expect(404)
+			.expect("Content-Type", "application/json; charset=utf-8")
 			.then(res => {
-				expect(res.body).toEqual({});
+				expect(res.body).toEqual({
+					code: 404,
+					message: "Not found",
+					name: "MoleculerError"
+				});
 			});
+
 	});
 
 });
