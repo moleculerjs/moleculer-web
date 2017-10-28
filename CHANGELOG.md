@@ -38,7 +38,8 @@ module.exports = {
     actions: {
         downloadCSV: 
             responseHeaders: {
-                "Content-Disposition": "attachment; filename=\"data.csv\""
+				"Content-Disposition": "attachment; filename=\"data.csv\"",
+				"Content-Type": "text/csv"
             },
             handler() {
                 return "...";

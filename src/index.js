@@ -687,12 +687,14 @@ module.exports = {
 				return res.end();
 
 			// Override responseType by action
-			const responseType = action.responseType;
+			let responseType = action.responseType;
 
 			// Custom headers
 			if (action.responseHeaders) {
 				Object.keys(action.responseHeaders).forEach(key => {
 					res.setHeader(key, action.responseHeaders[key]);
+					if (key == "Content-Type" && !responseType)
+						responseType = action.responseHeaders[key];
 				});
 			}
 

@@ -111,7 +111,8 @@ module.exports = {
 
 		customHeader: {
 			responseHeaders: {
-				"X-Custom-Header": "working"
+				"X-Custom-Header": "working",
+				"Content-Type": "text/plain"
 			},
 			handler() {
 				return "CustomHeader";

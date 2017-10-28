@@ -279,10 +279,10 @@ describe("Test responses", () => {
 		return request(server)
 			.get("/test/customHeader")
 			.expect(200)
-			.expect("Content-Type", "application/json; charset=utf-8")
 			.expect("X-Custom-Header", "working")
+			.expect("Content-Type", "text/plain")
 			.then(res => {
-				expect(res.body).toEqual("CustomHeader");
+				expect(res.text).toEqual("CustomHeader");
 			});
 	});
 
