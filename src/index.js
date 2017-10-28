@@ -18,7 +18,7 @@ const isStream  		= require("isstream");
 const pathToRegexp 		= require("path-to-regexp");
 
 const { Context } = require("moleculer");
-const { ServiceNotFoundError } = require("moleculer").Errors;
+const { MoleculerError, ServiceNotFoundError } = require("moleculer").Errors;
 const { InvalidRequestBodyError, BadRequestError, RateLimitExceeded, ERR_UNABLE_DECODE_PARAM } = require("./errors");
 
 const MemoryStore		= require("./memory-store");
@@ -189,11 +189,6 @@ module.exports = {
 
 			}
 
-			// Fallback response handler
-			/*if (opts.fallbackResponse)
-				route.fallbackResponse = this.Promise.method(opts.fallbackResponse);
-			*/
-
 			// Handle whitelist
 			route.whitelist = opts.whitelist;
 			route.hasWhitelist = Array.isArray(route.whitelist);
@@ -300,11 +295,35 @@ module.exports = {
 		 */
 		send404(res, next) {
 			if (next)
-				next();
-			else {
-				res.writeHead(404);
-				res.end("Not found");
+				return next();
+
+			this.sendError(res, new MoleculerError("Not found", 404));
+		},
+
+		/**
+		 * Send an error response
+		 *
+		 * @param {HttpResponse} res
+		 * @param {Error} err
+		 * @param {Function} next - `next` callback in middleware mode
+		 */
+		sendError(res, err, next) {
+			if (next)
+				return next(err);
+
+			if (!err || !(err instanceof Error)) {
+				res.writeHead(500);
+				res.end("Internal Server Error");
+				return;
 			}
+
+			// Return with the error as JSON object
+			res.setHeader("Content-type", "application/json; charset=utf-8");
+
+			const code = _.isNumber(err.code) ? err.code : 500;
+			res.writeHead(code);
+			const errObj = _.pick(err, ["name", "message", "code", "type", "data"]);
+			res.end(JSON.stringify(errObj, null, 2));
 		},
 
 		/**
@@ -408,12 +427,7 @@ module.exports = {
 								route.callMiddlewares(req, res, (req, res, err) => {
 									if (err) {
 										this.logger.error("Middleware error!", err);
-
-										if (next)
-											return next(err);
-
-										res.writeHead(500);
-										return res.end("Server error! " + err.message);
+										return this.sendError(res, err, next);
 									}
 									nextCall();
 								});
@@ -439,17 +453,8 @@ module.exports = {
 				this.send404(res, next);
 
 			} catch(err) {
-				/* istanbul ignore next */
 				this.logger.error("Handler error!", err);
-
-				/* istanbul ignore next */
-				if (next)
-					return next(err);
-
-				/* istanbul ignore next */
-				res.writeHead(500);
-				/* istanbul ignore next */
-				res.end("Server error! " + err.message);
+				return this.sendError(res, err, next);
 			}
 		},
 
@@ -622,6 +627,8 @@ module.exports = {
 							// Return with the response
 							if (ctx.requestID)
 								res.setHeader("X-Request-ID", ctx.requestID);
+							//if (ctx.cachedResult)
+							//	res.setHeader("X-From-Cache", "true");
 
 							return Promise.resolve()
 							// onAfterCall handling
@@ -639,45 +646,20 @@ module.exports = {
 
 				// Error handling
 				.catch(err => {
-					return Promise.resolve(err)
-						/* Deprecated. Use `route.callOptions.fallbackResponse` instead.
-						.then(err => {
-							let ctx = err.ctx;
-							if (_.isFunction(route.fallbackResponse)) {
-								return route.fallbackResponse.call(this, err, route, err.ctx, req, res)
-									.then(data => {
-										if (data !== undefined)  {
-											this.sendResponse(ctx, route, req, res, data);
-											return null;
-										}
-										return null;
-									}).catch(err => err); // Throw further the new Error
-							}
-							return err;
-						})
-						*/
-						.then(err => {
-							/* istanbul ignore next */
-							if (!err)
-								return;
+					if (!err)
+						return;
 
-							this.logger.error("  Request error!", err.name, ":", err.message, "\n", err.stack, "\nData:", err.data);
+					if (err.ctx)
+						res.setHeader("X-Request-ID", err.ctx.id);
 
-							res.setHeader("Content-type", "application/json");
+					this.logger.error("  Request error!", err.name, ":", err.message, "\n", err.stack, "\nData:", err.data);
 
-							if (err.ctx) {
-								res.setHeader("X-Request-ID", err.ctx.id);
-							}
+					// Return with the error
+					this.sendError(res, err);
 
-							// Return with the error
-							const code = _.isNumber(err.code) ? err.code : 500;
-							res.writeHead(code);
-							const errObj = _.pick(err, ["name", "message", "code", "type", "data"]);
-							res.end(JSON.stringify(errObj, null, 2));
-
-							if (err.ctx)
-								err.ctx._metricFinish(null, err.ctx.metrics);
-						});
+					// Finish the context
+					if (err.ctx)
+						err.ctx._metricFinish(null, err.ctx.metrics);
 				});
 
 			return p;
@@ -717,13 +699,13 @@ module.exports = {
 			}
 			// Object or Array
 			else if (_.isObject(data) || Array.isArray(data)) {
-				res.setHeader("Content-Type", responseType || "application/json");
+				res.setHeader("Content-Type", responseType || "application/json; charset=utf-8");
 				res.end(JSON.stringify(data));
 			}
 			// Other
 			else {
 				if (!responseType) {
-					res.setHeader("Content-Type", "application/json");
+					res.setHeader("Content-Type", "application/json; charset=utf-8");
 					res.end(JSON.stringify(data));
 				} else {
 					res.setHeader("Content-Type", responseType);

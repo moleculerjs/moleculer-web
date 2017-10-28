@@ -1,6 +1,8 @@
 "use strict";
 
 const _ = require("lodash");
+const fs = require("fs");
+const path = require("path");
 const { MoleculerError } = require("moleculer").Errors;
 
 module.exports = {
@@ -36,6 +38,10 @@ module.exports = {
 			return "Hi!";
 		},
 
+		utf(ctx) {
+			return "ÉÁŰŐÚÖÜÓÍ éáűőúöüóí";
+		},
+
 		dangerZone: {
 			publish: false,
 			handler(ctx) {
@@ -50,6 +56,15 @@ module.exports = {
 
 		wrong(ctx) {
 			throw new MoleculerError("It is a wrong action! I always throw error!");
-		}
+		},
+
+		stream() {
+			const stream = fs.createReadStream(path.join(__dirname, "..", "test", "assets", "lorem.txt"), "utf8");
+			setTimeout(() => {
+				stream.read(1024);
+			}, 100);
+
+			return stream;
+		},
 	}
 };

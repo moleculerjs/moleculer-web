@@ -31,6 +31,9 @@ broker.createService({
 - [Webpack](https://github.com/ice-services/moleculer-web/tree/webpack/examples/webpack)
 - [Webpack & Vue](https://github.com/ice-services/moleculer-web/tree/webpack/examples/webpack-vue)
 
+## Changes
+- better error handling. Always returns with JSON error response.
+
 -----------------------------
 <a name="0.5.2"></a>
 # 0.5.2 (2017-10-24)

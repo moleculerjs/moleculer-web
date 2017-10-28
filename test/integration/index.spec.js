@@ -35,7 +35,7 @@ describe("Test default settings", () => {
 		return request(server)
 			.get("/")
 			.expect(404)
-			.expect("Content-Type", "application/json")
+			.expect("Content-Type", "application/json; charset=utf-8")
 			.then(res => {
 				expect(res.body).toEqual({
 					"code": 404,
@@ -54,7 +54,7 @@ describe("Test default settings", () => {
 		return request(server)
 			.get("/other/action")
 			.expect(404)
-			.expect("Content-Type", "application/json")
+			.expect("Content-Type", "application/json; charset=utf-8")
 			.then(res => {
 				expect(res.body).toEqual({
 					"code": 404,
@@ -73,7 +73,7 @@ describe("Test default settings", () => {
 		return request(server)
 			.get("/test/hello")
 			.expect(200)
-			.expect("Content-Type", "application/json")
+			.expect("Content-Type", "application/json; charset=utf-8")
 			.then(res => {
 				expect(res.body).toBe("Hello Moleculer");
 			});
@@ -84,7 +84,7 @@ describe("Test default settings", () => {
 			.get("/test/greeter")
 			.query({ name: "John" })
 			.expect(200)
-			.expect("Content-Type", "application/json")
+			.expect("Content-Type", "application/json; charset=utf-8")
 			.then(res => {
 				expect(res.body).toBe("Hello John");
 			});
@@ -95,7 +95,7 @@ describe("Test default settings", () => {
 			.post("/test/greeter")
 			.query({ name: "John" })
 			.expect(200)
-			.expect("Content-Type", "application/json")
+			.expect("Content-Type", "application/json; charset=utf-8")
 			.then(res => {
 				expect(res.body).toBe("Hello John");
 			});
@@ -106,7 +106,7 @@ describe("Test default settings", () => {
 			.post("/test/greeter")
 			.send({ name: "Adam" })
 			.expect(200)
-			.expect("Content-Type", "application/json")
+			.expect("Content-Type", "application/json; charset=utf-8")
 			.then(res => {
 				expect(res.body).toBe("Hello Adam");
 			});
@@ -118,7 +118,7 @@ describe("Test default settings", () => {
 			.query({ name: "John" })
 			.send({ name: "Adam" })
 			.expect(200)
-			.expect("Content-Type", "application/json")
+			.expect("Content-Type", "application/json; charset=utf-8")
 			.then(res => {
 				expect(res.body).toBe("Hello John");
 			});
@@ -128,7 +128,7 @@ describe("Test default settings", () => {
 		return request(server)
 			.get("/test/dangerZone")
 			.expect(404)
-			.expect("Content-Type", "application/json")
+			.expect("Content-Type", "application/json; charset=utf-8")
 			.then(res => {
 				expect(res.body).toEqual({
 					"code": 404,
@@ -162,7 +162,7 @@ describe("Test responses", () => {
 		return request(server)
 			.get("/test/text")
 			.expect(200)
-			.expect("Content-Type", "application/json")
+			.expect("Content-Type", "application/json; charset=utf-8")
 			.then(res => {
 				expect(res.header["x-request-id"]).toBeDefined();
 				expect(res.body).toEqual("String text");
@@ -193,7 +193,7 @@ describe("Test responses", () => {
 		return request(server)
 			.get("/test/number")
 			.expect(200)
-			.expect("Content-Type", "application/json")
+			.expect("Content-Type", "application/json; charset=utf-8")
 			.then(res => {
 				expect(res.body).toEqual(123);
 			});
@@ -213,7 +213,7 @@ describe("Test responses", () => {
 		return request(server)
 			.get("/test/boolean")
 			.expect(200)
-			.expect("Content-Type", "application/json")
+			.expect("Content-Type", "application/json; charset=utf-8")
 			.then(res => {
 				expect(res.body).toEqual(true);
 			});
@@ -223,7 +223,7 @@ describe("Test responses", () => {
 		return request(server)
 			.get("/test/json")
 			.expect(200)
-			.expect("Content-Type", "application/json")
+			.expect("Content-Type", "application/json; charset=utf-8")
 			.then(res => {
 				expect(res.body).toEqual({ id: 1, name: "Eddie" });
 			});
@@ -233,7 +233,7 @@ describe("Test responses", () => {
 		return request(server)
 			.get("/test/jsonArray")
 			.expect(200)
-			.expect("Content-Type", "application/json")
+			.expect("Content-Type", "application/json; charset=utf-8")
 			.then(res => {
 				expect(res.body).toEqual([
 					{ id: 1, name: "John" },
@@ -289,7 +289,7 @@ describe("Test responses", () => {
 		return request(server)
 			.get("/test/streamWithError")
 			.expect(500)
-			.expect("Content-Type", "application/json")
+			.expect("Content-Type", "application/json; charset=utf-8")
 			.then(res => {
 				expect(res.body).toEqual({
 					"code": 500,
@@ -321,7 +321,7 @@ describe("Test responses", () => {
 		return request(server)
 			.get("/test/function")
 			.expect(200)
-			.expect("Content-Type", "application/json")
+			.expect("Content-Type", "application/json; charset=utf-8")
 			.then(res => {
 				expect(res.text).toEqual("");
 			});
@@ -331,7 +331,7 @@ describe("Test responses", () => {
 		return request(server)
 			.get("/test/error")
 			.expect(505)
-			.expect("Content-Type", "application/json")
+			.expect("Content-Type", "application/json; charset=utf-8")
 			.then(res => {
 				expect(res.header["x-request-id"]).toBeDefined();
 				expect(res.body).toEqual({
@@ -358,20 +358,36 @@ describe("Test with `path` prefix", () => {
 	it("GET /", () => {
 		return request(server)
 			.get("/")
-			.expect(404, "Not found");
+			.expect(404)
+			.expect("Content-Type", "application/json; charset=utf-8")
+			.then(res => {
+				expect(res.body).toEqual({
+					code: 404,
+					message: "Not found",
+					name: "MoleculerError"
+				});
+			});
 	});
 
 	it("GET /test/hello", () => {
 		return request(server)
 			.get("/test/hello")
-			.expect(404, "Not found");
+			.expect(404)
+			.expect("Content-Type", "application/json; charset=utf-8")
+			.then(res => {
+				expect(res.body).toEqual({
+					code: 404,
+					message: "Not found",
+					name: "MoleculerError"
+				});
+			});
 	});
 
 	it("GET /my-api/test/hello", () => {
 		return request(server)
 			.get("/my-api/test/hello")
 			.expect(200)
-			.expect("Content-Type", "application/json")
+			.expect("Content-Type", "application/json; charset=utf-8")
 			.then(res => {
 				expect(res.body).toBe("Hello Moleculer");
 			});
@@ -416,10 +432,16 @@ describe("Test only assets", () => {
 	it("GET /test/hello", () => {
 		return request(server)
 			.get("/test/hello")
-			.expect(404, "Not found")
+			.expect(404)
+			.expect("Content-Type", "application/json; charset=utf-8")
 			.then(res => {
-				expect(res.body).toEqual({});
+				expect(res.body).toEqual({
+					code: 404,
+					message: "Not found",
+					name: "MoleculerError"
+				});
 			});
+
 	});
 
 });
@@ -464,7 +486,7 @@ describe("Test assets & API route", () => {
 		return request(server)
 			.get("/api/test/hello")
 			.expect(200)
-			.expect("Content-Type", "application/json")
+			.expect("Content-Type", "application/json; charset=utf-8")
 			.then(res => {
 				expect(res.body).toBe("Hello Moleculer");
 			});
@@ -496,7 +518,7 @@ describe("Test whitelist", () => {
 		return request(server)
 			.get("/api/test/hello")
 			.expect(200)
-			.expect("Content-Type", "application/json")
+			.expect("Content-Type", "application/json; charset=utf-8")
 			.then(res => {
 				expect(res.body).toBe("Hello Moleculer");
 			});
@@ -506,7 +528,7 @@ describe("Test whitelist", () => {
 		return request(server)
 			.get("/api/test/json")
 			.expect(200)
-			.expect("Content-Type", "application/json")
+			.expect("Content-Type", "application/json; charset=utf-8")
 			.then(res => {
 				expect(res.body).toEqual({ id: 1, name: "Eddie" });
 			});
@@ -516,7 +538,7 @@ describe("Test whitelist", () => {
 		return request(server)
 			.get("/api/test/jsonArray")
 			.expect(200)
-			.expect("Content-Type", "application/json")
+			.expect("Content-Type", "application/json; charset=utf-8")
 			.then(res => {
 				expect(res.body).toEqual([
 					{ id: 1, name: "John" },
@@ -529,7 +551,7 @@ describe("Test whitelist", () => {
 		return request(server)
 			.get("/api/test/greeter")
 			.expect(404)
-			.expect("Content-Type", "application/json")
+			.expect("Content-Type", "application/json; charset=utf-8")
 			.then(res => {
 				expect(res.body).toEqual({
 					code: 404,
@@ -549,7 +571,7 @@ describe("Test whitelist", () => {
 			.get("/api/math.add")
 			.query({ a: 5, b: 8 })
 			.expect(200)
-			.expect("Content-Type", "application/json")
+			.expect("Content-Type", "application/json; charset=utf-8")
 			.then(res => {
 				expect(res.body).toBe(13);
 			});
@@ -560,7 +582,7 @@ describe("Test whitelist", () => {
 			.get("/api/math.sub")
 			.query({ a: 5, b: 8 })
 			.expect(200)
-			.expect("Content-Type", "application/json")
+			.expect("Content-Type", "application/json; charset=utf-8")
 			.then(res => {
 				expect(res.body).toBe(-3);
 			});
@@ -602,7 +624,7 @@ describe("Test alias", () => {
 			.get("/api/math.add")
 			.query({ a: 5, b: 8 })
 			.expect(200)
-			.expect("Content-Type", "application/json")
+			.expect("Content-Type", "application/json; charset=utf-8")
 			.then(res => {
 				expect(res.body).toBe(13);
 			});
@@ -614,7 +636,7 @@ describe("Test alias", () => {
 			.get("/api/add")
 			.query({ a: 5, b: 8 })
 			.expect(200)
-			.expect("Content-Type", "application/json")
+			.expect("Content-Type", "application/json; charset=utf-8")
 			.then(res => {
 				expect(res.body).toBe(13);
 			});
@@ -625,7 +647,7 @@ describe("Test alias", () => {
 			.post("/api/add")
 			.send({ a: 5, b: 8 })
 			.expect(200)
-			.expect("Content-Type", "application/json")
+			.expect("Content-Type", "application/json; charset=utf-8")
 			.then(res => {
 				expect(res.body).toBe(13);
 			});
@@ -635,7 +657,7 @@ describe("Test alias", () => {
 		return request(server)
 			.get("/api/test/hello")
 			.expect(200)
-			.expect("Content-Type", "application/json")
+			.expect("Content-Type", "application/json; charset=utf-8")
 			.then(res => {
 				expect(res.body).toBe("Hello Moleculer");
 			});
@@ -645,7 +667,7 @@ describe("Test alias", () => {
 		return request(server)
 			.get("/api/hello")
 			.expect(200)
-			.expect("Content-Type", "application/json")
+			.expect("Content-Type", "application/json; charset=utf-8")
 			.then(res => {
 				expect(res.body).toBe("Hello Moleculer");
 			});
@@ -656,7 +678,7 @@ describe("Test alias", () => {
 			.post("/api/hello")
 			.query({ name: "Ben" })
 			.expect(200)
-			.expect("Content-Type", "application/json")
+			.expect("Content-Type", "application/json; charset=utf-8")
 			.then(res => {
 				expect(res.body).toBe("Hello Ben");
 			});
@@ -666,7 +688,7 @@ describe("Test alias", () => {
 		return request(server)
 			.get("/api/greeter/Norbert")
 			.expect(200)
-			.expect("Content-Type", "application/json")
+			.expect("Content-Type", "application/json; charset=utf-8")
 			.then(res => {
 				expect(res.body).toBe("Hello Norbert");
 			});
@@ -676,7 +698,7 @@ describe("Test alias", () => {
 		return request(server)
 			.post("/api/greeter/Norbert")
 			.expect(404)
-			.expect("Content-Type", "application/json")
+			.expect("Content-Type", "application/json; charset=utf-8")
 			.then(res => {
 				expect(res.body).toEqual({
 					"name": "ServiceNotFoundError",
@@ -692,7 +714,7 @@ describe("Test alias", () => {
 		return request(server)
 			.get("/api/opt-test/John")
 			.expect(200)
-			.expect("Content-Type", "application/json")
+			.expect("Content-Type", "application/json; charset=utf-8")
 			.then(res => {
 				expect(res.body.params).toEqual({
 					name: "John"
@@ -704,7 +726,7 @@ describe("Test alias", () => {
 		return request(server)
 			.get("/api/opt-test")
 			.expect(200)
-			.expect("Content-Type", "application/json")
+			.expect("Content-Type", "application/json; charset=utf-8")
 			.then(res => {
 				expect(res.body.params).toEqual({});
 			});
@@ -714,7 +736,7 @@ describe("Test alias", () => {
 		return request(server)
 			.get("/api/repeat-test/John/Jane/Adam/Walter")
 			.expect(200)
-			.expect("Content-Type", "application/json")
+			.expect("Content-Type", "application/json; charset=utf-8")
 			.then(res => {
 				expect(res.body.params).toEqual({
 					args: ["John", "Jane", "Adam", "Walter"]
@@ -726,7 +748,7 @@ describe("Test alias", () => {
 		return request(server)
 			.get("/api")
 			.expect(200)
-			.expect("Content-Type", "application/json")
+			.expect("Content-Type", "application/json; charset=utf-8")
 			.then(res => {
 				expect(res.body).toBe("Hello Moleculer");
 			});
@@ -767,7 +789,7 @@ describe("Test REST shorthand aliases", () => {
 		return request(server)
 			.get("/api/posts")
 			.expect(200)
-			.expect("Content-Type", "application/json")
+			.expect("Content-Type", "application/json; charset=utf-8")
 			.then(res => {
 				expect(res.body.length).toBe(5);
 			});
@@ -778,7 +800,7 @@ describe("Test REST shorthand aliases", () => {
 		return request(server)
 			.get("/api/posts/2")
 			.expect(200)
-			.expect("Content-Type", "application/json")
+			.expect("Content-Type", "application/json; charset=utf-8")
 			.then(res => {
 				expect(res.body).toBeInstanceOf(Object);
 				expect(res.body.title).toBeDefined();
@@ -791,7 +813,7 @@ describe("Test REST shorthand aliases", () => {
 			.post("/api/posts")
 			.send({ id: 8, title: "Test", content: "Content" })
 			.expect(200)
-			.expect("Content-Type", "application/json")
+			.expect("Content-Type", "application/json; charset=utf-8")
 			.then(res => {
 				expect(res.body.id).toBe(8);
 				expect(res.body.title).toBe("Test");
@@ -804,7 +826,7 @@ describe("Test REST shorthand aliases", () => {
 			.put("/api/posts/8")
 			.send({ title: "Modified" })
 			.expect(200)
-			.expect("Content-Type", "application/json")
+			.expect("Content-Type", "application/json; charset=utf-8")
 			.then(res => {
 				expect(res.body.id).toBe(8);
 				expect(res.body.title).toBe("Modified");
@@ -816,7 +838,7 @@ describe("Test REST shorthand aliases", () => {
 		return request(server)
 			.get("/api/posts/8")
 			.expect(200)
-			.expect("Content-Type", "application/json")
+			.expect("Content-Type", "application/json; charset=utf-8")
 			.then(res => {
 				expect(res.body.id).toBe(8);
 				expect(res.body.title).toBe("Modified");
@@ -865,7 +887,7 @@ describe("Test alias & whitelist", () => {
 			.get("/api/add")
 			.query({ a: 5, b: 8 })
 			.expect(200)
-			.expect("Content-Type", "application/json")
+			.expect("Content-Type", "application/json; charset=utf-8")
 			.then(res => {
 				expect(res.body).toBe(13);
 			});
@@ -875,7 +897,7 @@ describe("Test alias & whitelist", () => {
 		return request(server)
 			.get("/api/hello")
 			.expect(404)
-			.expect("Content-Type", "application/json")
+			.expect("Content-Type", "application/json; charset=utf-8")
 			.then(res => {
 				expect(res.body).toEqual({
 					code: 404,
@@ -911,7 +933,7 @@ describe("Test body-parsers", () => {
 			.post("/test.greeter")
 			.send({ name: "John" })
 			.expect(422)
-			.expect("Content-Type", "application/json")
+			.expect("Content-Type", "application/json; charset=utf-8")
 			.then(res => {
 				/*expect(res.body).toEqual({
 					"code": 422,
@@ -939,7 +961,7 @@ describe("Test body-parsers", () => {
 			.post("/test.greeter")
 			.send({ name: "John" })
 			.expect(200)
-			.expect("Content-Type", "application/json")
+			.expect("Content-Type", "application/json; charset=utf-8")
 			.then(res => {
 				expect(res.body).toBe("Hello John");
 			});
@@ -956,10 +978,10 @@ describe("Test body-parsers", () => {
 
 		return request(server)
 			.post("/test.greeter")
-			.set("Content-Type", "application/json")
+			.set("Content-Type", "application/json; charset=utf-8")
 			.send("invalid")
 			.expect(400)
-			.expect("Content-Type", "application/json")
+			.expect("Content-Type", "application/json; charset=utf-8")
 			.then(res => {
 				expect(res.body).toEqual({
 					"code": 400,
@@ -1005,7 +1027,7 @@ describe("Test body-parsers", () => {
 			.set("Content-Type", "application/x-www-form-urlencoded")
 			.send({ name: "Adam" })
 			.expect(200)
-			.expect("Content-Type", "application/json")
+			.expect("Content-Type", "application/json; charset=utf-8")
 			.then(res => {
 				expect(res.body).toBe("Hello Adam");
 			});
@@ -1057,7 +1079,7 @@ describe("Test multiple routes", () => {
 		return request(server)
 			.get("/api2/test/hello")
 			.expect(200)
-			.expect("Content-Type", "application/json")
+			.expect("Content-Type", "application/json; charset=utf-8")
 			.then(res => {
 				expect(res.body).toBe("Hello Moleculer");
 			});
@@ -1068,7 +1090,7 @@ describe("Test multiple routes", () => {
 			.get("/api1/math.add")
 			.query({ a: 5, b: 8 })
 			.expect(200)
-			.expect("Content-Type", "application/json")
+			.expect("Content-Type", "application/json; charset=utf-8")
 			.then(res => {
 				expect(res.body).toBe(13);
 			});
@@ -1086,7 +1108,7 @@ describe("Test multiple routes", () => {
 			.get("/api1/main")
 			.query({ a: 5, b: 8 })
 			.expect(200)
-			.expect("Content-Type", "application/json")
+			.expect("Content-Type", "application/json; charset=utf-8")
 			.then(res => {
 				expect(res.body).toBe(13);
 			});
@@ -1097,7 +1119,7 @@ describe("Test multiple routes", () => {
 			.get("/api2/main")
 			.query({ name: "Thomas" })
 			.expect(200)
-			.expect("Content-Type", "application/json")
+			.expect("Content-Type", "application/json; charset=utf-8")
 			.then(res => {
 				expect(res.body).toBe("Hello Thomas");
 			});
@@ -1134,7 +1156,7 @@ describe("Test mappingPolicy route option", () => {
 				.get("/api/math.add")
 				.query({ a: 5, b: 8 })
 				.expect(200)
-				.expect("Content-Type", "application/json")
+				.expect("Content-Type", "application/json; charset=utf-8")
 				.then(res => {
 					expect(res.body).toBe(13);
 				});
@@ -1145,7 +1167,7 @@ describe("Test mappingPolicy route option", () => {
 				.get("/api/math/add")
 				.query({ a: 5, b: 8 })
 				.expect(200)
-				.expect("Content-Type", "application/json")
+				.expect("Content-Type", "application/json; charset=utf-8")
 				.then(res => {
 					expect(res.body).toBe(13);
 				});
@@ -1156,7 +1178,7 @@ describe("Test mappingPolicy route option", () => {
 				.get("/api/add")
 				.query({ a: 5, b: 8 })
 				.expect(200)
-				.expect("Content-Type", "application/json")
+				.expect("Content-Type", "application/json; charset=utf-8")
 				.then(res => {
 					expect(res.body).toBe(13);
 				});
@@ -1200,7 +1222,7 @@ describe("Test mappingPolicy route option", () => {
 				.get("/api/add")
 				.query({ a: 5, b: 8 })
 				.expect(200)
-				.expect("Content-Type", "application/json")
+				.expect("Content-Type", "application/json; charset=utf-8")
 				.then(res => {
 					expect(res.body).toBe(13);
 				});
@@ -1224,7 +1246,7 @@ describe("Test CORS", () => {
 		return request(server)
 			.get("/test/hello")
 			.expect(200)
-			.expect("Content-Type", "application/json")
+			.expect("Content-Type", "application/json; charset=utf-8")
 			.expect("Access-Control-Allow-Origin", "*")
 			//.expect("Access-Control-Allow-Credentials", "*")
 			//.expect("Access-Control-Expose-Headers", "*")
@@ -1243,7 +1265,7 @@ describe("Test CORS", () => {
 		return request(server)
 			.get("/test/hello")
 			.expect(200)
-			.expect("Content-Type", "application/json")
+			.expect("Content-Type", "application/json; charset=utf-8")
 			.expect("Access-Control-Allow-Origin", "http://localhost:3000")
 			.expect("Access-Control-Allow-Credentials", "true")
 			.expect("Access-Control-Expose-Headers", "X-Response-Time")
@@ -1262,7 +1284,7 @@ describe("Test CORS", () => {
 		return request(server)
 			.get("/test/hello")
 			.expect(200)
-			.expect("Content-Type", "application/json")
+			.expect("Content-Type", "application/json; charset=utf-8")
 			.expect("Access-Control-Allow-Origin", "http://localhost:3000, https://localhost:4000")
 			.expect("Access-Control-Allow-Credentials", "true")
 			.expect("Access-Control-Expose-Headers", "X-Custom-Header, X-Response-Time")
@@ -1288,7 +1310,7 @@ describe("Test CORS", () => {
 		return request(server)
 			.get("/test/hello")
 			.expect(200)
-			.expect("Content-Type", "application/json")
+			.expect("Content-Type", "application/json; charset=utf-8")
 			.expect("Access-Control-Allow-Origin", "http://test-server")
 			.expect("Access-Control-Expose-Headers", "X-Response-Time")
 			.then(res => expect(res.body).toBe("Hello Moleculer"));
@@ -1390,7 +1412,7 @@ describe("Test Rate Limiter", () => {
 		return request(server)
 			.get("/test/hello")
 			.expect(200)
-			.expect("Content-Type", "application/json")
+			.expect("Content-Type", "application/json; charset=utf-8")
 			.expect("X-Rate-Limit-Limit", "3")
 			.expect("X-Rate-Limit-Remaining", "2")
 			.expect("X-Rate-Limit-Reset", "10000")
@@ -1401,7 +1423,7 @@ describe("Test Rate Limiter", () => {
 		return request(server)
 			.get("/test/hello")
 			.expect(200)
-			.expect("Content-Type", "application/json")
+			.expect("Content-Type", "application/json; charset=utf-8")
 			.expect("X-Rate-Limit-Limit", "3")
 			.expect("X-Rate-Limit-Remaining", "1")
 			.expect("X-Rate-Limit-Reset", "10000")
@@ -1412,7 +1434,7 @@ describe("Test Rate Limiter", () => {
 		return request(server)
 			.get("/test/hello")
 			.expect(200)
-			.expect("Content-Type", "application/json")
+			.expect("Content-Type", "application/json; charset=utf-8")
 			.expect("X-Rate-Limit-Limit", "3")
 			.expect("X-Rate-Limit-Remaining", "0")
 			.expect("X-Rate-Limit-Reset", "10000")
@@ -1423,7 +1445,7 @@ describe("Test Rate Limiter", () => {
 		return request(server)
 			.get("/test/hello")
 			.expect(429)
-			.expect("Content-Type", "application/json")
+			.expect("Content-Type", "application/json; charset=utf-8")
 			.expect("X-Rate-Limit-Limit", "3")
 			.expect("X-Rate-Limit-Remaining", "0")
 			.expect("X-Rate-Limit-Reset", "10000")
@@ -1440,7 +1462,7 @@ describe("Test Rate Limiter", () => {
 		return request(server)
 			.get("/test/hello")
 			.expect(200)
-			.expect("Content-Type", "application/json")
+			.expect("Content-Type", "application/json; charset=utf-8")
 			.expect("X-Rate-Limit-Limit", "3")
 			.expect("X-Rate-Limit-Remaining", "2")
 			.expect("X-Rate-Limit-Reset", "20000")
@@ -1492,7 +1514,7 @@ describe("Test onBeforeCall & onAfterCall", () => {
 		return request(server)
 			.get("/test/hello")
 			.expect(200)
-			.expect("Content-Type", "application/json")
+			.expect("Content-Type", "application/json; charset=utf-8")
 			.expect("X-Custom-Header", "working")
 			.then(res => {
 				expect(res.body).toBe("Hello Moleculer");
@@ -1535,7 +1557,7 @@ describe("Test route middlewares", () => {
 		return request(server)
 			.get("/test/hello/")
 			.expect(200)
-			.expect("Content-Type", "application/json")
+			.expect("Content-Type", "application/json; charset=utf-8")
 			.expect("X-Custom-Header", "middleware")
 			.then(res => {
 				expect(res.body).toBe("Hello Moleculer");
@@ -1572,8 +1594,12 @@ describe("Test route middlewares", () => {
 		return request(server)
 			.get("/test/hello")
 			.expect(500)
+			.expect("Content-Type", "application/json; charset=utf-8")
 			.then(res => {
-				expect(res.text).toBe("Server error! Something went wrong");
+				expect(res.body).toEqual({
+					message: "Something went wrong",
+					name: "Error"
+				});
 				expect(mw1).toHaveBeenCalledTimes(1);
 				expect(mw1).toHaveBeenCalledWith(jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse), jasmine.any(Function));
 
@@ -1617,7 +1643,7 @@ describe("Test authorization", () => {
 		return request(server)
 			.get("/test/hello")
 			.expect(200)
-			.expect("Content-Type", "application/json")
+			.expect("Content-Type", "application/json; charset=utf-8")
 			.then(res => {
 				expect(res.body).toBe("Hello Moleculer");
 				expect(authorize).toHaveBeenCalledTimes(1);
@@ -1647,7 +1673,7 @@ describe("Test authorization", () => {
 		return request(server)
 			.get("/test/hello")
 			//.expect(401)
-			.expect("Content-Type", "application/json")
+			.expect("Content-Type", "application/json; charset=utf-8")
 			.then(res => {
 				expect(res.body).toEqual({
 					"message": "Unauthorized",
