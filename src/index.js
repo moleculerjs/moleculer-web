@@ -313,7 +313,7 @@ module.exports = {
 
 			if (!err || !(err instanceof Error)) {
 				res.writeHead(500);
-				res.end("Server error");
+				res.end("Internal Server Error");
 				return;
 			}
 
