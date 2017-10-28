@@ -29,6 +29,25 @@ broker.createService({
 });
 ```
 
+## Custom response headers
+It supports custom response headers to define in action definition.
+
+```js
+module.exports = {
+    name: "export",
+    actions: {
+        downloadCSV: 
+            responseHeaders: {
+                "Content-Disposition": "attachment; filename=\"data.csv\""
+            },
+            handler() {
+                return "...";
+            }
+        }
+    }
+}
+```
+
 ## New examples
 - [Webpack](https://github.com/ice-services/moleculer-web/tree/webpack/examples/webpack) - webpack-dev-middleware example
 - [Webpack & Vue](https://github.com/ice-services/moleculer-web/tree/webpack/examples/webpack-vue) - Webpack, VueJS, HMR example
