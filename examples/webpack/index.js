@@ -36,7 +36,7 @@ broker.createService({
 
 		routes: [
 			{
-				path: "/asd",
+				path: "/",
 
 				// Middlewares
 				use: [

@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "nodemon examples/index.js",
     "demo": "node examples/index.js",
-    "bench": "nodemon benchmarks/index.js",
+    "bench": "cross-env NODE_ENV=production nodemon benchmarks/index.js",
     "perf": "node --inspect --expose-gc benchmarks/index.js",
     "ci": "jest --watch",
     "test": "jest --coverage",
@@ -31,6 +31,7 @@
     "benchmarkify": "2.1.0",
     "compression": "1.7.1",
     "coveralls": "3.0.0",
+    "cross-env": "5.1.1",
     "eslint": "4.9.0",
     "express": "4.16.2",
     "fakerator": "0.3.0",
@@ -54,7 +55,6 @@
   },
   "dependencies": {
     "body-parser": "1.18.2",
-    "chalk": "2.3.0",
     "es6-error": "4.0.2",
     "isstream": "0.1.2",
     "lodash": "4.17.4",

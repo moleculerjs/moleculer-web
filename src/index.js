@@ -11,7 +11,6 @@ const https 			= require("https");
 const queryString 		= require("querystring");
 
 const _ 				= require("lodash");
-const chalk 			= require("chalk");
 const bodyParser 		= require("body-parser");
 const serveStatic 		= require("serve-static");
 const nanomatch  		= require("nanomatch");
@@ -533,6 +532,8 @@ module.exports = {
 							});
 							res.end();
 
+							this.logResponse(req, res);
+
 							// Break the chain
 							return Promise.reject();
 						}
@@ -739,7 +740,7 @@ module.exports = {
 		 * @param {HttpIncomingRequest} req
 		 */
 		logRequest(req) {
-			this.logger.info(`=> ${chalk.bold(req.method)} ${req.url}`);
+			this.logger.info(`=> ${req.method} ${req.url}`);
 		},
 
 		/**
@@ -750,13 +751,13 @@ module.exports = {
 		 */
 		coloringStatusCode(code) {
 			if (code >= 500)
-				return chalk.red(code);
+				return code;
 			if (code >= 400 && code < 500)
-				return chalk.yellow(code);
+				return code;
 			if (code >= 300 && code < 400)
-				return chalk.blue(code);
+				return code;
 			if (code >= 200 && code < 300)
-				return chalk.green(code);
+				return code;
 			return code;
 		},
 
@@ -772,9 +773,9 @@ module.exports = {
 			let time = "";
 			if (ctx && ctx.duration) {
 				if (ctx.duration > 1000)
-					time = chalk.grey(`[+${Number(ctx.duration / 1000).toFixed(3)}s]`);
+					time = `[+${Number(ctx.duration / 1000).toFixed(3)} s]`;
 				else
-					time = chalk.grey(`[+${Number(ctx.duration).toFixed(3)}ms]`);
+					time = `[+${Number(ctx.duration).toFixed(3)} ms]`;
 			}
 			this.logger.info(`<= ${this.coloringStatusCode(res.statusCode)} ${req.method} ${req.url} ${time}`);
 
