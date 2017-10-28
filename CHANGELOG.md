@@ -1,11 +1,13 @@
-<a name="0.5.3"></a>
-# 0.5.3 (2017-xx-xx)
+<a name="0.6.0"></a>
+# 0.6.0 (2017-xx-xx)
 
-## New
+## Changes
+- better error handling. Always returns with JSON error response.
+- The charset is `UTF-8` for `application/json` responses.
 - `logRequestParams` setting to log the request parameters. Use log level value i.e. `"debug"`, `"info"` or `null` to disable.
 - `logResponseData` setting to log the response data. Use log level value i.e. `"debug"`, `"info"` or `null` to disable.
 
-### Middlewares
+## Middlewares
 Support middlewares in routes
 
 ```js
@@ -27,12 +29,10 @@ broker.createService({
 });
 ```
 
-### 2 new examples
-- [Webpack](https://github.com/ice-services/moleculer-web/tree/webpack/examples/webpack)
-- [Webpack & Vue](https://github.com/ice-services/moleculer-web/tree/webpack/examples/webpack-vue)
+## New examples
+- [Webpack](https://github.com/ice-services/moleculer-web/tree/webpack/examples/webpack) - webpack-dev-middleware example
+- [Webpack & Vue](https://github.com/ice-services/moleculer-web/tree/webpack/examples/webpack-vue) - Webpack, VueJS, HMR example
 
-## Changes
-- better error handling. Always returns with JSON error response.
 
 -----------------------------
 <a name="0.5.2"></a>

@@ -14,7 +14,7 @@ const _ 				= require("lodash");
 const bodyParser 		= require("body-parser");
 const serveStatic 		= require("serve-static");
 const nanomatch  		= require("nanomatch");
-const isStream  		= require("isstream");
+const isReadableStream	= require("isstream").isReadable;
 const pathToRegexp 		= require("path-to-regexp");
 
 const { Context } = require("moleculer");
@@ -693,7 +693,7 @@ module.exports = {
 				res.end(buf);
 			}
 			// Stream
-			else if (isStream(data)) {
+			else if (isReadableStream(data)) {
 				res.setHeader("Content-Type", responseType || "application/octet-stream");
 				data.pipe(res);
 			}
