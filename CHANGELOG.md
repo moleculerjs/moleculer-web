@@ -5,6 +5,32 @@
 - `logRequestParams` setting to log the request parameters. Use log level value i.e. `"debug"`, `"info"` or `null` to disable.
 - `logResponseData` setting to log the response data. Use log level value i.e. `"debug"`, `"info"` or `null` to disable.
 
+### Middlewares
+Support middlewares in routes
+
+```js
+broker.createService({
+    mixins: [ApiService],
+    settings: {
+        routes: [
+            {
+                path: "/",
+
+                // Middlewares
+                use: [
+                    compression(),
+                    serveStatic(path.join(__dirname, "public"))
+                ]
+            }
+        ]
+    }
+});
+```
+
+### 2 new examples
+- [Webpack](https://github.com/ice-services/moleculer-web/tree/webpack/examples/webpack)
+- [Webpack & Vue](https://github.com/ice-services/moleculer-web/tree/webpack/examples/webpack-vue)
+
 -----------------------------
 <a name="0.5.2"></a>
 # 0.5.2 (2017-10-24)

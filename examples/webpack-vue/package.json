@@ -1,0 +1,28 @@
+{
+  "name": "webpack-vue-example",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "keywords": [
+    "moleculer",
+    "webpack",
+    "vue"
+  ],
+  "author": "Ice Services",
+  "license": "MIT",
+  "devDependencies": {
+    "babel-loader": "7.1.2",
+    "css-loader": "0.28.7",
+    "node-sass": "4.5.3",
+    "sass-loader": "6.0.6",
+    "vue": "2.5.2",
+    "vue-loader": "13.3.0",
+    "vue-template-compiler": "2.5.2",
+    "webpack": "3.8.1",
+    "webpack-dev-middleware": "1.12.0",
+    "webpack-hot-middleware": "2.20.0"
+  }
+}

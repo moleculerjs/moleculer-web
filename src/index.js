@@ -45,6 +45,7 @@ module.exports = {
 
 	// Default settings
 	settings: {
+		// Middleware mode for ExpressJS
 		middleware: false,
 
 		// Exposed port
@@ -53,6 +54,7 @@ module.exports = {
 		// Exposed IP
 		ip: process.env.IP || "0.0.0.0",
 
+		// Routes
 		routes: [
 			{
 				// Path prefix to this route
@@ -64,9 +66,10 @@ module.exports = {
 			}
 		],
 
-		// Log the request ctx.params with "debug" level
+		// Log the request ctx.params (default to "debug" level)
 		logRequestParams: "debug",
-		// Don't log the response data
+
+		// Log the response data (default to disable)
 		logResponseData: null
 	},
 
@@ -92,17 +95,11 @@ module.exports = {
 			this.server.on("error", err => {
 				this.logger.error("Server error", err);
 			});
-
-			/*this.server.on("connection", socket => {
-				// Disable Nagle algorithm https://nodejs.org/dist/latest-v6.x/docs/api/net.html#net_socket_setnodelay_nodelay
-				socket.setNoDelay(true);
-			});*/
 		}
 
 		// Create static server middleware
 		if (this.settings.assets) {
 			const opts = this.settings.assets.options || {};
-			opts.fallthrough = false;
 			this.serve = serveStatic(this.settings.assets.folder, opts);
 		}
 
@@ -123,8 +120,10 @@ module.exports = {
 		 * @returns {Object}
 		 */
 		createRoute(opts) {
+			this.logger.info(`Register route to '${opts.path}'`);
 			let route = {
-				opts
+				opts,
+				middlewares: []
 			};
 			if (opts.authorization) {
 				if (!_.isFunction(this.authorize)) {
@@ -136,6 +135,25 @@ module.exports = {
 
 			// Call options
 			route.callOptions = opts.callOptions;
+
+			// Middlewares
+			if (opts.use && Array.isArray(opts.use) && opts.use.length > 0) {
+
+				route.middlewares = opts.use;
+
+				route.callMiddlewares = (req, res, next) => {
+					const nextFn = (i, err) => {
+						if (i >= route.middlewares.length || err)
+							return next.call(this, req, res, err);
+
+						route.middlewares[i].call(this, req, res, err => nextFn(i + 1, err));
+					};
+
+					return nextFn(0);
+				};
+
+				this.logger.info(`  Registered ${route.middlewares.length} middlewares.`);
+			}
 
 			// CORS
 			if (this.settings.cors || opts.cors) {
@@ -277,12 +295,16 @@ module.exports = {
 		/**
 		 * Send 404 response
 		 *
-		 * @param {HttpRequest} req
 		 * @param {HttpResponse} res
+		 * @param {Function} next - `next` callback in middleware mode
 		 */
-		send404(res) {
-			res.writeHead(404);
-			res.end("Not found");
+		send404(res, next) {
+			if (next)
+				next();
+			else {
+				res.writeHead(404);
+				res.end("Not found");
+			}
 		},
 
 		/**
@@ -335,47 +357,71 @@ module.exports = {
 				let {query, url} = this.processQueryString(req);
 
 				// Trim trailing slash
-				if (url.endsWith("/"))
+				if (url.length > 1 && url.endsWith("/"))
 					url = url.slice(0, -1);
 
-				// Check the URL is an API request
+				// Check the URL
 				if (this.routes && this.routes.length > 0) {
 					for(let i = 0; i < this.routes.length; i++) {
 						const route = this.routes[i];
 
 						if (url.startsWith(route.path)) {
-							// Resolve action name
-							let urlPath = url.slice(route.path.length);
-							if (urlPath.startsWith("/"))
-								urlPath = urlPath.slice(1);
 
-							urlPath = urlPath.replace(/~/, "$");
-							let actionName = urlPath;
+							let nextCall = () => {
+								// Resolve action name
+								let urlPath = url.slice(route.path.length);
+								if (urlPath.startsWith("/"))
+									urlPath = urlPath.slice(1);
 
-							// Resolve aliases
-							if (route.aliases && route.aliases.length > 0) {
-								const alias = this.resolveAlias(route, urlPath, req.method);
-								if (alias) {
-									this.logger.debug(`  Alias: ${req.method} ${urlPath} -> ${alias.action}`);
-									actionName = alias.action;
-									Object.assign(query, alias.params);
+								urlPath = urlPath.replace(/~/, "$");
+								let actionName = urlPath;
 
-									// Custom Action handler
-									if (_.isFunction(alias.action)) {
-										return alias.action.call(this, route, req, res);
+								// Resolve aliases
+								if (route.aliases && route.aliases.length > 0) {
+									const alias = this.resolveAlias(route, urlPath, req.method);
+									if (alias) {
+										this.logger.debug(`  Alias: ${req.method} ${urlPath} -> ${alias.action}`);
+										actionName = alias.action;
+										Object.assign(query, alias.params);
+
+										// Custom Action handler
+										if (_.isFunction(alias.action)) {
+											return alias.action.call(this, route, req, res);
+										}
+									} else if (route.mappingPolicy == MAPPING_POLICY_RESTRICT) {
+										// Blocking direct access
+										return this.send404(res, next);
 									}
-								} else if (route.mappingPolicy == MAPPING_POLICY_RESTRICT) {
-									// Blocking direct access
-									break;
 								}
-							}
-							actionName = actionName.replace(/\//g, ".");
+								actionName = actionName.replace(/\//g, ".");
 
-							if (route.opts.camelCaseNames) {
-								actionName = actionName.split(".").map(part => _.camelCase(part)).join(".");
+								if (route.opts.camelCaseNames) {
+									actionName = actionName.split(".").map(part => _.camelCase(part)).join(".");
+								}
+
+								return this.callAction(route, actionName, req, res, query);
+							};
+
+							// Call middlewares
+							if (route.callMiddlewares) {
+								req.locals = req.locals || {};
+								route.callMiddlewares(req, res, (req, res, err) => {
+									if (err) {
+										this.logger.error("Middleware error!", err);
+
+										if (next)
+											return next(err);
+
+										res.writeHead(500);
+										return res.end("Server error! " + err.message);
+									}
+									nextCall();
+								});
+							} else {
+								nextCall();
 							}
 
-							return this.callAction(route, actionName, req, res, query);
+							return;
 						}
 					}
 				}
@@ -384,17 +430,13 @@ module.exports = {
 				if (this.serve) {
 					this.serve(req, res, err => {
 						this.logger.debug(err);
-						this.send404(res);
+						this.send404(res, next);
 					});
 					return;
 				}
 
-				if (next) {
-					next();
-				} else {
-					// 404
-					this.send404(res);
-				}
+				// If no route, send 404
+				this.send404(res, next);
 
 			} catch(err) {
 				/* istanbul ignore next */
@@ -402,7 +444,7 @@ module.exports = {
 
 				/* istanbul ignore next */
 				if (next)
-					return next();
+					return next(err);
 
 				/* istanbul ignore next */
 				res.writeHead(500);

@@ -34,9 +34,19 @@ describe("Test default settings", () => {
 	it("GET /", () => {
 		return request(server)
 			.get("/")
-			.expect(404, "Not found")
+			.expect(404)
+			.expect("Content-Type", "application/json")
 			.then(res => {
-				expect(res.body).toEqual({});
+				expect(res.body).toEqual({
+					"code": 404,
+					"message": "Service '' is not found.",
+					"name": "ServiceNotFoundError",
+					"type": null,
+					"data": {
+						action: "",
+						nodeID: undefined
+					}
+				});
 			});
 	});
 
@@ -1492,6 +1502,82 @@ describe("Test onBeforeCall & onAfterCall", () => {
 				expect(afterCall).toHaveBeenCalledTimes(1);
 				expect(afterCall).toHaveBeenCalledWith(jasmine.any(Context), jasmine.any(Object), jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse), "Hello Moleculer");
 				expect(afterCall.mock.calls[0][0].meta.custom).toBe("John");
+			});
+	});
+
+});
+
+describe("Test route middlewares", () => {
+
+	it("should call both middlewares", () => {
+		const broker = new ServiceBroker();
+		broker.loadService("./test/services/test.service");
+
+		const mw1 = jest.fn((req, res, next) => {
+			res.setHeader("X-Custom-Header", "middleware");
+			next();
+		});
+
+		const mw2 = jest.fn((req, res, next) => {
+			next();
+		});
+
+		const service = broker.createService(ApiGateway, {
+			settings: {
+				routes: [{
+					path: "/",
+					use: [mw1, mw2]
+				}]
+			}
+		});
+		const server = service.server;
+
+		return request(server)
+			.get("/test/hello/")
+			.expect(200)
+			.expect("Content-Type", "application/json")
+			.expect("X-Custom-Header", "middleware")
+			.then(res => {
+				expect(res.body).toBe("Hello Moleculer");
+				expect(mw1).toHaveBeenCalledTimes(1);
+				expect(mw1).toHaveBeenCalledWith(jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse), jasmine.any(Function));
+
+				expect(mw2).toHaveBeenCalledTimes(1);
+				expect(mw2).toHaveBeenCalledWith(jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse), jasmine.any(Function));
+			});
+	});
+
+	it("should return with error if middlewares call next with error", () => {
+		const broker = new ServiceBroker();
+		broker.loadService("./test/services/test.service");
+
+		const mw1 = jest.fn((req, res, next) => {
+			next(new Error("Something went wrong"));
+		});
+
+		const mw2 = jest.fn((req, res, next) => {
+			next();
+		});
+
+		const service = broker.createService(ApiGateway, {
+			settings: {
+				routes: [{
+					path: "/",
+					use: [mw1, mw2]
+				}]
+			}
+		});
+		const server = service.server;
+
+		return request(server)
+			.get("/test/hello")
+			.expect(500)
+			.then(res => {
+				expect(res.text).toBe("Server error! Something went wrong");
+				expect(mw1).toHaveBeenCalledTimes(1);
+				expect(mw1).toHaveBeenCalledWith(jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse), jasmine.any(Function));
+
+				expect(mw2).toHaveBeenCalledTimes(0);
 			});
 	});
 
