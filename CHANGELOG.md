@@ -28,8 +28,8 @@ broker.createService({
 ```
 
 ### 2 new examples
-- [Webpack](/examples/webpack)
-- [Webpack & Vue](/examples/webpack-vue)
+- [Webpack](https://github.com/ice-services/moleculer-web/tree/webpack/examples/webpack)
+- [Webpack & Vue](https://github.com/ice-services/moleculer-web/tree/webpack/examples/webpack-vue)
 
 -----------------------------
 <a name="0.5.2"></a>
