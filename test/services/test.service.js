@@ -4,7 +4,6 @@ const fs 		= require("fs");
 const path 		= require("path");
 
 const _ 		= require("lodash");
-const resumer	= require("resumer");
 
 const { MoleculerServerError } = require("moleculer").Errors;
 
@@ -120,10 +119,9 @@ module.exports = {
 		},
 
 		streamWithError() {
-			const stream = resumer().queue("Stream data");
+			const stream = fs.createReadStream(path.join(__dirname, "..", "assets", "lorem.txt"), "utf8");
 			setTimeout(() => {
 				stream.emit("error", new MoleculerServerError("Something happened!"));
-				stream.end();
 			}, 100);
 
 			return stream;
