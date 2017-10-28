@@ -49,8 +49,8 @@ module.exports = {
 ```
 
 ## New examples
-- [Webpack](https://github.com/ice-services/moleculer-web/tree/webpack/examples/webpack) - webpack-dev-middleware example
-- [Webpack & Vue](https://github.com/ice-services/moleculer-web/tree/webpack/examples/webpack-vue) - Webpack, VueJS, HMR example
+- [Webpack](https://github.com/ice-services/moleculer-web/tree/master/examples/webpack) - webpack-dev-middleware example
+- [Webpack & Vue](https://github.com/ice-services/moleculer-web/tree/master/examples/webpack-vue) - Webpack, VueJS, HMR example
 
 
 -----------------------------
