@@ -167,7 +167,6 @@ module.exports = {
 				return nextFn(0);
 			};
 
-
 			// CORS
 			if (this.settings.cors || opts.cors) {
 				// Merge cors settings
@@ -360,8 +359,6 @@ module.exports = {
 				query = queryString.parse(req.url.substring(questionIdx + 1));
 				url = req.url.substring(0, questionIdx);
 			}
-			// req.query = query;
-
 			return {query, url};
 		},
 
@@ -370,10 +367,11 @@ module.exports = {
 		 *
 		 * @param {HttpRequest} req
 		 * @param {HttpResponse} res
-		 * @param {Function} Call next middleware (for Express)
+		 * @param {Function} next Call next middleware (for Express)
 		 * @returns
 		 */
 		httpHandler(req, res, next) {
+			req.locals = req.locals || {};
 			this.logRequest(req);
 
 			try {
@@ -395,54 +393,20 @@ module.exports = {
 
 						if (url.startsWith(route.path)) {
 
-							let nextCall = () => {
-								// Resolve action name
-								let urlPath = url.slice(route.path.length);
-								if (urlPath.startsWith("/"))
-									urlPath = urlPath.slice(1);
-
-								urlPath = urlPath.replace(/~/, "$");
-								let actionName = urlPath;
-
-								// Resolve aliases
-								if (route.aliases && route.aliases.length > 0) {
-									const alias = this.resolveAlias(route, urlPath, req.method);
-									if (alias) {
-										this.logger.debug(`  Alias: ${req.method} ${urlPath} -> ${alias.action}`);
-										actionName = alias.action;
-										Object.assign(params, alias.params);
-
-										// Custom Action handler
-										if (_.isFunction(alias.action)) {
-											return alias.action.call(this, route, req, res);
-										}
-									} else if (route.mappingPolicy == MAPPING_POLICY_RESTRICT) {
-										// Blocking direct access
-										return this.send404(req, res, next);
-									}
-								}
-								actionName = actionName.replace(/\//g, ".");
-
-								if (route.opts.camelCaseNames) {
-									actionName = actionName.split(".").map(part => _.camelCase(part)).join(".");
-								}
-
-								return this.callAction(route, actionName, req, res, params);
-							};
+							req.route = route;
 
 							// Call middlewares
 							if (route.middlewares.length > 0) {
-								req.locals = req.locals || {};
 								route.callMiddlewares(req, res, (req, res, err) => {
 									if (err) {
 										const error = new MoleculerError(err.message, err.status, err.type);
 										this.logger.error("Middleware error!", error);
 										return this.sendError(req, res, error, next);
 									}
-									nextCall();
+									this.routeHandler(route, req, res, url, params, next);
 								});
 							} else {
-								nextCall();
+								this.routeHandler(route, req, res, url, params, next);
 							}
 
 							return;
@@ -469,6 +433,110 @@ module.exports = {
 		},
 
 		/**
+		 * Route handler.
+		 * 	- resolve aliases
+		 * 	- check whitelist
+		 * 	- CORS
+		 * 	- Rate limiter
+		 *
+		 * @param {Object} route
+		 * @param {HttpRequest} req
+		 * @param {HttpResponse} res
+		 * @param {String} url
+		 * @param {Object} params
+		 * @param {Function} next Call next middleware (for Express)
+		 * @returns
+		 */
+		routeHandler(route, req, res, url, params, next) {
+			// Resolve action name
+			let urlPath = url.slice(route.path.length);
+			if (urlPath.startsWith("/"))
+				urlPath = urlPath.slice(1);
+
+			urlPath = urlPath.replace(/~/, "$");
+			let actionName = urlPath;
+
+			// Resolve aliases
+			if (route.aliases && route.aliases.length > 0) {
+				const alias = this.resolveAlias(route, urlPath, req.method);
+				if (alias) {
+					this.logger.debug(`  Alias: ${req.method} ${urlPath} -> ${alias.action}`);
+					actionName = alias.action;
+					Object.assign(params, alias.params);
+
+					// Custom Action handler
+					if (_.isFunction(alias.action)) {
+						return alias.action.call(this, route, req, res);
+					}
+				} else if (route.mappingPolicy == MAPPING_POLICY_RESTRICT) {
+					// Blocking direct access
+					return this.send404(req, res, next);
+				}
+			}
+			actionName = actionName.replace(/\//g, ".");
+
+			if (route.opts.camelCaseNames) {
+				actionName = actionName.split(".").map(part => _.camelCase(part)).join(".");
+			}
+
+			// Whitelist check
+			if (route.hasWhitelist) {
+				if (!this.checkWhitelist(route, actionName)) {
+					this.logger.debug(`  The '${actionName}' action is not in the whitelist!`);
+					return this.sendError(req, res, new ServiceNotFoundError(actionName), next);
+				}
+			}
+
+			// Rate limiter
+			if (route.rateLimit) {
+				const opts = route.rateLimit;
+				const store = route.rateLimit.store;
+
+				const key = opts.key(req);
+				if (!key)
+					/* istanbul ignore next */
+					return;
+
+				const remaining = opts.limit - store.inc(key);
+				if (opts.headers) {
+					res.setHeader("X-Rate-Limit-Limit", opts.limit);
+					res.setHeader("X-Rate-Limit-Remaining", Math.max(0, remaining));
+					res.setHeader("X-Rate-Limit-Reset", store.resetTime);
+				}
+				if (remaining < 0) {
+					return this.sendError(req, res, new RateLimitExceeded(), next);
+				}
+			}
+
+			// CORS headers
+			if (route.cors) {
+				if (req.method == "OPTIONS" && req.headers["access-control-request-method"]) {
+					// Preflight request
+					this.writeCorsHeaders(route, req, res, true);
+
+					// 204 - No content
+					res.writeHead(204, {
+						"Content-Length": "0"
+					});
+					res.end();
+
+					this.logResponse(req, res);
+					return;
+				}
+
+				// Set CORS headers to `res`
+				this.writeCorsHeaders(route, req, res, true);
+			}
+
+			// Merge params
+			const body = _.isObject(req.body) ? req.body : {};
+			params = Object.assign({}, body, params);
+
+			// Call the action
+			return this.callAction(route, actionName, req, res, params);
+		},
+
+		/**
 		 * Middleware for ExpressJS
 		 *
 		 * @returns
@@ -491,69 +559,6 @@ module.exports = {
 			let endpoint;
 
 			const p = this.Promise.resolve()
-
-				// Whitelist check
-				.then(() => {
-					if (route.hasWhitelist) {
-						if (!this.checkWhitelist(route, actionName)) {
-							this.logger.debug(`  The '${actionName}' action is not in the whitelist!`);
-							return this.Promise.reject(new ServiceNotFoundError(actionName));
-						}
-					}
-				})
-
-				// Rate limiter
-				.then(() => {
-					if (route.rateLimit) {
-						const opts = route.rateLimit;
-						const store = route.rateLimit.store;
-
-						const key = opts.key(req);
-						if (!key)
-							/* istanbul ignore next */
-							return;
-
-						const remaining = opts.limit - store.inc(key);
-						if (opts.headers) {
-							res.setHeader("X-Rate-Limit-Limit", opts.limit);
-							res.setHeader("X-Rate-Limit-Remaining", Math.max(0, remaining));
-							res.setHeader("X-Rate-Limit-Reset", store.resetTime);
-						}
-						if (remaining < 0) {
-							return this.Promise.reject(new RateLimitExceeded());
-						}
-					}
-				})
-
-				// CORS headers
-				.then(() => {
-					if (route.cors) {
-						if (req.method == "OPTIONS" && req.headers["access-control-request-method"]) {
-							// Preflight request
-							this.writeCorsHeaders(route, req, res, true);
-
-							// 204 - No content
-							res.writeHead(204, {
-								"Content-Length": "0"
-							});
-							res.end();
-
-							this.logResponse(req, res);
-
-							// Break the chain
-							return Promise.reject();
-						}
-
-						// Set CORS headers to `res`
-						this.writeCorsHeaders(route, req, res, true);
-					}
-				})
-
-				// Merge params
-				.then(() => {
-					const body = _.isObject(req.body) ? req.body : {};
-					params = Object.assign({}, body, params);
-				})
 
 				// Resolve action by name
 				.then(() => {
