@@ -138,12 +138,22 @@ module.exports = {
 			// Call options
 			route.callOptions = opts.callOptions;
 
+			// Create body parsers as middlewares
+			if (opts.bodyParsers) {
+				const bps = opts.bodyParsers;
+				Object.keys(bps).forEach(key => {
+					const opts = _.isObject(bps[key]) ? bps[key] : undefined;
+					if (bps[key] !== false && key in bodyParser)
+						route.middlewares.push(bodyParser[key](opts));
+				});
+			}
+
 			// Middlewares
 			if (opts.use && Array.isArray(opts.use) && opts.use.length > 0) {
 
 				route.middlewares.push(...opts.use);
 
-				this.logger.info(`  Registered ${route.middlewares.length} middlewares.`);
+				this.logger.info(`  Registered ${opts.use.length.length} middlewares.`);
 			}
 
 			route.callMiddlewares = (req, res, next) => {
@@ -195,18 +205,6 @@ module.exports = {
 			// Handle whitelist
 			route.whitelist = opts.whitelist;
 			route.hasWhitelist = Array.isArray(route.whitelist);
-
-			// Create body parsers
-			if (opts.bodyParsers) {
-				deprecate("The `bodyParsers` route option is deprecated. Use the `body-parser` middleware in the `use` option.");
-
-				const bps = opts.bodyParsers;
-				Object.keys(bps).forEach(key => {
-					const opts = _.isObject(bps[key]) ? bps[key] : undefined;
-					if (bps[key] !== false)
-						route.middlewares.push(bodyParser[key](opts));
-				});
-			}
 
 			// `onBeforeCall` handler
 			if (opts.onBeforeCall)
