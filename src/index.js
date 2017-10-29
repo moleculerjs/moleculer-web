@@ -17,7 +17,9 @@ const nanomatch  		= require("nanomatch");
 const isReadableStream	= require("isstream").isReadable;
 const pathToRegexp 		= require("path-to-regexp");
 
-const { Context } = require("moleculer");
+const deprecate 		= require("depd")("moleculer-web");
+
+const { Context } 		= require("moleculer");
 const { MoleculerError, ServiceNotFoundError } = require("moleculer").Errors;
 const { InvalidRequestBodyError, BadRequestError, RateLimitExceeded, ERR_UNABLE_DECODE_PARAM } = require("./errors");
 
@@ -139,21 +141,22 @@ module.exports = {
 			// Middlewares
 			if (opts.use && Array.isArray(opts.use) && opts.use.length > 0) {
 
-				route.middlewares = opts.use;
-
-				route.callMiddlewares = (req, res, next) => {
-					const nextFn = (i, err) => {
-						if (i >= route.middlewares.length || err)
-							return next.call(this, req, res, err);
-
-						route.middlewares[i].call(this, req, res, err => nextFn(i + 1, err));
-					};
-
-					return nextFn(0);
-				};
+				route.middlewares.push(...opts.use);
 
 				this.logger.info(`  Registered ${route.middlewares.length} middlewares.`);
 			}
+
+			route.callMiddlewares = (req, res, next) => {
+				const nextFn = (i, err) => {
+					if (i >= route.middlewares.length || err)
+						return next.call(this, req, res, err);
+
+					route.middlewares[i].call(this, req, res, err => nextFn(i + 1, err));
+				};
+
+				return nextFn(0);
+			};
+
 
 			// CORS
 			if (this.settings.cors || opts.cors) {
@@ -195,15 +198,14 @@ module.exports = {
 
 			// Create body parsers
 			if (opts.bodyParsers) {
+				deprecate("The `bodyParsers` route option is deprecated. Use the `body-parser` middleware in the `use` option.");
+
 				const bps = opts.bodyParsers;
-				const parsers = [];
 				Object.keys(bps).forEach(key => {
 					const opts = _.isObject(bps[key]) ? bps[key] : undefined;
 					if (bps[key] !== false)
-						parsers.push(bodyParser[key](opts));
+						route.middlewares.push(bodyParser[key](opts));
 				});
-
-				route.parsers = parsers;
 			}
 
 			// `onBeforeCall` handler
@@ -342,6 +344,7 @@ module.exports = {
 				"Location": url
 			});
 			res.end();
+			//this.logResponse(req, res);
 		},
 
 		/**
@@ -430,12 +433,13 @@ module.exports = {
 							};
 
 							// Call middlewares
-							if (route.callMiddlewares) {
+							if (route.middlewares.length > 0) {
 								req.locals = req.locals || {};
 								route.callMiddlewares(req, res, (req, res, err) => {
 									if (err) {
-										this.logger.error("Middleware error!", err);
-										return this.sendError(req, res, err, next);
+										const error = new MoleculerError(err.message, err.status, err.type);
+										this.logger.error("Middleware error!", error);
+										return this.sendError(req, res, error, next);
 									}
 									nextCall();
 								});
@@ -544,23 +548,6 @@ module.exports = {
 
 						// Set CORS headers to `res`
 						this.writeCorsHeaders(route, req, res, true);
-					}
-				})
-
-				// Parse body
-				.then(() => {
-					if (["POST", "PUT", "PATCH"].indexOf(req.method) !== -1 && route.parsers && route.parsers.length > 0) {
-						return this.Promise.mapSeries(route.parsers, parser => {
-							return new this.Promise((resolve, reject) => {
-								parser(req, res, err => {
-									if (err) {
-										return reject(new InvalidRequestBodyError(err.body, err.message));
-									}
-
-									resolve();
-								});
-							});
-						});
 					}
 				})
 
@@ -934,6 +921,11 @@ module.exports = {
 	actions: {
 		// Virtual action
 		rest() {}
-	}
+	},
 
+
+	bodyParser,
+	serveStatic,
+
+	Errors: require("./errors"),
 };

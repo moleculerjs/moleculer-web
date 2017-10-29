@@ -997,13 +997,9 @@ describe("Test body-parsers", () => {
 			.then(res => {
 				expect(res.body).toEqual({
 					"code": 400,
-					"type": null,
-					"data": {
-						"body": "invalid",
-						"error": "Unexpected token i in JSON at position 0"
-					},
-					"message": "Invalid request body",
-					"name": "InvalidRequestBodyError"
+					"type": "entity.parse.failed",
+					"message": "Unexpected token i in JSON at position 0",
+					"name": "MoleculerError"
 				});
 			});
 	});
