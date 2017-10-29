@@ -1606,7 +1606,8 @@ describe("Test route middlewares", () => {
 			.then(res => {
 				expect(res.body).toEqual({
 					message: "Something went wrong",
-					name: "Error"
+					code: 500,
+					name: "MoleculerError"
 				});
 				expect(mw1).toHaveBeenCalledTimes(1);
 				expect(mw1).toHaveBeenCalledWith(jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse), jasmine.any(Function));
