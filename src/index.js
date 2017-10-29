@@ -327,7 +327,7 @@ module.exports = {
 			const errObj = _.pick(err, ["name", "message", "code", "type", "data"]);
 			res.end(JSON.stringify(errObj, null, 2));
 
-			this.logResponse(req, res);
+			this.logResponse(req, res, err? err.ctx : null);
 		},
 
 		/**
@@ -659,14 +659,12 @@ module.exports = {
 
 					this.logger.error("  Request error!", err.name, ":", err.message, "\n", err.stack, "\nData:", err.data);
 
-					// Return with the error
-					this.sendError(req, res, err);
-
 					// Finish the context
 					if (err.ctx)
 						err.ctx._metricFinish(null, err.ctx.metrics);
 
-					this.logResponse(req, res, err.ctx);
+					// Return with the error
+					this.sendError(req, res, err);
 				});
 
 			return p;
