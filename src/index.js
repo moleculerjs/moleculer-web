@@ -378,6 +378,10 @@ module.exports = {
 			try {
 				// Split URL & query params
 				let {query, url} = this.processQueryString(req);
+				if (!req.query)
+					req.query = query;
+
+				let params = Object.assign({}, query);
 
 				// Trim trailing slash
 				if (url.length > 1 && url.endsWith("/"))
@@ -405,7 +409,7 @@ module.exports = {
 									if (alias) {
 										this.logger.debug(`  Alias: ${req.method} ${urlPath} -> ${alias.action}`);
 										actionName = alias.action;
-										Object.assign(query, alias.params);
+										Object.assign(params, alias.params);
 
 										// Custom Action handler
 										if (_.isFunction(alias.action)) {
@@ -422,7 +426,7 @@ module.exports = {
 									actionName = actionName.split(".").map(part => _.camelCase(part)).join(".");
 								}
 
-								return this.callAction(route, actionName, req, res, query);
+								return this.callAction(route, actionName, req, res, params);
 							};
 
 							// Call middlewares
