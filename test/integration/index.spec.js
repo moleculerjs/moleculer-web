@@ -606,8 +606,8 @@ describe("Test alias", () => {
 	let service;
 	let server;
 
-	let customAlias = jest.fn((route, req, res) => {
-		res.end("Custom Alias");
+	let customAlias = jest.fn((route, req, res, params) => {
+		res.end(`Custom Alias by ${params.name}`);
 	});
 
 	beforeAll(() => {
@@ -769,11 +769,12 @@ describe("Test alias", () => {
 	it("GET /api/custom", () => {
 		return request(server)
 			.get("/api/custom")
+			.query({ name: "Ben" })
 			.expect(200)
 			.then(res => {
-				expect(res.text).toBe("Custom Alias");
+				expect(res.text).toBe("Custom Alias by Ben");
 				expect(customAlias).toHaveBeenCalledTimes(1);
-				expect(customAlias).toHaveBeenCalledWith(service.routes[0], jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse));
+				expect(customAlias).toHaveBeenCalledWith(service.routes[0], jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse), { name: "Ben" });
 			});
 	});
 });
