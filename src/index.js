@@ -371,6 +371,7 @@ module.exports = {
 		 * @returns
 		 */
 		httpHandler(req, res, next) {
+			req.service = this; // pointer to this service
 			req.locals = req.locals || {};
 			this.logRequest(req);
 
