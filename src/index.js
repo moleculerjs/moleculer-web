@@ -466,7 +466,7 @@ module.exports = {
 
 					// Custom Action handler
 					if (_.isFunction(alias.action)) {
-						return alias.action.call(this, route, req, res);
+						return alias.action.call(this, route, req, res, params);
 					}
 				} else if (route.mappingPolicy == MAPPING_POLICY_RESTRICT) {
 					// Blocking direct access
@@ -597,21 +597,17 @@ module.exports = {
 
 				// onBeforeCall handling
 				.then(ctx => {
-					if (route.onBeforeCall) {
-						return route.onBeforeCall.call(this, ctx, route, req, res).then(() => {
-							return ctx;
-						});
-					}
+					if (route.onBeforeCall)
+						return route.onBeforeCall.call(this, ctx, route, req, res).then(() => ctx);
+
 					return ctx;
 				})
 
 				// Authorization
 				.then(ctx => {
-					if (route.authorization) {
-						return this.authorize(ctx, route, req, res).then(() => {
-							return ctx;
-						});
-					}
+					if (route.authorization)
+						return this.authorize(ctx, route, req, res).then(() => ctx);
+
 					return ctx;
 				})
 
