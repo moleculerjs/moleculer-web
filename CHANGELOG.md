@@ -6,9 +6,11 @@
 - The charset is `UTF-8` for `application/json` responses.
 - `logRequestParams` setting to log the request parameters. Use log level value i.e. `"debug"`, `"info"` or `null` to disable.
 - `logResponseData` setting to log the response data. Use log level value i.e. `"debug"`, `"info"` or `null` to disable.
+- alias function has a new 4th parameter, the `params`.
+- the `req.service` is pointed to the service instance.
 
 ## Middlewares
-Support middlewares in routes
+Support middlewares in routes.
 
 ```js
 broker.createService({
