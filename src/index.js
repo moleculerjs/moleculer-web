@@ -242,7 +242,7 @@ module.exports = {
 				else if (Array.isArray(action)) {
 					let mws = action.map(mw => {
 						if (_.isString(mw))
-							return (req, res) => this.routeHandler(route, req, res, mw);
+							return (req, res) => this.preActionCall(route, req, res, mw);
 						else if(_.isFunction(mw))
 							return mw;
 					});
@@ -372,7 +372,7 @@ module.exports = {
 		 * @param {any} req
 		 * @returns
 		 */
-		processQueryString(req) {
+		parseQueryString(req) {
 			// Split URL & query params
 			let url = req.url;
 			let query = {};
@@ -402,7 +402,7 @@ module.exports = {
 
 			try {
 				// Split URL & query params
-				let parsed = this.processQueryString(req);
+				let parsed = this.parseQueryString(req);
 				let url = parsed.url;
 				if (!req.query)
 					req.query = parsed.query;
@@ -487,7 +487,7 @@ module.exports = {
 									actionName = actionName.split(".").map(_.camelCase).join(".");
 								}
 
-								this.routeHandler(route, req, res, actionName);
+								this.preActionCall(route, req, res, actionName);
 							});
 
 							return;
@@ -525,7 +525,7 @@ module.exports = {
 		 * @param {String} actionName
 		 * @returns
 		 */
-		routeHandler(route, req, res, actionName) {
+		preActionCall(route, req, res, actionName) {
 
 			// Whitelist check
 			if (route.hasWhitelist) {
