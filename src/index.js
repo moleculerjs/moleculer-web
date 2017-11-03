@@ -360,7 +360,8 @@ module.exports = {
 		 */
 		sendRedirect(res, url, code = 302) {
 			res.writeHead(code, {
-				"Location": url
+				"Location": url,
+				"Content-Length": "0"
 			});
 			res.end();
 			//this.logResponse(req, res);
