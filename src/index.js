@@ -17,11 +17,9 @@ const nanomatch  		= require("nanomatch");
 const isReadableStream	= require("isstream").isReadable;
 const pathToRegexp 		= require("path-to-regexp");
 
-const deprecate 		= require("depd")("moleculer-web");
-
 const { Context } 		= require("moleculer");
-const { MoleculerError, ServiceNotFoundError } = require("moleculer").Errors;
-const { InvalidRequestBodyError, BadRequestError, RateLimitExceeded, ERR_UNABLE_DECODE_PARAM } = require("./errors");
+const { MoleculerError, MoleculerServerError, ServiceNotFoundError } = require("moleculer").Errors;
+const { BadRequestError, RateLimitExceeded, ERR_UNABLE_DECODE_PARAM } = require("./errors");
 
 const MemoryStore		= require("./memory-store");
 
@@ -116,6 +114,27 @@ module.exports = {
 	methods: {
 
 		/**
+		 * Compose middlewares
+		 *
+		 * @param {...Function} mws
+		 */
+		compose(...mws) {
+			return (req, res, done) => {
+				const next = (i, err) => {
+					if (i >= mws.length || err) {
+						if (_.isFunction(done))
+							return done.call(this, err);
+						return;
+					}
+
+					mws[i].call(this, req, res, err => next(i + 1, err));
+				};
+
+				return next(0);
+			};
+		},
+
+		/**
 		 * Create route object from options
 		 *
 		 * @param {Object} opts
@@ -150,22 +169,9 @@ module.exports = {
 
 			// Middlewares
 			if (opts.use && Array.isArray(opts.use) && opts.use.length > 0) {
-
 				route.middlewares.push(...opts.use);
-
-				this.logger.info(`  Registered ${opts.use.length.length} middlewares.`);
+				this.logger.info(`  Registered ${opts.use.length} middlewares.`);
 			}
-
-			route.callMiddlewares = (req, res, next) => {
-				const nextFn = (i, err) => {
-					if (i >= route.middlewares.length || err)
-						return next.call(this, req, res, err);
-
-					route.middlewares[i].call(this, req, res, err => nextFn(i + 1, err));
-				};
-
-				return nextFn(0);
-			};
 
 			// CORS
 			if (this.settings.cors || opts.cors) {
@@ -218,7 +224,7 @@ module.exports = {
 			route.path = route.path || "/";
 
 			// Helper for aliased routes
-			const createAliasedRoute = (action, matchPath) => {
+			const createAlias = (matchPath, action) => {
 				let method = "*";
 				if (matchPath.indexOf(" ") !== -1) {
 					const p = matchPath.split(" ");
@@ -228,35 +234,53 @@ module.exports = {
 				if (matchPath.startsWith("/"))
 					matchPath = matchPath.slice(1);
 
+				let alias;
+				if (_.isString(action))
+					alias = { action };
+				else if (_.isFunction(action))
+					alias = { handler: action };
+				else if (Array.isArray(action)) {
+					let mws = action.map(mw => {
+						if (_.isString(mw))
+							return (req, res) => this.routeHandler(route, req, res, mw);
+						else if(_.isFunction(mw))
+							return mw;
+					});
+					alias = { handler: this.compose(...mws) };
+				} else {
+					alias = action;
+				}
+
+				alias.path = matchPath;
+				alias.method = method;
+
 				let keys = [];
-				const re = pathToRegexp(matchPath, keys, {}); // Options: https://github.com/pillarjs/path-to-regexp#usage
+				alias.re = pathToRegexp(matchPath, keys, {}); // Options: https://github.com/pillarjs/path-to-regexp#usage
 
-				this.logger.info(`  Alias: ${method} ${route.path + (route.path.endsWith("/") ? "": "/")}${matchPath} -> ${_.isFunction(action) ? "<Function>" : action}`);
-				return {
-					action,
-					method,
-					re,
-					match: url => {
-						const m = re.exec(url);
-						if (!m) return false;
+				this.logger.info(`  Alias: ${method} ${route.path + (route.path.endsWith("/") ? "": "/")}${matchPath} -> ${alias.handler != null ? "<Function>" : alias.action}`);
 
-						const params = {};
+				alias.match = url => {
+					const m = alias.re.exec(url);
+					if (!m) return false;
 
-						let key, param;
-						for (let i = 0; i < keys.length; i++) {
-							key = keys[i];
-							param = m[i + 1];
-							if (!param) continue;
+					const params = {};
 
-							params[key.name] = decodeParam(param);
+					let key, param;
+					for (let i = 0; i < keys.length; i++) {
+						key = keys[i];
+						param = m[i + 1];
+						if (!param) continue;
 
-							if (key.repeat)
-								params[key.name] = params[key.name].split(key.delimiter);
-						}
+						params[key.name] = decodeParam(param);
 
-						return params;
+						if (key.repeat)
+							params[key.name] = params[key.name].split(key.delimiter);
 					}
+
+					return params;
 				};
+
+				return alias;
 			};
 
 			// Handle aliases
@@ -268,15 +292,15 @@ module.exports = {
 						const pathName = p[1];
 
 						// Generate RESTful API. More info http://www.restapitutorial.com/
-						route.aliases.push(createAliasedRoute(`${action}.list`,   `GET ${pathName}`));
-						route.aliases.push(createAliasedRoute(`${action}.get`,	  `GET ${pathName}/:id`));
-						route.aliases.push(createAliasedRoute(`${action}.create`, `POST ${pathName}`));
-						route.aliases.push(createAliasedRoute(`${action}.update`, `PUT ${pathName}/:id`));
-						//route.aliases.push(createAliasedRoute(`${action}.update`, `PATCH ${pathName}/:id`));
-						route.aliases.push(createAliasedRoute(`${action}.remove`, `DELETE ${pathName}/:id`));
+						route.aliases.push(createAlias(`GET ${pathName}`, 			`${action}.list`));
+						route.aliases.push(createAlias(`GET ${pathName}/:id`, 		`${action}.get`));
+						route.aliases.push(createAlias(`POST ${pathName}`, 			`${action}.create`));
+						route.aliases.push(createAlias(`PUT ${pathName}/:id`, 		`${action}.update`));
+						//route.aliases.push(createAlias(`PATCH ${pathName}/:id`, 	`${action}.update`));
+						route.aliases.push(createAlias(`DELETE ${pathName}/:id`, 	`${action}.remove`));
 
 					} else {
-						route.aliases.push(createAliasedRoute(action, matchPath));
+						route.aliases.push(createAlias(matchPath, action));
 					}
 				});
 			}
@@ -290,11 +314,10 @@ module.exports = {
 		 * Send 404 response
 		 *
 		 * @param {HttpResponse} res
-		 * @param {Function} next - `next` callback in middleware mode
 		 */
-		send404(req, res, next) {
-			if (next)
-				return next();
+		send404(req, res) {
+			if (req.$next)
+				return req.$next();
 
 			this.sendError(req, res, new MoleculerError("Not found", 404));
 		},
@@ -304,11 +327,10 @@ module.exports = {
 		 *
 		 * @param {HttpResponse} res
 		 * @param {Error} err
-		 * @param {Function} next - `next` callback in middleware mode
 		 */
-		sendError(req, res, err, next) {
-			if (next)
-				return next(err);
+		sendError(req, res, err) {
+			if (req.$next)
+				return req.$next(err);
 
 			if (!err || !(err instanceof Error)) {
 				res.writeHead(500);
@@ -371,17 +393,21 @@ module.exports = {
 		 * @returns
 		 */
 		httpHandler(req, res, next) {
-			req.service = this; // pointer to this service
+			req.$service = this; // pointer to this service
+			res.$service = this; // pointer to this service
+			req.$next = next;
+
 			req.locals = req.locals || {};
 			this.logRequest(req);
 
 			try {
 				// Split URL & query params
-				let {query, url} = this.processQueryString(req);
+				let parsed = this.processQueryString(req);
+				let url = parsed.url;
 				if (!req.query)
-					req.query = query;
+					req.query = parsed.query;
 
-				let params = Object.assign({}, query);
+				let params = {};
 
 				// Trim trailing slash
 				if (url.length > 1 && url.endsWith("/"))
@@ -394,21 +420,75 @@ module.exports = {
 
 						if (url.startsWith(route.path)) {
 
-							req.route = route;
+							// Pointer to the matched route
+							req.$route = route;
+							res.$route = route;
 
 							// Call middlewares
-							if (route.middlewares.length > 0) {
-								route.callMiddlewares(req, res, (req, res, err) => {
-									if (err) {
-										const error = new MoleculerError(err.message, err.status, err.type);
-										this.logger.error("Middleware error!", error);
-										return this.sendError(req, res, error, next);
+							this.compose(...route.middlewares)(req, res, err => {
+								if (err) {
+									const error = new MoleculerError(err.message, err.status, err.type);
+									this.logger.error("Middleware error!", error);
+									return this.sendError(req, res, error);
+								}
+
+								// Merge params
+								const body = _.isObject(req.body) ? req.body : {};
+								Object.assign(params, body, req.query);
+								req.$params = params;
+
+								// Resolve action name
+								let urlPath = url.slice(route.path.length);
+								if (urlPath.startsWith("/"))
+									urlPath = urlPath.slice(1);
+
+								urlPath = urlPath.replace(/~/, "$");
+								let actionName = urlPath;
+
+								// Resolve aliases
+								if (route.aliases && route.aliases.length > 0) {
+									const found = this.resolveAlias(route, urlPath, req.method);
+									if (found) {
+										let alias = found.alias;
+										this.logger.debug(`  Alias: ${req.method} ${urlPath} -> ${alias.action}`);
+										Object.assign(params, found.params);
+
+										req.$alias = alias;
+
+										// Custom Action handler
+										if (alias.handler) {
+											return alias.handler.call(this, req, res, err => {
+												if (err) {
+													const error = new MoleculerError(err.message, err.status, err.type);
+													this.logger.error("Alias middleware error!", error);
+													return this.sendError(req, res, error);
+												}
+
+												if (req.$next)
+													return req.$next();
+
+												// If it is reached, there is no real handler for this alias.
+												const error = new MoleculerServerError("No alias handler", 500);
+												this.logger.error(error);
+												return this.sendError(req, res, error);
+											});
+										}
+
+										actionName = alias.action;
+
+									} else if (route.mappingPolicy == MAPPING_POLICY_RESTRICT) {
+										// Blocking direct access
+										return this.send404(req, res);
 									}
-									this.routeHandler(route, req, res, url, params, next);
-								});
-							} else {
-								this.routeHandler(route, req, res, url, params, next);
-							}
+								}
+								actionName = actionName.replace(/\//g, ".");
+
+								if (route.opts.camelCaseNames) {
+									actionName = actionName.split(".").map(_.camelCase).join(".");
+								}
+
+								this.routeHandler(route, req, res, actionName);
+							});
 
 							return;
 						}
@@ -419,23 +499,22 @@ module.exports = {
 				if (this.serve) {
 					this.serve(req, res, err => {
 						this.logger.debug(err);
-						this.send404(req, res, next);
+						this.send404(req, res);
 					});
 					return;
 				}
 
 				// If no route, send 404
-				this.send404(req, res, next);
+				this.send404(req, res);
 
 			} catch(err) {
 				this.logger.error("Handler error!", err);
-				return this.sendError(req, res, err, next);
+				return this.sendError(req, res, err);
 			}
 		},
 
 		/**
 		 * Route handler.
-		 * 	- resolve aliases
 		 * 	- check whitelist
 		 * 	- CORS
 		 * 	- Rate limiter
@@ -443,48 +522,16 @@ module.exports = {
 		 * @param {Object} route
 		 * @param {HttpRequest} req
 		 * @param {HttpResponse} res
-		 * @param {String} url
-		 * @param {Object} params
-		 * @param {Function} next Call next middleware (for Express)
+		 * @param {String} actionName
 		 * @returns
 		 */
-		routeHandler(route, req, res, url, params, next) {
-			// Resolve action name
-			let urlPath = url.slice(route.path.length);
-			if (urlPath.startsWith("/"))
-				urlPath = urlPath.slice(1);
-
-			urlPath = urlPath.replace(/~/, "$");
-			let actionName = urlPath;
-
-			// Resolve aliases
-			if (route.aliases && route.aliases.length > 0) {
-				const alias = this.resolveAlias(route, urlPath, req.method);
-				if (alias) {
-					this.logger.debug(`  Alias: ${req.method} ${urlPath} -> ${alias.action}`);
-					actionName = alias.action;
-					Object.assign(params, alias.params);
-
-					// Custom Action handler
-					if (_.isFunction(alias.action)) {
-						return alias.action.call(this, route, req, res, params);
-					}
-				} else if (route.mappingPolicy == MAPPING_POLICY_RESTRICT) {
-					// Blocking direct access
-					return this.send404(req, res, next);
-				}
-			}
-			actionName = actionName.replace(/\//g, ".");
-
-			if (route.opts.camelCaseNames) {
-				actionName = actionName.split(".").map(part => _.camelCase(part)).join(".");
-			}
+		routeHandler(route, req, res, actionName) {
 
 			// Whitelist check
 			if (route.hasWhitelist) {
 				if (!this.checkWhitelist(route, actionName)) {
 					this.logger.debug(`  The '${actionName}' action is not in the whitelist!`);
-					return this.sendError(req, res, new ServiceNotFoundError(actionName), next);
+					return this.sendError(req, res, new ServiceNotFoundError(actionName));
 				}
 			}
 
@@ -494,18 +541,16 @@ module.exports = {
 				const store = route.rateLimit.store;
 
 				const key = opts.key(req);
-				if (!key)
-					/* istanbul ignore next */
-					return;
-
-				const remaining = opts.limit - store.inc(key);
-				if (opts.headers) {
-					res.setHeader("X-Rate-Limit-Limit", opts.limit);
-					res.setHeader("X-Rate-Limit-Remaining", Math.max(0, remaining));
-					res.setHeader("X-Rate-Limit-Reset", store.resetTime);
-				}
-				if (remaining < 0) {
-					return this.sendError(req, res, new RateLimitExceeded(), next);
+				if (key) {
+					const remaining = opts.limit - store.inc(key);
+					if (opts.headers) {
+						res.setHeader("X-Rate-Limit-Limit", opts.limit);
+						res.setHeader("X-Rate-Limit-Remaining", Math.max(0, remaining));
+						res.setHeader("X-Rate-Limit-Reset", store.resetTime);
+					}
+					if (remaining < 0) {
+						return this.sendError(req, res, new RateLimitExceeded());
+					}
 				}
 			}
 
@@ -529,12 +574,8 @@ module.exports = {
 				this.writeCorsHeaders(route, req, res, true);
 			}
 
-			// Merge params
-			const body = _.isObject(req.body) ? req.body : {};
-			params = Object.assign({}, body, params);
-
 			// Call the action
-			return this.callAction(route, actionName, req, res, params);
+			return this.callAction(route, actionName, req, res, req.$params);
 		},
 
 		/**
@@ -589,9 +630,20 @@ module.exports = {
 						name: this.name + ".rest"
 					};
 
+					// Pass the `req` & `res` vars to ctx.params.
+					if (req.$alias && req.$alias.passReqResToParams) {
+						if (endpoint.local) {
+							params.$req = req;
+							params.$res = res;
+						} else {
+							this.logger.warn("Don't use the `passReqResToParams` option in aliases if you call a remote service.");
+						}
+					}
+
 					// Create a new context to wrap the request
 					const ctx = Context.create(this.broker, restAction, this.broker.nodeID, params, route.callOptions || {});
 					ctx._metricStart(ctx.metrics);
+
 
 					return ctx;
 				})
@@ -872,7 +924,7 @@ module.exports = {
 					const res = alias.match(url);
 					if (res) {
 						return {
-							action: alias.action,
+							alias,
 							params: res
 						};
 					}

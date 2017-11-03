@@ -601,14 +601,29 @@ describe("Test whitelist", () => {
 	});
 });
 
-describe("Test alias", () => {
+describe("Test aliases", () => {
 	let broker;
 	let service;
 	let server;
 
-	let customAlias = jest.fn((route, req, res, params) => {
-		res.end(`Custom Alias by ${params.name}`);
+	let customAlias = jest.fn((req, res) => {
+		expect(req.$route).toBeDefined();
+		expect(req.$service).toBe(service);
+		expect(req.$params).toEqual({
+			name: "Ben"
+		});
+
+		expect(res.$route).toBeDefined();
+		expect(res.$service).toBe(service);
+
+		res.end(`Custom Alias by ${req.$params.name}`);
 	});
+
+	let customMiddlewares = [
+		jest.fn((req, res, next) => next()),
+		jest.fn((req, res, next) => next()),
+		"test.greeter"
+	];
 
 	beforeAll(() => {
 		[ broker, service, server] = setup({
@@ -619,10 +634,17 @@ describe("Test alias", () => {
 					"GET hello": "test.hello",
 					"POST /hello": "test.greeter",
 					"GET greeter/:name": "test.greeter",
+					"POST greeting/:name": "test.greeter",
 					"opt-test/:name?": "test.echo",
 					"/repeat-test/:args*": "test.echo",
 					"GET /": "test.hello",
-					"GET custom": customAlias
+					"GET custom": customAlias,
+					"GET /middleware": customMiddlewares,
+					"GET /wrong-middleware": [customMiddlewares[0], customMiddlewares[1]],
+					"GET reqres": {
+						action: "test.reqres",
+						passReqResToParams: true
+					},
 				}
 			}]
 		});
@@ -722,6 +744,18 @@ describe("Test alias", () => {
 			});
 	});
 
+	it("POST /api/greeting/Norbert", () => {
+		return request(server)
+			.post("/api/greeting/Norbert")
+			.query({ name: "John" })
+			.send({ name: "Adam" })
+			.expect(200)
+			.expect("Content-Type", "application/json; charset=utf-8")
+			.then(res => {
+				expect(res.body).toBe("Hello Norbert");
+			});
+	});
+
 	it("GET opt-test/:name? with name", () => {
 		return request(server)
 			.get("/api/opt-test/John")
@@ -774,7 +808,58 @@ describe("Test alias", () => {
 			.then(res => {
 				expect(res.text).toBe("Custom Alias by Ben");
 				expect(customAlias).toHaveBeenCalledTimes(1);
-				expect(customAlias).toHaveBeenCalledWith(service.routes[0], jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse), { name: "Ben" });
+				expect(customAlias).toHaveBeenCalledWith(jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse), jasmine.any(Function));
+			});
+	});
+
+	it("GET /api/middleware", () => {
+		return request(server)
+			.get("/api/middleware")
+			.query({ name: "Ben" })
+			.expect(200)
+			.then(res => {
+				expect(res.body).toBe("Hello Ben");
+
+				expect(customMiddlewares[0]).toHaveBeenCalledTimes(1);
+				expect(customMiddlewares[0]).toHaveBeenCalledWith(jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse), jasmine.any(Function));
+
+				expect(customMiddlewares[1]).toHaveBeenCalledTimes(1);
+				expect(customMiddlewares[1]).toHaveBeenCalledWith(jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse), jasmine.any(Function));
+			});
+	});
+
+	it("GET /api/wrong-middleware", () => {
+		customMiddlewares[0].mockClear();
+		customMiddlewares[1].mockClear();
+
+		return request(server)
+			.get("/api/wrong-middleware")
+			.expect(500)
+			.then(res => {
+				expect(res.body).toEqual({
+					"name": "MoleculerServerError",
+					"message": "No alias handler",
+					"code": 500,
+				});
+
+				expect(customMiddlewares[0]).toHaveBeenCalledTimes(1);
+				expect(customMiddlewares[0]).toHaveBeenCalledWith(jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse), jasmine.any(Function));
+
+				expect(customMiddlewares[1]).toHaveBeenCalledTimes(1);
+				expect(customMiddlewares[1]).toHaveBeenCalledWith(jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse), jasmine.any(Function));
+			});
+	});
+
+	it("GET /api/reqres with name", () => {
+		return request(server)
+			.get("/api/reqres")
+			.expect(200)
+			.expect("Content-Type", "application/json; charset=utf-8")
+			.then(res => {
+				expect(res.body).toEqual({
+					hasReq: true,
+					hasRes: true
+				});
 			});
 	});
 });

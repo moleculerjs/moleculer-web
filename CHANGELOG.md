@@ -1,16 +1,24 @@
 <a name="0.6.0"></a>
 # 0.6.0 (2017-xx-xx)
 
-## Changes
+## Breaking changes
+
+### Alias custom function arguments is changed
+The `route` first argument is removed. The new signature of function is `function(req, res) {}`. To access to route use the `req.$route` property.
+However you can use an array of `Function` for aliases. With it you can call middlewares. In this case the third argument is `next`. I.e.: `function(req, res, next) {}`.
+
+## Other changes
 - better error handling. Always returns with JSON error response.
 - The charset is `UTF-8` for `application/json` responses.
 - `logRequestParams` setting to log the request parameters. Use log level value i.e. `"debug"`, `"info"` or `null` to disable.
 - `logResponseData` setting to log the response data. Use log level value i.e. `"debug"`, `"info"` or `null` to disable.
-- alias function has a new 4th parameter, the `params`.
-- the `req.service` is pointed to the service instance.
+- `req.$service` & `res.$service` is pointed to the service instance.
+- `req.$route` & `res.$route` is pointed to the route definition.
+- `req.$params` is pointed to the resolved parameters (from query string & post body)
+- `req.$alias` is pointed to the alias definition.
 
 ## Middlewares
-Support middlewares in routes.
+Support middlewares in routes & aliases
 
 ```js
 broker.createService({
@@ -24,7 +32,15 @@ broker.createService({
                 use: [
                     compression(),
                     serveStatic(path.join(__dirname, "public"))
-                ]
+				],
+				
+				aliases: {
+					"GET /secret": [
+						auth.isAuthenticated(),
+						auth.hasRole("admin"),
+						"top.secret" // Call the `top.secret` action
+					]
+				}
             }
         ]
     }

@@ -33,6 +33,16 @@ module.exports = {
 			}
 		},
 
+		reqres: {
+			handler(ctx) {
+				return {
+					hasReq: !!ctx.params.$req,
+					hasRes: !!ctx.params.$res,
+					a: ctx.params.a
+				};
+			}
+		},
+
 		dangerZone: {
 			publish: false,
 			handler(ctx) {
