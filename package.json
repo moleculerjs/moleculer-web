@@ -51,7 +51,7 @@
     "webpack-dev-middleware": "1.12.0"
   },
   "peerDependencies": {
-    "moleculer": ">= 0.10.0"
+    "moleculer": ">= 0.11.0"
   },
   "dependencies": {
     "body-parser": "1.18.2",
