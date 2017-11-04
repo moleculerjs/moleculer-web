@@ -16,6 +16,7 @@ However you can use an array of `Function` for aliases. With it you can call mid
 - `req.$route` & `res.$route` is pointed to the route definition.
 - `req.$params` is pointed to the resolved parameters (from query string & post body)
 - `req.$alias` is pointed to the alias definition.
+- `disableServiceCalls` settings in route definition to disable action calls in the given route.
 
 ## Middlewares
 Support middlewares in routes & aliases

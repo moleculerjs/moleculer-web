@@ -1156,6 +1156,15 @@ describe("Test multiple routes", () => {
 					aliases: {
 						"main": "test.greeter"
 					}
+				},
+				{
+					path: "/api3",
+					aliases: {
+						"/test"(req, res) {
+							res.end("TEST");
+						}
+					},
+					disableServiceCalls: true
 				}
 			]
 		});
@@ -1216,6 +1225,29 @@ describe("Test multiple routes", () => {
 			.expect("Content-Type", "application/json; charset=utf-8")
 			.then(res => {
 				expect(res.body).toBe("Hello Thomas");
+			});
+	});
+
+	it("GET /api3/math.add", () => {
+		return request(server)
+			.get("/api3/math/add")
+			.query({ a: 5, b: 8 })
+			.expect(404)
+			.then(res => {
+				expect(res.body).toEqual({
+					name: "MoleculerError",
+					message: "Not found",
+					code: 404,
+				});
+			});
+	});
+
+	it("GET /api3/test", () => {
+		return request(server)
+			.get("/api3/test")
+			.expect(200)
+			.then(res => {
+				expect(res.text).toBe("TEST");
 			});
 	});
 });

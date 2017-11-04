@@ -495,7 +495,10 @@ module.exports = {
 									actionName = actionName.split(".").map(_.camelCase).join(".");
 								}
 
-								this.preActionCall(route, req, res, actionName);
+								if (route.opts.disableServiceCalls !== true)
+									this.preActionCall(route, req, res, actionName);
+								else
+									this.send404(req, res);
 							});
 
 							return;
