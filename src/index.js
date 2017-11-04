@@ -168,9 +168,16 @@ module.exports = {
 			}
 
 			// Middlewares
-			if (opts.use && Array.isArray(opts.use) && opts.use.length > 0) {
-				route.middlewares.push(...opts.use);
-				this.logger.info(`  Registered ${opts.use.length} middlewares.`);
+			let mw = [];
+			if (this.settings.use && Array.isArray(this.settings.use) && this.settings.use.length > 0)
+				mw.push(...this.settings.use);
+
+			if (opts.use && Array.isArray(opts.use) && opts.use.length > 0)
+				mw.push(...opts.use);
+
+			if (mw.length > 0) {
+				route.middlewares.push(...mw);
+				this.logger.info(`  Registered ${mw.length} middlewares.`);
 			}
 
 			// CORS

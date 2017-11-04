@@ -1625,9 +1625,11 @@ describe("Test onBeforeCall & onAfterCall", () => {
 
 describe("Test route middlewares", () => {
 
-	it("should call both middlewares", () => {
+	it("should call global & route middlewares", () => {
 		const broker = new ServiceBroker();
 		broker.loadService("./test/services/test.service");
+
+		const mwg = jest.fn((req, res, next) => next());
 
 		const mw1 = jest.fn((req, res, next) => {
 			res.setHeader("X-Custom-Header", "middleware");
@@ -1640,6 +1642,7 @@ describe("Test route middlewares", () => {
 
 		const service = broker.createService(ApiGateway, {
 			settings: {
+				use: [mwg],
 				routes: [{
 					path: "/",
 					use: [mw1, mw2]
@@ -1655,6 +1658,9 @@ describe("Test route middlewares", () => {
 			.expect("X-Custom-Header", "middleware")
 			.then(res => {
 				expect(res.body).toBe("Hello Moleculer");
+				expect(mwg).toHaveBeenCalledTimes(1);
+				expect(mwg).toHaveBeenCalledWith(jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse), jasmine.any(Function));
+
 				expect(mw1).toHaveBeenCalledTimes(1);
 				expect(mw1).toHaveBeenCalledWith(jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse), jasmine.any(Function));
 

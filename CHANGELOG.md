@@ -24,11 +24,16 @@ Support middlewares in routes & aliases
 broker.createService({
     mixins: [ApiService],
     settings: {
+		// Global middlewares. Applied to all routes.
+		use: [
+			cookieParser()
+		],
+
         routes: [
             {
                 path: "/",
 
-                // Middlewares
+                // Route-level middlewares
                 use: [
                     compression(),
                     serveStatic(path.join(__dirname, "public"))
@@ -36,6 +41,7 @@ broker.createService({
 				
 				aliases: {
 					"GET /secret": [
+						// Alias-level middlewares
 						auth.isAuthenticated(),
 						auth.hasRole("admin"),
 						"top.secret" // Call the `top.secret` action
