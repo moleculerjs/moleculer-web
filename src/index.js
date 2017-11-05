@@ -488,17 +488,19 @@ module.exports = {
 										// Blocking direct access
 										return this.send404(req, res);
 									}
+
+								} else if (route.mappingPolicy == MAPPING_POLICY_RESTRICT) {
+									// Blocking direct access
+									return this.send404(req, res);
 								}
+
 								actionName = actionName.replace(/\//g, ".");
 
 								if (route.opts.camelCaseNames) {
 									actionName = actionName.split(".").map(_.camelCase).join(".");
 								}
 
-								if (route.opts.disableServiceCalls !== true)
-									this.preActionCall(route, req, res, actionName);
-								else
-									this.send404(req, res);
+								this.preActionCall(route, req, res, actionName);
 							});
 
 							return;
