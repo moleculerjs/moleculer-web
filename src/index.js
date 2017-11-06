@@ -405,7 +405,7 @@ module.exports = {
 			res.$service = this; // pointer to this service
 			req.$next = next;
 
-			req.locals = req.locals || {};
+			res.locals = res.locals || {};
 			this.logRequest(req);
 
 			try {
