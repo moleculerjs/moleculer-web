@@ -16,6 +16,7 @@ However you can use an array of `Function` for aliases. With it you can call mid
 - `req.$route` & `res.$route` is pointed to the route definition.
 - `req.$params` is pointed to the resolved parameters (from query string & post body)
 - `req.$alias` is pointed to the alias definition.
+- `req.$endpoint` is pointed to the resolved action endpoint. It contains `action` and `nodeID`.
 
 ## Middlewares
 Support middlewares in routes & aliases
