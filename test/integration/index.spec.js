@@ -1612,11 +1612,27 @@ describe("Test onBeforeCall & onAfterCall", () => {
 		const broker = new ServiceBroker();
 		broker.loadService("./test/services/test.service");
 
-		const beforeCall = jest.fn((ctx) => {
+		const beforeCall = jest.fn((ctx, route, req, res) => {
+			expect(req.$service).toBeDefined();
+			expect(req.$route).toBeDefined();
+			expect(req.$params).toBeDefined();
+			expect(req.$endpoint).toBeDefined();
+
+			expect(res.$service).toBeDefined();
+			expect(res.$route).toBeDefined();
+
 			ctx.meta.custom = "John";
 			return Promise.resolve();
 		});
 		const afterCall = jest.fn((ctx, route, req, res, data) => {
+			expect(req.$service).toBeDefined();
+			expect(req.$route).toBeDefined();
+			expect(req.$params).toBeDefined();
+			expect(req.$endpoint).toBeDefined();
+
+			expect(res.$service).toBeDefined();
+			expect(res.$route).toBeDefined();
+
 			res.setHeader("X-Custom-Header", "working");
 		});
 
