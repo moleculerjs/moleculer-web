@@ -635,6 +635,8 @@ module.exports = {
 
 				// Create a new context for request
 				.then(() => {
+					req.$endpoint = endpoint;
+
 					this.logger.info(`  Call '${actionName}' action`);
 					if (this.settings.logRequestParams && this.settings.logRequestParams in this.logger)
 						this.logger[this.settings.logRequestParams]("  Params:", params);

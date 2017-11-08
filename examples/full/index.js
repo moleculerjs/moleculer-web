@@ -216,7 +216,7 @@ broker.createService({
 
 				onBeforeCall(ctx, route, req, res) {
 					return new this.Promise(resolve => {
-						this.logger.info("async onBeforeCall in public");
+						this.logger.info("async onBeforeCall in public. Action:", req.$endpoint.action.name);
 						ctx.meta.userAgent = req.headers["user-agent"];
 						//ctx.meta.headers = req.headers;
 						resolve();
