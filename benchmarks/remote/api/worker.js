@@ -1,22 +1,15 @@
 "use strict";
 
 let { ServiceBroker } 	= require("moleculer");
-let ApiService 			= require("../../index");
+let ApiService 			= require("../../../index");
 
 // Create broker
 let broker = new ServiceBroker({
-	nodeID: process.argv[2],
+	namespace: "benchmark",
+	nodeID: process.argv[2] || "api-gw",
 	logger: console,
-	logLevel: "error"
-});
-
-broker.createService({
-	name: "test",
-	actions: {
-		hello() {
-			return "Hello Moleculer";
-		}
-	}
+	logLevel: "error",
+	transporter: process.env.TRANSPORTER || "nats://localhost:4222"
 });
 
 // Load API Gateway
