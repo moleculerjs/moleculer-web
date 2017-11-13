@@ -79,6 +79,36 @@ module.exports = {
 }
 ```
 
+## Error handlers
+You can add route & global custom error handlers.
+
+```js
+broker.createService({
+    mixins: [ApiService],
+    settings: {
+
+        routes: [{
+            path: "/api",
+
+            // Route error handler
+            onError(req, res, err) {
+                res.setHeader("Content-Type", "application/json; charset=utf-8");
+                res.writeHead(500);
+                res.end(JSON.stringify(err));
+            }
+        }],
+
+        // Global error handler
+        onError(req, res, err) {
+            res.setHeader("Content-Type", "text/plain");
+            res.writeHead(501);
+            res.end("Global error: " + err.message);
+        }		
+    }
+}
+```
+
+
 ## New examples
 - [Webpack](https://github.com/ice-services/moleculer-web/tree/master/examples/webpack) - webpack-dev-middleware example
 - [Webpack & Vue](https://github.com/ice-services/moleculer-web/tree/master/examples/webpack-vue) - Webpack, VueJS, HMR example

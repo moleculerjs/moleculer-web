@@ -222,9 +222,13 @@ module.exports = {
 			if (opts.onBeforeCall)
 				route.onBeforeCall = this.Promise.method(opts.onBeforeCall);
 
-			// `onBeforeCall` handler
+			// `onAfterCall` handler
 			if (opts.onAfterCall)
 				route.onAfterCall = this.Promise.method(opts.onAfterCall);
+
+			// `onError` handler
+			if (opts.onError)
+				route.onError = opts.onError;
 
 			// Create URL prefix
 			route.path = (this.settings.path || "") + (opts.path || "");
@@ -336,6 +340,17 @@ module.exports = {
 		 * @param {Error} err
 		 */
 		sendError(req, res, err) {
+			// Route error handler
+			if (req.$route && _.isFunction(req.$route.onError))
+				return req.$route.onError.call(this, req, res, err);
+
+			// Global error handler
+			if (_.isFunction(this.settings.onError))
+				return this.settings.onError.call(this, req, res, err);
+
+			// --- Default error handler
+
+			// In middleware mode call the next(err)
 			if (req.$next)
 				return req.$next(err);
 

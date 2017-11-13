@@ -1832,6 +1832,94 @@ describe("Test authorization", () => {
 
 });
 
+describe("Test onError handlers", () => {
+
+	it("should return with JSON error object", () => {
+		const broker = new ServiceBroker();
+		const service = broker.createService(ApiGateway, {
+			settings: {
+				routes: [{
+					path: "/api"
+				}]
+			}
+		});
+		const server = service.server;
+
+		return request(server)
+			.get("/api/test/hello")
+			.expect(404)
+			.expect("Content-Type", "application/json; charset=utf-8")
+			.then(res => {
+				expect(res.body).toEqual({
+					code: 404,
+					data: {
+						action: "test.hello"
+					},
+					message: "Service 'test.hello' is not found.",
+					name: "ServiceNotFoundError",
+					type: null
+				});
+			});
+	});
+
+	it("should return with global error handler response", () => {
+		const broker = new ServiceBroker();
+		const service = broker.createService(ApiGateway, {
+			settings: {
+				routes: [{
+					path: "/api",
+				}],
+				onError(req, res, err) {
+					res.setHeader("Content-Type", "text/plain");
+					res.writeHead(501);
+					res.end("Global error: " + err.message);
+				}
+			}
+		});
+		const server = service.server;
+
+		return request(server)
+			.get("/api/test/hello")
+			.expect(501)
+			.expect("Content-Type", "text/plain")
+			.then(res => {
+				expect(res.text).toBe("Global error: Service 'test.hello' is not found.");
+			});
+	});
+
+	it("should return with route error handler response", () => {
+		const broker = new ServiceBroker();
+		const service = broker.createService(ApiGateway, {
+			settings: {
+				routes: [{
+					path: "/api",
+					onError(req, res, err) {
+						res.setHeader("Content-Type", "text/plain");
+						res.writeHead(500);
+						res.end("Route error: " + err.message);
+					}
+				}],
+
+				onError(req, res, err) {
+					res.setHeader("Content-Type", "text/plain");
+					res.writeHead(501);
+					res.end("Global error: " + err.message);
+				}
+			}
+		});
+		const server = service.server;
+
+		return request(server)
+			.get("/api/test/hello")
+			.expect(500)
+			.expect("Content-Type", "text/plain")
+			.then(res => {
+				expect(res.text).toBe("Route error: Service 'test.hello' is not found.");
+			});
+	});
+
+});
+
 
 describe("Test lifecycle events", () => {
 

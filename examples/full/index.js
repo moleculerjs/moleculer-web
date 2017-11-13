@@ -168,7 +168,15 @@ broker.createService({
 				onAfterCall(ctx, route, req, res, data) {
 					this.logger.info("onAfterCall in protected route");
 					res.setHeader("X-Custom-Header", "Authorized path");
+				},
+
+				// Route error handler
+				onError(req, res, err) {
+					res.setHeader("Content-Type", "text/plain");
+					res.writeHead(err.code || 500);
+					res.end("Route error: " + err.message);
 				}
+
 			},
 
 			/**
@@ -229,8 +237,7 @@ broker.createService({
 						res.setHeader("X-Response-Type", typeof(data));
 						resolve();
 					});
-				}
-
+				},
 			}
 		],
 
@@ -240,6 +247,13 @@ broker.createService({
 			folder: "./examples/full/assets",
 			// Options to `server-static` module
 			options: {}
+		},
+
+		// Global error handler
+		onError(req, res, err) {
+			res.setHeader("Content-Type", "text/plain");
+			res.writeHead(err.code || 500);
+			res.end("Global error: " + err.message);
 		}
 
 	},
