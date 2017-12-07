@@ -864,6 +864,32 @@ describe("Test aliases", () => {
 	});
 });
 
+describe("Test root url alias", () => {
+	let broker;
+	let service;
+	let server;
+
+	beforeAll(() => {
+		[ broker, service, server] = setup({
+			routes: [{
+				aliases: {
+					"": "test.hello"
+				}
+			}]
+		})
+	})
+
+	it ("GET /", () => {
+		return request(server)
+			.get("/")
+			.expect(200)
+			.expect("Content-Type", "application/json; charset=utf-8")
+			.then(res => {
+				expect(res.body).toEqual("Hello Moleculer");
+			});
+	})
+})
+
 describe("Test REST shorthand aliases", () => {
 	let broker;
 	let service;
