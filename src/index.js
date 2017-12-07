@@ -437,8 +437,8 @@ module.exports = {
 					url = url.slice(0, -1);
 
 				// Handle root case
-				if (url === '')
-					url = '/'
+				if (url === "")
+					url = "/";
 
 				// Check the URL
 				if (this.routes && this.routes.length > 0) {
