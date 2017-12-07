@@ -436,6 +436,10 @@ module.exports = {
 				if (url.length > 1 && url.endsWith("/"))
 					url = url.slice(0, -1);
 
+				// Handle root case
+				if (url === '')
+					url = '/'
+
 				// Check the URL
 				if (this.routes && this.routes.length > 0) {
 					for(let i = 0; i < this.routes.length; i++) {
