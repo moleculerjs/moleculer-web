@@ -206,8 +206,8 @@ broker.createService({
 					"add/:a/:b": "math.add",
 					"GET sub": "math.sub",
 					"POST divide": "math.div",
-					"POST upload"(route, req, res) {
-						this.parseUploadedFile(route, req, res);
+					"POST upload"(req, res) {
+						this.parseUploadedFile(req, res);
 					}
 				},
 
@@ -305,7 +305,7 @@ broker.createService({
 				return this.Promise.reject(new UnAuthorizedError(ERR_NO_TOKEN));
 		},
 
-		parseUploadedFile(route, req, res) {
+		parseUploadedFile(req, res) {
 			this.logger.info("Incoming file!");
 
 			upload(req, res, err => {
