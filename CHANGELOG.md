@@ -19,7 +19,7 @@ However you can use an array of `Function` for aliases. With it you can call mid
 - `req.$endpoint` is pointed to the resolved action endpoint. It contains `action` and `nodeID`.
 
 ## Middlewares
-Support middlewares in routes & aliases
+Support middlewares in global, routes & aliases.
 
 ```js
 broker.createService({
@@ -35,7 +35,7 @@ broker.createService({
             {
                 path: "/",
 
-                // Route-level middlewares
+                // Route-level middlewares.
                 use: [
                     compression(),
                     
@@ -47,7 +47,7 @@ broker.createService({
                 
                 aliases: {
                     "GET /secret": [
-                        // Alias-level middlewares
+                        // Alias-level middlewares.
                         auth.isAuthenticated(),
                         auth.hasRole("admin"),
                         "top.secret" // Call the `top.secret` action
@@ -109,7 +109,7 @@ broker.createService({
 ```
 
 
-## New examples
+## New examples to serve client-side developing with Webpack
 - [Webpack](https://github.com/ice-services/moleculer-web/tree/master/examples/webpack) - webpack-dev-middleware example
 - [Webpack & Vue](https://github.com/ice-services/moleculer-web/tree/master/examples/webpack-vue) - Webpack, VueJS, HMR example
 
