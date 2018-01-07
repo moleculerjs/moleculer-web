@@ -1491,11 +1491,17 @@ describe("Test CORS", () => {
 				origin: "http://localhost:3000",
 				exposedHeaders: ["X-Custom-Header", "X-Response-Time"],
 				methods: "GET",
-			}
+			},
+			routes: [{
+				aliases: {
+					"GET hello": "test.hello"
+				},
+				mappingPolicy: "restrict"
+			}]
 		});
 
 		return request(server)
-			.options("/test/hello")
+			.options("/hello")
 			.set("Access-Control-Request-Method", "GET")
 			.set("Access-Control-Request-Headers", "X-Rate-Limiting")
 			.expect(204)

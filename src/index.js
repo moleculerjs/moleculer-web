@@ -455,6 +455,26 @@ module.exports = {
 									return this.sendError(req, res, error);
 								}
 
+								// CORS headers
+								if (route.cors) {
+									if (req.method == "OPTIONS" && req.headers["access-control-request-method"]) {
+										// Preflight request
+										this.writeCorsHeaders(route, req, res, true);
+
+										// 204 - No content
+										res.writeHead(204, {
+											"Content-Length": "0"
+										});
+										res.end();
+
+										this.logResponse(req, res);
+										return;
+									}
+
+									// Set CORS headers to `res`
+									this.writeCorsHeaders(route, req, res, true);
+								}
+
 								// Merge params
 								const body = _.isObject(req.body) ? req.body : {};
 								Object.assign(params, body, req.query);
@@ -580,26 +600,6 @@ module.exports = {
 						return this.sendError(req, res, new RateLimitExceeded());
 					}
 				}
-			}
-
-			// CORS headers
-			if (route.cors) {
-				if (req.method == "OPTIONS" && req.headers["access-control-request-method"]) {
-					// Preflight request
-					this.writeCorsHeaders(route, req, res, true);
-
-					// 204 - No content
-					res.writeHead(204, {
-						"Content-Length": "0"
-					});
-					res.end();
-
-					this.logResponse(req, res);
-					return;
-				}
-
-				// Set CORS headers to `res`
-				this.writeCorsHeaders(route, req, res, true);
 			}
 
 			// Call the action
