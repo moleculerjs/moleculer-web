@@ -3,7 +3,7 @@
 # 0.6.2 (2018-01-15)
 
 ## Changes
-- turnable pre validation with `preValidate` setting. Default to `true` in order to backward compatibility.
+- turnable pre-validation with `preValidate` setting. Default to `true` in order to backward compatibility.
     ```js
     broker.createService({
         mixins: [ApiService],
