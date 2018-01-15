@@ -1,5 +1,29 @@
+-----------------------------
+<a name="0.6.2"></a>
+# 0.6.2 (2018-01-15)
+
+## Changes
+- turnable pre validation with `preValidate` setting. Default to `true` in order to backward compatibility.
+	```js
+	broker.createService({
+		mixins: [ApiService],
+		settings: {
+			// Disable pre-validation at action calls
+			preValidate: false
+		}
+	})
+	```
+
+-----------------------------
+<a name="0.6.1"></a>
+# 0.6.1 (2018-01-07)
+
+## Changes
+- fix CORS `OPTIONS` handling. [#30](https://github.com/ice-services/moleculer-web/issues/30)
+
+-----------------------------
 <a name="0.6.0"></a>
-# 0.6.0 (2017-xx-xx)
+# 0.6.0 (2018-01-04)
 
 ## Breaking changes
 

@@ -73,7 +73,7 @@ module.exports = {
 		logResponseData: null,
 
 		// Pre-validation
-		preValidate: false
+		preValidate: true
 	},
 
 	/**
