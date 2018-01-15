@@ -70,7 +70,10 @@ module.exports = {
 		logRequestParams: "debug",
 
 		// Log the response data (default to disable)
-		logResponseData: null
+		logResponseData: null,
+
+		// Pre-validation
+		preValidate: false
 	},
 
 	/**
@@ -641,8 +644,8 @@ module.exports = {
 						return this.Promise.reject(new ServiceNotFoundError(actionName));
 					}
 
-					// Validate params
-					if (this.broker.validator && endpoint.action.params)
+					// Validate params if neccessary
+					if (this.settings.preValidate && this.broker.validator && endpoint.action.params)
 						this.broker.validator.validate(params, endpoint.action.params);
 
 					return endpoint;
