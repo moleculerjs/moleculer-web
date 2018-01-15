@@ -4,15 +4,15 @@
 
 ## Changes
 - turnable pre validation with `preValidate` setting. Default to `true` in order to backward compatibility.
-	```js
-	broker.createService({
-		mixins: [ApiService],
-		settings: {
-			// Disable pre-validation at action calls
-			preValidate: false
-		}
-	})
-	```
+    ```js
+    broker.createService({
+        mixins: [ApiService],
+        settings: {
+            // Disable pre-validation at action calls
+            preValidate: false
+        }
+    })
+    ```
 
 -----------------------------
 <a name="0.6.1"></a>
