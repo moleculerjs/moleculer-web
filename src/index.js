@@ -630,39 +630,60 @@ module.exports = {
 		 */
 		callAction(route, actionName, req, res, params) {
 			let endpoint;
+			let reqContext;
 
 			const p = this.Promise.resolve()
-
-				// Resolve action by name
+				// Create a new context for request
+				// should be the first thing for accurate metrics
 				.then(() => {
+					const vName = this.version
+						? `${this.version}.${this.name}`
+						: this.name; //version.api. or api.
+
+					const method = `${req.method.toLowerCase()}\t${actionName
+						.split(".")
+						.join("/")}`; //httpmethod version/service/method
+
+					const restAction = {
+						name: vName + "." + method //"api.post v1/example.add"
+					};
+
+					// Create a new context to wrap the request
+					reqContext = Context.create(this.broker, restAction, this.broker.nodeID, params, route.callOptions || {});
+					reqContext._metricStart(reqContext.metrics);
+
+					return reqContext;
+				})
+				// endpoint & params validation
+				.then(ctx => {
+
 					endpoint = this.broker.findNextActionEndpoint(actionName);
-					if (endpoint instanceof Error)
-						return this.Promise.reject(endpoint);
+
+					if (endpoint instanceof Error) throw endpoint; //to catch handler
 
 					if (endpoint.action.publish === false) {
 						// Action is not publishable
-						return this.Promise.reject(new ServiceNotFoundError(actionName));
+
+						throw new ServiceNotFoundError(actionName); //to handle by catch
 					}
 
-					// Validate params if neccessary
+					// Validate params
 					if (this.settings.preValidate && this.broker.validator && endpoint.action.params)
-						this.broker.validator.validate(params, endpoint.action.params);
+						this.broker.validator.validate(params, endpoint.action.params); //this throw ValidationError
 
-					return endpoint;
-				})
-
-				// Create a new context for request
-				.then(() => {
+					//all good
 					req.$endpoint = endpoint;
 
+					return ctx;
+				})
+				//refereces & logging, verbose option?
+				.then(ctx => {
+					//if(!this.settings.verbose) return ctx; //continue along
+					//
 					this.logger.info(`  Call '${actionName}' action`);
-					if (this.settings.logRequestParams && this.settings.logRequestParams in this.logger)
+					if (this.settings.logRequestParams && this.settings.logRequestParams in this.logger) {
 						this.logger[this.settings.logRequestParams]("  Params:", params);
-
-					const restAction = {
-						name: this.name + ".rest"
-					};
-
+					}
 					// Pass the `req` & `res` vars to ctx.params.
 					if (req.$alias && req.$alias.passReqResToParams) {
 						if (endpoint.local) {
@@ -673,14 +694,8 @@ module.exports = {
 						}
 					}
 
-					// Create a new context to wrap the request
-					const ctx = Context.create(this.broker, restAction, this.broker.nodeID, params, route.callOptions || {});
-					ctx._metricStart(ctx.metrics);
-
-
 					return ctx;
 				})
-
 				// onBeforeCall handling
 				.then(ctx => {
 					if (route.onBeforeCall)
@@ -688,7 +703,6 @@ module.exports = {
 
 					return ctx;
 				})
-
 				// Authorization
 				.then(ctx => {
 					if (route.authorization)
@@ -696,7 +710,6 @@ module.exports = {
 
 					return ctx;
 				})
-
 				// Call the action
 				.then(ctx => {
 					return ctx.call(endpoint, params, route.callOptions || {})
@@ -707,37 +720,36 @@ module.exports = {
 							if (ctx.requestID)
 								res.setHeader("X-Request-ID", ctx.requestID);
 							//if (ctx.cachedResult)
-							//	res.setHeader("X-From-Cache", "true");
+							//  res.setHeader("X-From-Cache", "true");
 
-							return Promise.resolve()
-							// onAfterCall handling
-								.then(() => {
-									if (route.onAfterCall)
-										return route.onAfterCall.call(this, ctx, route, req, res, data);
-								})
-								.then(() => {
-									this.sendResponse(ctx, route, req, res, data, endpoint.action);
+							return (
+								Promise.resolve()
+									// onAfterCall handling
+									.then(() => {
+										if (route.onAfterCall)
+											return route.onAfterCall.call(this, ctx, route, req, res, data);
+									})
+									.then(() => {
 
-									ctx._metricFinish(null, ctx.metrics);
+										this.sendResponse(ctx, route, req, res, data, endpoint.action);
+										//finish success
+										ctx._metricFinish(null, ctx.metrics);
 
-									this.logResponse(req, res, ctx, data);
-								});
+										this.logResponse(req, res, ctx, data);
+									})
+							);
 						});
 				})
-
 				// Error handling
 				.catch(err => {
-					if (!err)
-						return;
-
-					if (err.ctx)
-						res.setHeader("X-Request-ID", err.ctx.id);
-
 					this.logger.error("  Request error!", err.name, ":", err.message, "\n", err.stack, "\nData:", err.data);
 
-					// Finish the context
-					if (err.ctx)
-						err.ctx._metricFinish(null, err.ctx.metrics);
+					if (reqContext) {
+						res.setHeader("X-Request-ID", reqContext.requestID);
+
+						// Finish the context with error
+						reqContext._metricFinish(err, reqContext.metrics);
+					}
 
 					// Return with the error
 					this.sendError(req, res, err);
@@ -745,7 +757,6 @@ module.exports = {
 
 			return p;
 		},
-
 		/**
 		 * Convert data & send back to client
 		 *
