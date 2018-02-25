@@ -80,10 +80,6 @@ module.exports = {
 	 * Service created lifecycle event handler
 	 */
 	created() {
-		this.Promise.config({
-			cancellation: true
-		});
-
 		if (!this.settings.middleware) {
 			// Create HTTP or HTTPS server (if not running as middleware)
 			if (this.settings.https && this.settings.https.key && this.settings.https.cert) {
