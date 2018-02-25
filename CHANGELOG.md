@@ -1,4 +1,12 @@
 -----------------------------
+<a name="0.6.3"></a>
+# 0.6.3 (2018-02-25)
+
+## Changes
+- fix Bluebird cancellation error `UnhandledPromiseRejectionWarning: Error: cannot enable cancellation after promises are in use`[#202](https://github.com/ice-services/moleculer/issues/202)
+-update dependencies
+
+-----------------------------
 <a name="0.6.2"></a>
 # 0.6.2 (2018-01-15)
 
