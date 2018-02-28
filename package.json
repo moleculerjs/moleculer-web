@@ -67,6 +67,7 @@
   },
   "typings": "./index.d.ts",
   "jest": {
+    "coverageDirectory": "../coverage",
     "testEnvironment": "node",
     "rootDir": "./src",
     "roots": [
