@@ -11,7 +11,7 @@
     "webpack",
     "vue"
   ],
-  "author": "Ice Services",
+  "author": "MoleculerJS",
   "license": "MIT",
   "devDependencies": {
     "babel-loader": "7.1.2",

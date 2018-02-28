@@ -3,7 +3,7 @@
 # 0.6.3 (2018-02-25)
 
 ## Changes
-- fix Bluebird cancellation error `UnhandledPromiseRejectionWarning: Error: cannot enable cancellation after promises are in use`[#202](https://github.com/ice-services/moleculer/issues/202)
+- fix Bluebird cancellation error `UnhandledPromiseRejectionWarning: Error: cannot enable cancellation after promises are in use`[#202](https://github.com/moleculerjs/moleculer/issues/202)
 -update dependencies
 
 -----------------------------
@@ -27,7 +27,7 @@
 # 0.6.1 (2018-01-07)
 
 ## Changes
-- fix CORS `OPTIONS` handling. [#30](https://github.com/ice-services/moleculer-web/issues/30)
+- fix CORS `OPTIONS` handling. [#30](https://github.com/moleculerjs/moleculer-web/issues/30)
 
 -----------------------------
 <a name="0.6.0"></a>
@@ -142,8 +142,8 @@ broker.createService({
 
 
 ## New examples to serve client-side developing with Webpack
-- [Webpack](https://github.com/ice-services/moleculer-web/tree/master/examples/webpack) - webpack-dev-middleware example
-- [Webpack & Vue](https://github.com/ice-services/moleculer-web/tree/master/examples/webpack-vue) - Webpack, VueJS, HMR example
+- [Webpack](https://github.com/moleculerjs/moleculer-web/tree/master/examples/webpack) - webpack-dev-middleware example
+- [Webpack & Vue](https://github.com/moleculerjs/moleculer-web/tree/master/examples/webpack-vue) - Webpack, VueJS, HMR example
 
 
 -----------------------------
@@ -456,7 +456,7 @@ Example: [examples/express](/examples/express)
 ## New
 
 ### Support custom authorization
-For more information check the [full](/examples/full) or [authorization](/examples/authorization) examples or [readme](https://github.com/ice-services/moleculer-web#authorization)
+For more information check the [full](/examples/full) or [authorization](/examples/authorization) examples or [readme](https://github.com/moleculerjs/moleculer-web#authorization)
 
 -----------------------------
 <a name="0.2.0"></a>

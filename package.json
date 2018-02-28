@@ -23,9 +23,9 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/ice-services/moleculer-web.git"
+    "url": "https://github.com/moleculerjs/moleculer-web.git"
   },
-  "author": "Ice Services",
+  "author": "MoleculerJS",
   "license": "MIT",
   "devDependencies": {
     "benchmarkify": "2.1.0",
