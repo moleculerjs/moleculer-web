@@ -1,28 +1,28 @@
 /*
  * moleculer
- * Copyright (c) 2017 MoleculerJS (https://github.com/moleculerjs/moleculer)
+ * Copyright (c) 2018 MoleculerJS (https://github.com/moleculerjs/moleculer)
  * MIT Licensed
  */
 
 "use strict";
 
-const http 				= require("http");
-const https 			= require("https");
-const queryString 		= require("querystring");
-const deprecate 		= require("depd")("moleculer-web");
+const http 						= require("http");
+const https 					= require("https");
+const queryString 				= require("querystring");
+const deprecate 				= require("depd")("moleculer-web");
 
-const _ 				= require("lodash");
-const bodyParser 		= require("body-parser");
-const serveStatic 		= require("serve-static");
-const nanomatch  		= require("nanomatch");
-const isReadableStream	= require("isstream").isReadable;
-const pathToRegexp 		= require("path-to-regexp");
+const _ 						= require("lodash");
+const bodyParser 				= require("body-parser");
+const serveStatic 				= require("serve-static");
+const nanomatch  				= require("nanomatch");
+const isReadableStream			= require("isstream").isReadable;
+const pathToRegexp 				= require("path-to-regexp");
 
-const { Context } 		= require("moleculer");
+const { Context } 				= require("moleculer");
 const { MoleculerError, MoleculerServerError, ServiceNotFoundError } = require("moleculer").Errors;
 const { BadRequestError, RateLimitExceeded, ERR_UNABLE_DECODE_PARAM } = require("./errors");
 
-const MemoryStore		= require("./memory-store");
+const MemoryStore				= require("./memory-store");
 
 const MAPPING_POLICY_ALL		= "all";
 const MAPPING_POLICY_RESTRICT	= "restrict";
@@ -753,7 +753,7 @@ module.exports = {
 		 * @param {HttpIncomingRequest} req
 		 * @param {HttpResponse} res
 		 * @param {any} data
-		 * @param {String|null} responseType
+		 * @param {Object} action
 		 */
 		sendResponse(ctx, route, req, res, data, action) {
 			// Status code & message
