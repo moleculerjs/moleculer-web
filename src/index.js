@@ -710,8 +710,10 @@ module.exports = {
 								.then(() => {
 									if (route.onAfterCall)
 										return route.onAfterCall.call(this, ctx, route, req, res, data);
+
+									return data;
 								})
-								.then(() => {
+								.then(data => {
 									this.sendResponse(ctx, route, req, res, data, endpoint.action);
 
 									ctx._metricFinish(null, ctx.metrics);

@@ -1640,6 +1640,7 @@ describe("Test onBeforeCall & onAfterCall", () => {
 			expect(res.$route).toBeDefined();
 
 			res.setHeader("X-Custom-Header", "working");
+			return data;
 		});
 
 		const service = broker.createService(ApiGateway, {
@@ -1671,6 +1672,43 @@ describe("Test onBeforeCall & onAfterCall", () => {
 			});
 	});
 
+	it("should modify response in 'onAfterCall'", () => {
+		const broker = new ServiceBroker();
+		broker.loadService("./test/services/test.service");
+
+		const afterCall = jest.fn((ctx, route, req, res, data) => {
+			return broker.Promise.resolve({
+				id: 123,
+				name: "John",
+				old: data
+			});
+		});
+
+		const service = broker.createService(ApiGateway, {
+			settings: {
+				routes: [{
+					onAfterCall: afterCall,
+				}]
+			}
+		});
+		const server = service.server;
+
+		return request(server)
+			.get("/test/json")
+			.expect(200)
+			.expect("Content-Type", "application/json; charset=utf-8")
+			.then(res => {
+				expect(res.body).toEqual({
+					id: 123,
+					name: "John",
+					old: {
+						id: 1,
+						name: "Eddie"
+					}
+				});
+				expect(afterCall).toHaveBeenCalledTimes(1);
+			});
+	});
 });
 
 describe("Test route middlewares", () => {

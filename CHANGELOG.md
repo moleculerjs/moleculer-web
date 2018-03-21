@@ -1,4 +1,46 @@
 -----------------------------
+<a name="0.7.0"></a>
+# 0.7.0 (2018-xx-xx)
+
+## Breaking changes
+
+### The `onAfterCall` hook has changed
+In previous versions of Moleculer Web, you couldn't manipulate the `data`. Now you can, but you must always return the new or old `data`.
+
+**Modify only headers**
+```js
+broker.createService(ApiGatewayService, {
+    settings: {
+        routes: [{
+            onAfterCall(ctx, route, req, res, data) {
+                res.setHeader("X-Custom-Header", "123456");
+
+                // Must return the `data`
+                return data;
+            }
+        }]
+    }
+});
+```
+
+**Modify (wrap) the original data**
+```js
+broker.createService(ApiGatewayService, {
+    settings: {
+        routes: [{
+            onAfterCall(ctx, route, req, res, data) {
+                // Wrap the original data to a new object
+                return {
+                    other: "things",
+                    data: data
+                };
+            }
+        }]
+    }
+});
+```
+
+-----------------------------
 <a name="0.6.4"></a>
 # 0.6.4 (2018-03-04)
 
