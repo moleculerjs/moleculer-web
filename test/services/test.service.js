@@ -55,8 +55,9 @@ module.exports = {
 		},
 
 		textPlain: {
-			responseType: "text/plain",
 			handler(ctx) {
+				ctx.meta.$responseType = "text/plain";
+
 				return "Plain text";
 			}
 		},
@@ -66,8 +67,8 @@ module.exports = {
 		},
 
 		numberPlain: {
-			responseType: "text/plain",
 			handler(ctx) {
+				ctx.meta.$responseType = "text/plain";
 				return 123;
 			}
 		},
@@ -113,27 +114,44 @@ module.exports = {
 		},
 
 		bufferJson: {
-			responseType: "application/json",
 			handler(ctx) {
+				ctx.meta.$responseType = "application/json";
 				return Buffer.from("{ \"a\": 5 }");
 			}
 		},
 
 		customHeader: {
-			responseHeaders: {
-				"X-Custom-Header": "working",
-				"Content-Type": "text/plain"
-			},
-			handler() {
+			handler(ctx) {
+				ctx.meta.$responseHeaders = {
+					"X-Custom-Header": "working",
+					"Content-Type": "text/plain"
+				};
 				return "CustomHeader";
 			}
 		},
 
+		customStatus: {
+			handler(ctx) {
+				ctx.meta.$statusCode = 201;
+				ctx.meta.$statusMessage = "Entity created";
+			}
+		},
+
+		redirect: {
+			handler(ctx) {
+				ctx.meta.$statusCode = 302;
+				ctx.meta.$statusMessage = "Redirecting...";
+				ctx.meta.$location = "/test/hello";
+
+				return "REDIRECT";
+			}
+		},
+
 		stream: {
-			responseHeaders: {
-				"Content-Disposition": "attachment; filename=\"stream-lorem.txt\""
-			},
-			handler() {
+			handler(ctx) {
+				ctx.meta.$responseHeaders = {
+					"Content-Disposition": "attachment; filename=\"stream-lorem.txt\""
+				};
 				const stream = fs.createReadStream(path.join(__dirname, "..", "assets", "lorem.txt"), "utf8");
 				setTimeout(() => {
 					stream.read(1024);
@@ -143,7 +161,10 @@ module.exports = {
 			}
 		},
 
-		streamWithError() {
+		streamWithError(ctx) {
+			ctx.meta.$responseHeaders = {
+				"Content-Disposition": "attachment; filename=\"stream-lorem.txt\""
+			};
 			const stream = fs.createReadStream(path.join(__dirname, "..", "assets", "lorem.txt"), "utf8");
 			setTimeout(() => {
 				stream.emit("error", new MoleculerServerError("Something happened!"));

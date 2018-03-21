@@ -9,8 +9,8 @@ module.exports = {
 	name: "test",
 	actions: {
 		hello: {
-			responseType: "text/plain",
 			handler(ctx) {
+				ctx.meta.$responseType = "text/plain";
 				return "Hello Moleculer";
 			}
 		},
@@ -32,6 +32,18 @@ module.exports = {
 					meta: ctx.meta
 				};
 			}
+		},
+
+		redirect(ctx) {
+			ctx.meta.$statusCode = 302;
+			ctx.meta.$statusMessage = "Redirecting...";
+			ctx.meta.$location = "/test/hello";
+
+			return "REDIRECT";
+		},
+
+		noContent(ctx) {
+			ctx.meta.$statusCode = 204;
 		},
 
 		sayHi(ctx) {
@@ -59,10 +71,10 @@ module.exports = {
 		},
 
 		stream: {
-			responseHeaders: {
-				"Content-Disposition": "attachment; filename=\"stream-lorem.txt\""
-			},
-			handler() {
+			handler(ctx) {
+				ctx.meta.$responseHeaders = {
+					"Content-Disposition": "attachment; filename=\"stream-lorem.txt\""
+				};
 				const stream = fs.createReadStream(path.join(__dirname, "..", "test", "assets", "lorem.txt"), "utf8");
 				setTimeout(() => {
 					stream.read(1024);

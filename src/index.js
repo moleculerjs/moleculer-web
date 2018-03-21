@@ -9,6 +9,7 @@
 const http 				= require("http");
 const https 			= require("https");
 const queryString 		= require("querystring");
+const deprecate 		= require("depd")("moleculer-web");
 
 const _ 				= require("lodash");
 const bodyParser 		= require("body-parser");
@@ -73,7 +74,7 @@ module.exports = {
 		logResponseData: null,
 
 		// Pre-validation
-		preValidate: true
+		preValidate: false
 	},
 
 	/**
@@ -755,20 +756,56 @@ module.exports = {
 		 * @param {String|null} responseType
 		 */
 		sendResponse(ctx, route, req, res, data, action) {
-			if (data == null)
-				return res.end();
+			// Status code & message
+			if (ctx.meta.$statusCode) {
+				res.statusCode = ctx.meta.$statusCode;
+			}
+			if (ctx.meta.$statusMessage) {
+				res.statusMessage = ctx.meta.$statusMessage;
+			}
 
-			// Override responseType by action
+			// Redirect
+			if (res.statusCode >= 300 && res.statusCode < 400) {
+				const location = ctx.meta.$location;
+				if (!location)
+					this.logger.warn(`The 'ctx.meta.$location' is missing for status code ${res.statusCode}!`);
+				else
+					res.setHeader("Location", location);
+			}
+
+			// Override responseType by action (Deprecated)
 			let responseType = action.responseType;
+			if (responseType) {
+				deprecate("The 'responseType' in action definition is deprecated. Use 'ctx.meta.$responseType'");
+			}
 
-			// Custom headers
+			// Custom headers (Deprecated)
 			if (action.responseHeaders) {
+				deprecate("The 'responseHeaders' in action definition is deprecated. Use 'ctx.meta.$responseHeaders'");
 				Object.keys(action.responseHeaders).forEach(key => {
 					res.setHeader(key, action.responseHeaders[key]);
 					if (key == "Content-Type" && !responseType)
 						responseType = action.responseHeaders[key];
 				});
 			}
+
+			// Custom responseType from ctx.meta
+			if (ctx.meta.$responseType) {
+				responseType = ctx.meta.$responseType;
+			}
+
+			// Custom headers from ctx.meta
+			if (ctx.meta.$responseHeaders) {
+				Object.keys(ctx.meta.$responseHeaders).forEach(key => {
+					if (key == "Content-Type" && !responseType)
+						responseType = ctx.meta.$responseHeaders[key];
+					else
+						res.setHeader(key, ctx.meta.$responseHeaders[key]);
+				});
+			}
+
+			if (data == null)
+				return res.end();
 
 			// Buffer
 			if (Buffer.isBuffer(data)) {

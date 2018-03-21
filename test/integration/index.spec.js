@@ -286,6 +286,27 @@ describe("Test responses", () => {
 			});
 	});
 
+	it("GET /test/customStatus", () => {
+		return request(server)
+			.get("/test/customStatus")
+			.expect(201)
+			.then(res => {
+				expect(res.res.statusMessage).toEqual("Entity created");
+				expect(res.text).toEqual("");
+			});
+	});
+
+	it("GET /test/redirect", () => {
+		return request(server)
+			.get("/test/redirect")
+			.expect(302)
+			.expect("Location", "/test/hello")
+			.then(res => {
+				expect(res.res.statusMessage).toEqual("Redirecting...");
+				expect(res.body).toEqual("REDIRECT");
+			});
+	});
+
 	it("GET /test/stream", () => {
 		return request(server)
 			.get("/test/stream")
@@ -1126,10 +1147,7 @@ describe("Test body-parsers", () => {
 				expect(res.body).toBe("Hello Adam");
 			});
 	});
-
-
 });
-
 
 describe("Test multiple routes", () => {
 	let broker;
@@ -1961,9 +1979,7 @@ describe("Test onError handlers", () => {
 				expect(res.text).toBe("Route error: Service 'test.hello' is not found.");
 			});
 	});
-
 });
-
 
 describe("Test lifecycle events", () => {
 

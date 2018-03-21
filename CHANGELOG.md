@@ -40,6 +40,70 @@ broker.createService(ApiGatewayService, {
 });
 ```
 
+## New
+
+### Response header data from `ctx.meta`
+Since Moleculer v0.12, you can use `ctx.meta` to send back response headers to the Moleculer Web.
+The old method is deprecated but works.
+
+**Available meta fields:**
+* `ctx.meta.$statusCode` - set `res.statusCode`.
+* `ctx.meta.$statusMessage` - set `res.statusMessage`.
+* `ctx.meta.$responseType` - set `Content-Type` in header.
+* `ctx.meta.$responseHeaders` - set all keys in header.
+* `ctx.meta.$location` - set `Location` key in header for redirects.
+
+
+**Old method**
+```js
+module.exports = {
+    name: "export",
+    actions: {
+        downloadCSV: 
+			responseType: "text/csv",
+            responseHeaders: {
+                "Content-Disposition": "attachment; filename=\"data.csv\"",
+            },
+            handler() {
+                return "...";
+            }
+        }
+    }
+}
+```
+
+**New (recommended) method**
+```js
+module.exports = {
+    name: "export",
+    actions: {
+		// Download a file in the browser
+        downloadCSV(ctx) {
+			ctx.meta.$responseType = "text/csv";
+			ctx.meta.$responseHeaders = {
+				"Content-Disposition": `attachment; filename="data-${ctx.params.id}.csv"`
+			};
+			
+			return "...";
+		}
+
+		// Redirect the request
+        redirectSample(ctx) {
+			ctx.meta.$statusCode = 302;
+			ctx.meta.$location = "/test/hello";
+		}
+    }
+}
+```
+
+
+
+
+
+
+## Changes
+- `preValidate` default value is changed to `false`.
+
 -----------------------------
 <a name="0.6.4"></a>
 # 0.6.4 (2018-03-04)
