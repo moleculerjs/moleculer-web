@@ -307,7 +307,7 @@ module.exports = {
 						route.aliases.push(createAlias(`GET ${pathName}/:id`, 		`${action}.get`));
 						route.aliases.push(createAlias(`POST ${pathName}`, 			`${action}.create`));
 						route.aliases.push(createAlias(`PUT ${pathName}/:id`, 		`${action}.update`));
-						//route.aliases.push(createAlias(`PATCH ${pathName}/:id`, 	`${action}.update`));
+						//route.aliases.push(createAlias(`PATCH ${pathName}/:id`, 	`${action}.patch`));
 						route.aliases.push(createAlias(`DELETE ${pathName}/:id`, 	`${action}.remove`));
 
 					} else {
@@ -616,6 +616,32 @@ module.exports = {
 		},
 
 		/**
+		 * Create a wrapper context for the request
+		 *
+		 * @param {Object} route 		Route options
+		 * @param {HttpRequest} req 	Request object
+		 * @param {HttpResponse} res 	Response object
+		 * @param {Object} params		Merged query params + named parameters from URL
+		 * @returns {Context}
+		 */
+		createRestContext(route, req, res, params) {
+			const vName = this.version ? `${this.version}.${this.name}` : this.name;
+			const method = req.method.toLowerCase();
+			const restAction = {
+				name: vName + "." + method //"api.post"
+			};
+
+			// Pass the `req` & `res` vars to ctx.params.
+			if (req.$alias && req.$alias.passReqResToParams) {
+				params.$req = req;
+				params.$res = res;
+			}
+
+			// Create a new context to wrap the request
+			return Context.create(this.broker, restAction, this.broker.nodeID, params, route.callOptions || {});
+		},
+
+		/**
 		 * Call an action via broker
 		 *
 		 * @param {Object} route 		Route options
@@ -630,97 +656,78 @@ module.exports = {
 
 			const p = this.Promise.resolve()
 
+				// Create a new context for request
+				.then(() => {
+
+					this.logger.info(`  Call '${actionName}' action`);
+					if (this.settings.logRequestParams && this.settings.logRequestParams in this.logger)
+						this.logger[this.settings.logRequestParams]("  Params:", params);
+
+					ctx = this.createRestContext(route, req, res, params);
+					ctx._metricStart(ctx.metrics);
+
+					return ctx;
+				})
+
 				// Resolve action by name
 				.then(() => {
 					endpoint = this.broker.findNextActionEndpoint(actionName);
 					if (endpoint instanceof Error)
-						return this.Promise.reject(endpoint);
+						throw endpoint;
 
 					if (endpoint.action.publish === false) {
 						// Action is not publishable
-						return this.Promise.reject(new ServiceNotFoundError(actionName));
+						throw new ServiceNotFoundError(actionName);
 					}
 
 					// Validate params if neccessary
 					if (this.settings.preValidate && this.broker.validator && endpoint.action.params)
 						this.broker.validator.validate(params, endpoint.action.params);
 
-					return endpoint;
-				})
-
-				// Create a new context for request
-				.then(() => {
 					req.$endpoint = endpoint;
 
-					this.logger.info(`  Call '${actionName}' action`);
-					if (this.settings.logRequestParams && this.settings.logRequestParams in this.logger)
-						this.logger[this.settings.logRequestParams]("  Params:", params);
-
-					const restAction = {
-						name: this.name + ".rest"
-					};
-
-					// Pass the `req` & `res` vars to ctx.params.
-					if (req.$alias && req.$alias.passReqResToParams) {
-						if (endpoint.local) {
-							params.$req = req;
-							params.$res = res;
-						} else {
-							this.logger.warn("Don't use the `passReqResToParams` option in aliases if you call a remote service.");
-						}
-					}
-
-					// Create a new context to wrap the request
-					ctx = Context.create(this.broker, restAction, this.broker.nodeID, params, route.callOptions || {});
-					ctx._metricStart(ctx.metrics);
-
-					return ctx;
+					return endpoint;
 				})
-
 				// onBeforeCall handling
-				.then(ctx => {
+				.then(() => {
 					if (route.onBeforeCall)
-						return route.onBeforeCall.call(this, ctx, route, req, res).then(() => ctx);
-
-					return ctx;
+						return route.onBeforeCall.call(this, ctx, route, req, res);
 				})
 
 				// Authorization
-				.then(ctx => {
+				.then(() => {
 					if (route.authorization)
-						return this.authorize(ctx, route, req, res).then(() => ctx);
-
-					return ctx;
+						return this.authorize(ctx, route, req, res);
 				})
 
 				// Call the action
-				.then(ctx => {
-					return ctx.call(endpoint, params, route.callOptions || {})
-						.then(data => {
-							res.statusCode = 200;
+				.then(() => ctx.call(endpoint, params, route.callOptions || {}))
 
-							// Return with the response
-							if (ctx.requestID)
-								res.setHeader("X-Request-ID", ctx.requestID);
-							//if (ctx.cachedResult)
-							//	res.setHeader("X-From-Cache", "true");
+				// Process the response
+				.then(data => {
+					res.statusCode = 200;
 
-							return Promise.resolve()
-							// onAfterCall handling
-								.then(() => {
-									if (route.onAfterCall)
-										return route.onAfterCall.call(this, ctx, route, req, res, data);
+					// Return with the response
+					if (ctx.requestID)
+						res.setHeader("X-Request-ID", ctx.requestID);
 
-									return data;
-								})
-								.then(data => {
-									this.sendResponse(ctx, route, req, res, data, endpoint.action);
+					//if (ctx.cachedResult)
+					//	res.setHeader("X-From-Cache", "true");
 
-									ctx._metricFinish(null, ctx.metrics);
+					// onAfterCall handling
+					if (route.onAfterCall)
+						return route.onAfterCall.call(this, ctx, route, req, res, data);
 
-									this.logResponse(req, res, ctx, data);
-								});
-						});
+					return data;
+				})
+
+				// Send back the response
+				.then(data => {
+					this.sendResponse(ctx, route, req, res, data, endpoint.action);
+
+					ctx._metricFinish(null, ctx.metrics);
+
+					this.logResponse(req, res, ctx, data);
 				})
 
 				// Error handling
@@ -728,14 +735,14 @@ module.exports = {
 					if (!err)
 						return;
 
-					if (ctx)
-						res.setHeader("X-Request-ID", ctx.id);
-
 					this.logger.error("  Request error!", err.name, ":", err.message, "\n", err.stack, "\nData:", err.data);
 
 					// Finish the context
-					if (ctx)
-						ctx._metricFinish(null, ctx.metrics);
+					if (ctx) {
+						res.setHeader("X-Request-ID", ctx.id);
+
+						ctx._metricFinish(err, ctx.metrics);
+					}
 
 					// Return with the error
 					this.sendError(req, res, err);
@@ -812,7 +819,7 @@ module.exports = {
 				res.setHeader("Content-Length", data.length);
 				res.end(data);
 			}
-			// Buffer from JSON
+			// Buffer from Object
 			else if (_.isObject(data) && data.type == "Buffer") {
 				const buf = Buffer.from(data);
 				res.setHeader("Content-Type", responseType || "application/octet-stream");
