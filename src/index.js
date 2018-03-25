@@ -626,7 +626,7 @@ module.exports = {
 		 * @returns {Promise}
 		 */
 		callAction(route, actionName, req, res, params) {
-			let endpoint;
+			let endpoint, ctx;
 
 			const p = this.Promise.resolve()
 
@@ -671,9 +671,8 @@ module.exports = {
 					}
 
 					// Create a new context to wrap the request
-					const ctx = Context.create(this.broker, restAction, this.broker.nodeID, params, route.callOptions || {});
+					ctx = Context.create(this.broker, restAction, this.broker.nodeID, params, route.callOptions || {});
 					ctx._metricStart(ctx.metrics);
-
 
 					return ctx;
 				})
@@ -729,14 +728,14 @@ module.exports = {
 					if (!err)
 						return;
 
-					if (err.ctx)
-						res.setHeader("X-Request-ID", err.ctx.id);
+					if (ctx)
+						res.setHeader("X-Request-ID", ctx.id);
 
 					this.logger.error("  Request error!", err.name, ":", err.message, "\n", err.stack, "\nData:", err.data);
 
 					// Finish the context
-					if (err.ctx)
-						err.ctx._metricFinish(null, err.ctx.metrics);
+					if (ctx)
+						ctx._metricFinish(null, ctx.metrics);
 
 					// Return with the error
 					this.sendError(req, res, err);
