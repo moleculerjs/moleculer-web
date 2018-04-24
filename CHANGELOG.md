@@ -60,7 +60,7 @@ module.exports = {
     name: "export",
     actions: {
         downloadCSV: 
-			responseType: "text/csv",
+            responseType: "text/csv",
             responseHeaders: {
                 "Content-Disposition": "attachment; filename=\"data.csv\"",
             },
@@ -77,27 +77,40 @@ module.exports = {
 module.exports = {
     name: "export",
     actions: {
-		// Download a file in the browser
+        // Download a file in the browser
         downloadCSV(ctx) {
-			ctx.meta.$responseType = "text/csv";
-			ctx.meta.$responseHeaders = {
-				"Content-Disposition": `attachment; filename="data-${ctx.params.id}.csv"`
-			};
-			
-			return "...";
-		}
+            ctx.meta.$responseType = "text/csv";
+            ctx.meta.$responseHeaders = {
+                "Content-Disposition": `attachment; filename="data-${ctx.params.id}.csv"`
+            };
+            
+            return "...";
+        }
 
-		// Redirect the request
+        // Redirect the request
         redirectSample(ctx) {
-			ctx.meta.$statusCode = 302;
-			ctx.meta.$location = "/test/hello";
-		}
+            ctx.meta.$statusCode = 302;
+            ctx.meta.$location = "/test/hello";
+        }
     }
 }
 ```
 
+### Support array & nested objects in query
+Thanks for [@hwuethrich](https://github.com/hwuethrich), Moleculer Web supports arrays & nested objects in querystring.
 
+**`GET /api/opt-test?a=1&a=2`**
+```js
+a: ["1", "2"]
+```
 
+**`GET /api/opt-test?foo[bar]=a&foo[bar]=b&foo[baz]=c`**
+```js
+foo: { 
+    bar: ["a", "b"], 
+    baz: "c" 
+}
+```
 
 
 
