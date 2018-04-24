@@ -8,7 +8,7 @@
 
 const http 						= require("http");
 const https 					= require("https");
-const queryString 				= require("querystring");
+const queryString 				= require("qs");
 const deprecate 				= require("depd")("moleculer-web");
 
 const _ 						= require("lodash");

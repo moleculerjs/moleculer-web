@@ -789,6 +789,32 @@ describe("Test aliases", () => {
 			});
 	});
 
+	it("GET opt-test with array params", () => {
+		return request(server)
+			.get("/api/opt-test")
+			.query("a=1&a=2")
+			.expect(200)
+			.expect("Content-Type", "application/json; charset=utf-8")
+			.then(res => {
+				expect(res.body.params).toEqual({
+					a: ["1", "2"],
+				});
+			});
+	});
+
+	it("GET opt-test with nested params", () => {
+		return request(server)
+			.get("/api/opt-test")
+			.query("foo[bar]=a&foo[bar]=b&foo[baz]=c")
+			.expect(200)
+			.expect("Content-Type", "application/json; charset=utf-8")
+			.then(res => {
+				expect(res.body.params).toEqual({
+					foo: { bar: ["a", "b"], baz: "c" }
+				});
+			});
+	});
+
 	it("GET opt-test/:name? without name", () => {
 		return request(server)
 			.get("/api/opt-test")
