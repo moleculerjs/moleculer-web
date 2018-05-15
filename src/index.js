@@ -20,7 +20,7 @@ const pathToRegexp 				= require("path-to-regexp");
 
 const { Context } 				= require("moleculer");
 const { MoleculerError, MoleculerServerError, ServiceNotFoundError } = require("moleculer").Errors;
-const { BadRequestError, RateLimitExceeded, ERR_UNABLE_DECODE_PARAM } = require("./errors");
+const { BadRequestError, NotFoundError, ForbiddenError, RateLimitExceeded, ERR_UNABLE_DECODE_PARAM, ERR_ORIGIN_NOT_FOUND, ERR_ORIGIN_NOT_ALLOWED } = require("./errors");
 
 const MemoryStore				= require("./memory-store");
 
@@ -903,6 +903,35 @@ module.exports = {
 		},
 
 		/**
+		 * Check origin(s)
+		 *
+		 * @param {String} origin
+		 * @param {any} settings
+		 * @returns {Boolean}
+		 */
+		checkOrigin(origin, settings) {
+			if (_.isString(settings)) {
+				if (settings.indexOf("*") !== -1) {
+					// Based on: https://github.com/hapijs/hapi
+					const wildcard = new RegExp(`^${_.escapeRegExp(settings).replace(/\\\*/g, ".*").replace(/\\\?/g, ".")}$`);
+					if (origin.match(wildcard)) {
+						return true;
+					}					
+				} else if(settings.indexOf(origin) !== -1) {
+					return true;
+				}
+			} else if (Array.isArray(settings)) {
+				for(let i = 0; i < settings.length; i++) {
+					if (this.checkOrigin(origin, settings[i])) {
+						return true;
+					}
+				}
+			}
+
+			return false;
+		},
+
+		/**
 		 * Write CORS header
 		 *
 		 * @param {Object} route
@@ -913,15 +942,20 @@ module.exports = {
 		writeCorsHeaders(route, req, res, isPreFlight) {
 			if (!route.cors) return;
 
+			const origin = req.headers["origin"];
+
+			if (!origin) {
+				throw new NotFoundError(ERR_ORIGIN_NOT_FOUND);
+			}
+
 			// Access-Control-Allow-Origin
 			if (!route.cors.origin || route.cors.origin === "*") {
 				res.setHeader("Access-Control-Allow-Origin", "*");
-			} else if (_.isString(route.cors.origin)) {
-				res.setHeader("Access-Control-Allow-Origin", route.cors.origin);
+			} else if (this.checkOrigin(origin, route.cors.origin)) {
+				res.setHeader("Access-Control-Allow-Origin", origin);
 				res.setHeader("Vary", "Origin");
-			} else if (Array.isArray(route.cors.origin)) {
-				res.setHeader("Access-Control-Allow-Origin", route.cors.origin.join(", "));
-				res.setHeader("Vary", "Origin");
+			} else {
+				throw new ForbiddenError(ERR_ORIGIN_NOT_ALLOWED);
 			}
 
 			// Access-Control-Allow-Credentials

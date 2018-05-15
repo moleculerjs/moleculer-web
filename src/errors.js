@@ -11,6 +11,8 @@ const { MoleculerError, MoleculerClientError } = require("moleculer").Errors;
 const ERR_NO_TOKEN = "ERR_NO_TOKEN";
 const ERR_INVALID_TOKEN = "ERR_INVALID_TOKEN";
 const ERR_UNABLE_DECODE_PARAM = "ERR_UNABLE_DECODE_PARAM";
+const ERR_ORIGIN_NOT_FOUND = "ERR_ORIGIN_NOT_FOUND";
+const ERR_ORIGIN_NOT_ALLOWED = "ERR_ORIGIN_NOT_ALLOWED";
 
 /**
  * Invalid request body
@@ -117,6 +119,26 @@ class BadRequestError extends MoleculerError {
 }
 
 /**
+ * Not found HTTP error
+ *
+ * @class NotFoundError
+ * @extends {Error}
+ */
+class NotFoundError extends MoleculerError {
+	/**
+	 * Creates an instance of NotFoundError.
+	 *
+	 * @param {String} type
+	 * @param {any} data
+	 *
+	 * @memberOf NotFoundError
+	 */
+	constructor(type, data) {
+		super("Not found", 404, type, data);
+	}
+}
+
+/**
  * Rate limit exceeded HTTP error
  *
  * @class RateLimitExceeded
@@ -142,9 +164,12 @@ module.exports = {
 	UnAuthorizedError,
 	ForbiddenError,
 	BadRequestError,
+	NotFoundError,
 	RateLimitExceeded,
 
 	ERR_NO_TOKEN,
 	ERR_INVALID_TOKEN,
-	ERR_UNABLE_DECODE_PARAM
+	ERR_UNABLE_DECODE_PARAM,
+	ERR_ORIGIN_NOT_FOUND,
+	ERR_ORIGIN_NOT_ALLOWED
 };

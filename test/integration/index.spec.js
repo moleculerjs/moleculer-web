@@ -1404,6 +1404,41 @@ describe("Test CORS", () => {
 	beforeAll(() => {
 	});
 
+	it("errors on missing origin header", () => {
+		[ broker, service, server] = setup({
+			cors: {}
+		});
+		return request(server)
+			.get("/test/hello")
+			.expect(404)
+			.then(res => {
+				expect(res.body).toEqual({
+					"message": "Not found",
+					"code": 404,
+					"type": "ERR_ORIGIN_NOT_FOUND",
+					"name": "NotFoundError"});
+			});;
+	});
+
+	it("errors on mismatching origin header", () => {
+		[ broker, service, server] = setup({
+			cors: {
+				origin: "a"
+			}
+		});
+		return request(server)
+			.get("/test/hello")
+			.set("Origin", "http://localhost:3000")
+			.expect(403)
+			.then(res => {
+				expect(res.body).toEqual({
+					"message": "Forbidden",
+					"code": 403,
+					"type": "ERR_ORIGIN_NOT_ALLOWED",
+					"name": "ForbiddenError"});
+			});;
+	});
+
 	it("with default settings", () => {
 		[ broker, service, server] = setup({
 			cors: {}
@@ -1411,6 +1446,7 @@ describe("Test CORS", () => {
 
 		return request(server)
 			.get("/test/hello")
+			.set("Origin", "http://localhost:3000")
 			.expect(200)
 			.expect("Content-Type", "application/json; charset=utf-8")
 			.expect("Access-Control-Allow-Origin", "*")
@@ -1430,6 +1466,7 @@ describe("Test CORS", () => {
 
 		return request(server)
 			.get("/test/hello")
+			.set("Origin", "http://localhost:3000")
 			.expect(200)
 			.expect("Content-Type", "application/json; charset=utf-8")
 			.expect("Access-Control-Allow-Origin", "http://localhost:3000")
@@ -1449,9 +1486,10 @@ describe("Test CORS", () => {
 
 		return request(server)
 			.get("/test/hello")
+			.set("Origin", "https://localhost:4000")
 			.expect(200)
 			.expect("Content-Type", "application/json; charset=utf-8")
-			.expect("Access-Control-Allow-Origin", "http://localhost:3000, https://localhost:4000")
+			.expect("Access-Control-Allow-Origin", "https://localhost:4000")
 			.expect("Access-Control-Allow-Credentials", "true")
 			.expect("Access-Control-Expose-Headers", "X-Custom-Header, X-Response-Time")
 			.then(res => expect(res.body).toBe("Hello Moleculer"));
@@ -1475,10 +1513,59 @@ describe("Test CORS", () => {
 
 		return request(server)
 			.get("/test/hello")
+			.set("Origin", "http://test-server")
 			.expect(200)
 			.expect("Content-Type", "application/json; charset=utf-8")
 			.expect("Access-Control-Allow-Origin", "http://test-server")
 			.expect("Access-Control-Expose-Headers", "X-Response-Time")
+			.then(res => expect(res.body).toBe("Hello Moleculer"));
+	});
+
+	it("returns matching CORS origin wildcard with single origin", () => {
+		[ broker, service, server] = setup({
+			cors: {
+				origin: "http://localhost:*",
+			}
+		});
+
+		return request(server)
+			.get("/test/hello")
+			.set("Origin", "http://localhost:4000")
+			.expect(200)
+			.expect("Access-Control-Allow-Origin", "http://localhost:4000")
+			.expect("Vary", "Origin")
+			.then(res => expect(res.body).toBe("Hello Moleculer"));
+	});
+
+	it("returns matching CORS origin wildcard", () => {
+		[ broker, service, server] = setup({
+			cors: {
+				origin: ["http://test.example.com", "http://www.example.com", "http://*.a.com"],
+			}
+		});
+
+		return request(server)
+			.get("/test/hello")
+			.set("Origin", "http://www.a.com")
+			.expect(200)
+			.expect("Access-Control-Allow-Origin", "http://www.a.com")
+			.expect("Vary", "Origin")
+			.then(res => expect(res.body).toBe("Hello Moleculer"));
+	});
+
+	it("returns matching CORS origin wildcard when more than one wildcard", () => {
+		[ broker, service, server] = setup({
+			cors: {
+				origin: ["http://test.example.com", "http://*.b.com", "http://*.a.com"],
+			}
+		});
+
+		return request(server)
+			.get("/test/hello")
+			.set("Origin", "http://www.a.com")
+			.expect(200)
+			.expect("Access-Control-Allow-Origin", "http://www.a.com")
+			.expect("Vary", "Origin")
 			.then(res => expect(res.body).toBe("Hello Moleculer"));
 	});
 
@@ -1501,6 +1588,7 @@ describe("Test CORS", () => {
 
 		return request(server)
 			.options("/test/hello")
+			.set("Origin", "http://test-server")
 			.set("Access-Control-Request-Method", "GET")
 			.expect(204)
 			.expect("Access-Control-Allow-Origin", "http://test-server")
@@ -1522,6 +1610,7 @@ describe("Test CORS", () => {
 
 		return request(server)
 			.options("/test/hello")
+			.set("Origin", "http://localhost:3000")
 			.set("Access-Control-Request-Method", "GET")
 			.expect(204)
 			.expect("Access-Control-Allow-Origin", "*")
@@ -1546,6 +1635,7 @@ describe("Test CORS", () => {
 
 		return request(server)
 			.options("/hello")
+			.set("Origin", "http://localhost:3000")
 			.set("Access-Control-Request-Method", "GET")
 			.set("Access-Control-Request-Headers", "X-Rate-Limiting")
 			.expect(204)
