@@ -116,6 +116,7 @@ foo: {
 
 ## Changes
 - `preValidate` default value is changed to `false`.
+- fix multiple CORS origin handling. Thanks for [@felipegcampos](https://github.com/felipegcampos)
 
 -----------------------------
 <a name="0.6.4"></a>
