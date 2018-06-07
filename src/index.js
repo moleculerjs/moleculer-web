@@ -450,7 +450,7 @@ module.exports = {
 							// Call middlewares
 							this.compose(...route.middlewares)(req, res, err => {
 								if (err) {
-									const error = new MoleculerError(err.message, err.status, err.type);
+									const error = new MoleculerError(err.message, err.code || err.status, err.type);
 									this.logger.error("Middleware error!", error);
 									return this.sendError(req, res, error);
 								}
@@ -502,7 +502,7 @@ module.exports = {
 										if (alias.handler) {
 											return alias.handler.call(this, req, res, err => {
 												if (err) {
-													const error = new MoleculerError(err.message, err.status, err.type);
+													const error = new MoleculerError(err.message, err.code || err.status, err.type);
 													this.logger.error("Alias middleware error!", error);
 													return this.sendError(req, res, error);
 												}
