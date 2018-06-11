@@ -10,8 +10,16 @@ const ApiGateway = require("../../index");
 const { ServiceBroker, Context } = require("moleculer");
 const { UnAuthorizedError, ERR_NO_TOKEN } = ApiGateway.Errors;
 
-function setup(settings) {
-	const broker = new ServiceBroker({ nodeID: undefined });
+function protectReject(err) {
+	if (err && err.stack) {
+		console.error(err);
+		console.error(err.stack);
+	}
+	expect(err).toBe(true);
+}
+
+function setup(settings, brokerSettings = {}) {
+	const broker = new ServiceBroker(Object.assign({}, { nodeID: undefined, logger: false }, brokerSettings));
 	broker.loadService("./test/services/test.service");
 
 	const service = broker.createService(ApiGateway, {
@@ -29,7 +37,10 @@ describe("Test default settings", () => {
 
 	beforeAll(() => {
 		[ broker, service, server] = setup();
+		return broker.start();
 	});
+
+	afterAll(() => broker.stop());
 
 	it("GET /", () => {
 		return request(server)
@@ -39,13 +50,9 @@ describe("Test default settings", () => {
 			.then(res => {
 				expect(res.body).toEqual({
 					"code": 404,
-					"message": "Service '' is not found.",
-					"name": "ServiceNotFoundError",
-					"type": null,
-					"data": {
-						action: "",
-						nodeID: undefined
-					}
+					"message": "Not found",
+					"name": "NotFoundError",
+					"type": "NOT_FOUND"
 				});
 			});
 	});
@@ -60,10 +67,9 @@ describe("Test default settings", () => {
 					"code": 404,
 					"message": "Service 'other.action' is not found.",
 					"name": "ServiceNotFoundError",
-					"type": null,
+					"type": "SERVICE_NOT_FOUND",
 					"data": {
-						action: "other.action",
-						nodeID: undefined
+						action: "other.action"
 					}
 				});
 			});
@@ -131,13 +137,12 @@ describe("Test default settings", () => {
 			.expect("Content-Type", "application/json; charset=utf-8")
 			.then(res => {
 				expect(res.body).toEqual({
-					"code": 404,
-					"message": "Service 'test.dangerZone' is not found.",
-					"name": "ServiceNotFoundError",
-					"type": null,
-					"data": {
-						action: "test.dangerZone",
-						nodeID: undefined
+					code: 404,
+					message: "Service 'test.dangerZone' is not found.",
+					name: "ServiceNotFoundError",
+					type: "SERVICE_NOT_FOUND",
+					data: {
+						action: "test.dangerZone"
 					}
 				});
 			});
@@ -150,13 +155,16 @@ describe("Test responses", () => {
 	let server;
 
 	beforeAll(() => {
+
 		[ broker, service, server] = setup({
 			routes:[{
 				camelCaseNames: true
 			}]
-		});
-		broker.options.metrics = true;
+		}, { metrics: true });
+
+		return broker.start();
 	});
+	afterAll(() => broker.stop());
 
 	it("GET /test/text with 'text/plain'", () => {
 		return request(server)
@@ -172,9 +180,11 @@ describe("Test responses", () => {
 	it("GET /test/textPlain with 'text/plain'", () => {
 		return request(server)
 			.get("/test/textPlain")
+			.set("X-Request-Id", "abcd1234")
 			.expect(200)
 			.expect("Content-Type", "text/plain")
 			.then(res => {
+				expect(res.header["x-request-id"]).toBe("abcd1234");
 				expect(res.text).toEqual("Plain text");
 			});
 	});
@@ -386,7 +396,9 @@ describe("Test with `path` prefix", () => {
 			path: "/my-api"
 		});
 		//broker.loadService("./test/services/math.service");
+		return broker.start();
 	});
+	afterAll(() => broker.stop());
 
 	it("GET /", () => {
 		return request(server)
@@ -395,9 +407,10 @@ describe("Test with `path` prefix", () => {
 			.expect("Content-Type", "application/json; charset=utf-8")
 			.then(res => {
 				expect(res.body).toEqual({
-					code: 404,
-					message: "Not found",
-					name: "MoleculerError"
+					"code": 404,
+					"message": "Not found",
+					"name": "NotFoundError",
+					"type": "NOT_FOUND"
 				});
 			});
 	});
@@ -409,9 +422,10 @@ describe("Test with `path` prefix", () => {
 			.expect("Content-Type", "application/json; charset=utf-8")
 			.then(res => {
 				expect(res.body).toEqual({
-					code: 404,
-					message: "Not found",
-					name: "MoleculerError"
+					"code": 404,
+					"message": "Not found",
+					"name": "NotFoundError",
+					"type": "NOT_FOUND"
 				});
 			});
 	});
@@ -440,7 +454,9 @@ describe("Test only assets", () => {
 			},
 			routes: null
 		});
+		return broker.start();
 	});
+	afterAll(() => broker.stop());
 
 	it("GET /", () => {
 		return request(server)
@@ -469,9 +485,10 @@ describe("Test only assets", () => {
 			.expect("Content-Type", "application/json; charset=utf-8")
 			.then(res => {
 				expect(res.body).toEqual({
-					code: 404,
-					message: "Not found",
-					name: "MoleculerError"
+					"code": 404,
+					"message": "Not found",
+					"name": "NotFoundError",
+					"type": "NOT_FOUND"
 				});
 			});
 
@@ -493,7 +510,9 @@ describe("Test assets & API route", () => {
 				path: "/api"
 			}]
 		});
+		return broker.start();
 	});
+	afterAll(() => broker.stop());
 
 	it("GET /", () => {
 		return request(server)
@@ -545,7 +564,9 @@ describe("Test whitelist", () => {
 		});
 
 		broker.loadService("./test/services/math.service");
+		return broker.start();
 	});
+	afterAll(() => broker.stop());
 
 	it("GET /api/test/hello", () => {
 		return request(server)
@@ -590,10 +611,9 @@ describe("Test whitelist", () => {
 					code: 404,
 					message: "Service 'test.greeter' is not found.",
 					name: "ServiceNotFoundError",
-					type: null,
+					type: "SERVICE_NOT_FOUND",
 					data: {
-						action: "test.greeter",
-						nodeID: undefined
+						action: "test.greeter"
 					}
 				});
 			});
@@ -634,6 +654,7 @@ describe("Test aliases", () => {
 			name: "Ben"
 		});
 
+		expect(res.$ctx).toBeDefined();
 		expect(res.$route).toBeDefined();
 		expect(res.$service).toBe(service);
 
@@ -671,7 +692,10 @@ describe("Test aliases", () => {
 		});
 
 		broker.loadService("./test/services/math.service");
+		return broker.start();
 	});
+
+	afterAll(() => broker.stop());
 
 
 	it("GET /api/math.add", () => {
@@ -759,7 +783,7 @@ describe("Test aliases", () => {
 					"name": "ServiceNotFoundError",
 					"message": "Service 'greeter.Norbert' is not found.",
 					"code": 404,
-					"type": null,
+					"type": "SERVICE_NOT_FOUND",
 					"data": {"action": "greeter.Norbert", nodeID: undefined}
 				});
 			});
@@ -887,6 +911,10 @@ describe("Test aliases", () => {
 					"name": "MoleculerServerError",
 					"message": "No alias handler",
 					"code": 500,
+					"type": "NO_ALIAS_HANDLER",
+					"data": {
+						"alias": jasmine.any(Object)
+					}
 				});
 
 				expect(customMiddlewares[0]).toHaveBeenCalledTimes(1);
@@ -927,8 +955,9 @@ describe("Test REST shorthand aliases", () => {
 		});
 
 		broker.loadService("./test/services/posts.service");
+		return broker.start();
 	});
-
+	afterAll(() => broker.stop());
 
 	it("GET /api/posts", () => {
 		return request(server)
@@ -1025,7 +1054,9 @@ describe("Test alias & whitelist", () => {
 		});
 
 		broker.loadService("./test/services/math.service");
+		return broker.start();
 	});
+	afterAll(() => broker.stop());
 
 	it("GET /api/add", () => {
 		return request(server)
@@ -1048,7 +1079,7 @@ describe("Test alias & whitelist", () => {
 					code: 404,
 					message: "Service 'test.hello' is not found.",
 					name: "ServiceNotFoundError",
-					type: null,
+					type: "SERVICE_NOT_FOUND",
 					data: {
 						action: "test.hello",
 						nodeID: undefined
@@ -1074,13 +1105,14 @@ describe("Test body-parsers", () => {
 			}]
 		});
 
-		return request(server)
-			.post("/test.greeter")
-			.send({ name: "John" })
-			.expect(422)
-			.expect("Content-Type", "application/json; charset=utf-8")
+		return broker.start()
+			.then(() => request(server)
+				.post("/test.greeter")
+				.send({ name: "John" })
+				.expect(422)
+				.expect("Content-Type", "application/json; charset=utf-8"))
 			.then(res => {
-				/*expect(res.body).toEqual({
+				expect(res.body).toEqual({
 					"code": 422,
 					"data": [{
 						"field": "name",
@@ -1088,9 +1120,10 @@ describe("Test body-parsers", () => {
 						"type": "required"
 					}],
 					"message": "Parameters validation error!",
-					"name": "ValidationError"
-				});*/
-			});
+					"name": "ValidationError",
+					"type": "VALIDATION_ERROR"
+				});
+			}).catch(protectReject).then(() => broker.stop());
 	});
 
 	it("POST /api/test.gretter with JSON parser", () => {
@@ -1102,14 +1135,15 @@ describe("Test body-parsers", () => {
 			}]
 		});
 
-		return request(server)
-			.post("/test.greeter")
-			.send({ name: "John" })
-			.expect(200)
-			.expect("Content-Type", "application/json; charset=utf-8")
+		return broker.start()
+			.then(() => request(server)
+				.post("/test.greeter")
+				.send({ name: "John" })
+				.expect(200)
+				.expect("Content-Type", "application/json; charset=utf-8"))
 			.then(res => {
 				expect(res.body).toBe("Hello John");
-			});
+			}).catch(protectReject).then(() => broker.stop());
 	});
 
 	it("POST /api/test.gretter with JSON parser & invalid JSON", () => {
@@ -1121,12 +1155,13 @@ describe("Test body-parsers", () => {
 			}]
 		});
 
-		return request(server)
-			.post("/test.greeter")
-			.set("Content-Type", "application/json; charset=utf-8")
-			.send("invalid")
-			.expect(400)
-			.expect("Content-Type", "application/json; charset=utf-8")
+		return broker.start()
+			.then(() => request(server)
+				.post("/test.greeter")
+				.set("Content-Type", "application/json; charset=utf-8")
+				.send("invalid")
+				.expect(400)
+				.expect("Content-Type", "application/json; charset=utf-8"))
 			.then(res => {
 				expect(res.body).toEqual({
 					"code": 400,
@@ -1134,7 +1169,7 @@ describe("Test body-parsers", () => {
 					"message": "Unexpected token i in JSON at position 0",
 					"name": "MoleculerError"
 				});
-			});
+			}).catch(protectReject).then(() => broker.stop());
 	});
 
 
@@ -1147,11 +1182,13 @@ describe("Test body-parsers", () => {
 			}]
 		});
 
-		return request(server)
-			.post("/test.greeter")
-			.set("Content-Type", "application/x-www-form-urlencoded")
-			.send({ name: "Bill" })
-			.expect(422);
+		return broker.start()
+			.then(() => request(server)
+				.post("/test.greeter")
+				.set("Content-Type", "application/x-www-form-urlencoded")
+				.send({ name: "Bill" })
+				.expect(422))
+			.catch(protectReject).then(() => broker.stop());
 	});
 
 	it("POST /api/test.gretter with urlencoder parser", () => {
@@ -1163,15 +1200,16 @@ describe("Test body-parsers", () => {
 			}]
 		});
 
-		return request(server)
-			.post("/test.greeter")
-			.set("Content-Type", "application/x-www-form-urlencoded")
-			.send({ name: "Adam" })
-			.expect(200)
-			.expect("Content-Type", "application/json; charset=utf-8")
+		return broker.start()
+			.then(() => request(server)
+				.post("/test.greeter")
+				.set("Content-Type", "application/x-www-form-urlencoded")
+				.send({ name: "Adam" })
+				.expect(200)
+				.expect("Content-Type", "application/json; charset=utf-8"))
 			.then(res => {
 				expect(res.body).toBe("Hello Adam");
-			});
+			}).catch(protectReject).then(() => broker.stop());
 	});
 });
 
@@ -1205,7 +1243,10 @@ describe("Test multiple routes", () => {
 		});
 
 		broker.loadService("./test/services/math.service");
+
+		return broker.start();
 	});
+	afterAll(() => broker.stop());
 
 	it("GET /api1/test/hello", () => {
 		return request(server)
@@ -1287,7 +1328,9 @@ describe("Test mappingPolicy route option", () => {
 			});
 
 			broker.loadService("./test/services/math.service");
+			return broker.start();
 		});
+		afterAll(() => broker.stop());
 
 		it("GET /api/math.add", () => {
 			return request(server)
@@ -1341,7 +1384,9 @@ describe("Test mappingPolicy route option", () => {
 			});
 
 			broker.loadService("./test/services/math.service");
+			return broker.start();
 		});
+		afterAll(() => broker.stop());
 
 		it("GET /api/math.add", () => {
 			return request(server)
@@ -1379,7 +1424,9 @@ describe("Test mappingPolicy route option", () => {
 			});
 
 			broker.loadService("./test/services/math.service");
+			return broker.start();
 		});
+		afterAll(() => broker.stop());
 
 		it("GET /test", () => {
 			return request(server)
@@ -1408,16 +1455,17 @@ describe("Test CORS", () => {
 		[ broker, service, server] = setup({
 			cors: {}
 		});
-		return request(server)
-			.get("/test/hello")
-			.expect(404)
+		return broker.start()
+			.then(() => (server)
+				.get("/test/hello")
+				.expect(404))
 			.then(res => {
 				expect(res.body).toEqual({
 					"message": "Not found",
 					"code": 404,
 					"type": "ERR_ORIGIN_NOT_FOUND",
 					"name": "NotFoundError"});
-			});;
+			}).catch(() => {}).then(() => broker.stop());
 	});
 
 	it("errors on mismatching origin header", () => {
@@ -1426,17 +1474,18 @@ describe("Test CORS", () => {
 				origin: "a"
 			}
 		});
-		return request(server)
-			.get("/test/hello")
-			.set("Origin", "http://localhost:3000")
-			.expect(403)
+		return broker.start()
+			.then(() => (server)
+				.get("/test/hello")
+				.set("Origin", "http://localhost:3000")
+				.expect(403))
 			.then(res => {
 				expect(res.body).toEqual({
 					"message": "Forbidden",
 					"code": 403,
 					"type": "ERR_ORIGIN_NOT_ALLOWED",
 					"name": "ForbiddenError"});
-			});;
+			}).catch(() => {}).then(() => broker.stop());
 	});
 
 	it("with default settings", () => {
@@ -1444,15 +1493,17 @@ describe("Test CORS", () => {
 			cors: {}
 		});
 
-		return request(server)
-			.get("/test/hello")
-			.set("Origin", "http://localhost:3000")
-			.expect(200)
-			.expect("Content-Type", "application/json; charset=utf-8")
-			.expect("Access-Control-Allow-Origin", "*")
+		return broker.start()
+			.then(() => (server)
+				.get("/test/hello")
+				.set("Origin", "http://localhost:3000")
+				.expect(200)
+				.expect("Content-Type", "application/json; charset=utf-8")
+				.expect("Access-Control-Allow-Origin", "*"))
 			//.expect("Access-Control-Allow-Credentials", "*")
 			//.expect("Access-Control-Expose-Headers", "*")
-			.then(res => expect(res.body).toBe("Hello Moleculer"));
+			.then(res => expect(res.body).toBe("Hello Moleculer"))
+			.catch(() => {}).then(() => broker.stop());
 	});
 
 	it("with custom global settings (string)", () => {
@@ -1464,15 +1515,17 @@ describe("Test CORS", () => {
 			}
 		});
 
-		return request(server)
-			.get("/test/hello")
-			.set("Origin", "http://localhost:3000")
-			.expect(200)
-			.expect("Content-Type", "application/json; charset=utf-8")
-			.expect("Access-Control-Allow-Origin", "http://localhost:3000")
-			.expect("Access-Control-Allow-Credentials", "true")
-			.expect("Access-Control-Expose-Headers", "X-Response-Time")
-			.then(res => expect(res.body).toBe("Hello Moleculer"));
+		return broker.start()
+			.then(() => (server)
+				.get("/test/hello")
+				.set("Origin", "http://localhost:3000")
+				.expect(200)
+				.expect("Content-Type", "application/json; charset=utf-8")
+				.expect("Access-Control-Allow-Origin", "http://localhost:3000")
+				.expect("Access-Control-Allow-Credentials", "true")
+				.expect("Access-Control-Expose-Headers", "X-Response-Time"))
+			.then(res => expect(res.body).toBe("Hello Moleculer"))
+			.catch(() => {}).then(() => broker.stop());
 	});
 
 	it("with custom global settings (array)", () => {
@@ -1484,15 +1537,17 @@ describe("Test CORS", () => {
 			}
 		});
 
-		return request(server)
-			.get("/test/hello")
-			.set("Origin", "https://localhost:4000")
-			.expect(200)
-			.expect("Content-Type", "application/json; charset=utf-8")
-			.expect("Access-Control-Allow-Origin", "https://localhost:4000")
-			.expect("Access-Control-Allow-Credentials", "true")
-			.expect("Access-Control-Expose-Headers", "X-Custom-Header, X-Response-Time")
-			.then(res => expect(res.body).toBe("Hello Moleculer"));
+		return broker.start()
+			.then(() => (server)
+				.get("/test/hello")
+				.set("Origin", "https://localhost:4000")
+				.expect(200)
+				.expect("Content-Type", "application/json; charset=utf-8")
+				.expect("Access-Control-Allow-Origin", "https://localhost:4000")
+				.expect("Access-Control-Allow-Credentials", "true")
+				.expect("Access-Control-Expose-Headers", "X-Custom-Header, X-Response-Time"))
+			.then(res => expect(res.body).toBe("Hello Moleculer"))
+			.catch(() => {}).then(() => broker.stop());
 	});
 
 	it("with custom route settings", () => {
@@ -1511,14 +1566,16 @@ describe("Test CORS", () => {
 			}]
 		});
 
-		return request(server)
-			.get("/test/hello")
-			.set("Origin", "http://test-server")
-			.expect(200)
-			.expect("Content-Type", "application/json; charset=utf-8")
-			.expect("Access-Control-Allow-Origin", "http://test-server")
-			.expect("Access-Control-Expose-Headers", "X-Response-Time")
-			.then(res => expect(res.body).toBe("Hello Moleculer"));
+		return broker.start()
+			.then(() => (server)
+				.get("/test/hello")
+				.set("Origin", "http://test-server")
+				.expect(200)
+				.expect("Content-Type", "application/json; charset=utf-8")
+				.expect("Access-Control-Allow-Origin", "http://test-server")
+				.expect("Access-Control-Expose-Headers", "X-Response-Time"))
+			.then(res => expect(res.body).toBe("Hello Moleculer"))
+			.catch(() => {}).then(() => broker.stop());
 	});
 
 	it("returns matching CORS origin wildcard with single origin", () => {
@@ -1528,13 +1585,15 @@ describe("Test CORS", () => {
 			}
 		});
 
-		return request(server)
-			.get("/test/hello")
-			.set("Origin", "http://localhost:4000")
-			.expect(200)
-			.expect("Access-Control-Allow-Origin", "http://localhost:4000")
-			.expect("Vary", "Origin")
-			.then(res => expect(res.body).toBe("Hello Moleculer"));
+		return broker.start()
+			.then(() => (server)
+				.get("/test/hello")
+				.set("Origin", "http://localhost:4000")
+				.expect(200)
+				.expect("Access-Control-Allow-Origin", "http://localhost:4000")
+				.expect("Vary", "Origin"))
+			.then(res => expect(res.body).toBe("Hello Moleculer"))
+			.catch(() => {}).then(() => broker.stop());
 	});
 
 	it("returns matching CORS origin wildcard", () => {
@@ -1544,13 +1603,15 @@ describe("Test CORS", () => {
 			}
 		});
 
-		return request(server)
-			.get("/test/hello")
-			.set("Origin", "http://www.a.com")
-			.expect(200)
-			.expect("Access-Control-Allow-Origin", "http://www.a.com")
-			.expect("Vary", "Origin")
-			.then(res => expect(res.body).toBe("Hello Moleculer"));
+		return broker.start()
+			.then(() => (server)
+				.get("/test/hello")
+				.set("Origin", "http://www.a.com")
+				.expect(200)
+				.expect("Access-Control-Allow-Origin", "http://www.a.com")
+				.expect("Vary", "Origin"))
+			.then(res => expect(res.body).toBe("Hello Moleculer"))
+			.catch(() => {}).then(() => broker.stop());
 	});
 
 	it("returns matching CORS origin wildcard when more than one wildcard", () => {
@@ -1560,13 +1621,15 @@ describe("Test CORS", () => {
 			}
 		});
 
-		return request(server)
-			.get("/test/hello")
-			.set("Origin", "http://www.a.com")
-			.expect(200)
-			.expect("Access-Control-Allow-Origin", "http://www.a.com")
-			.expect("Vary", "Origin")
-			.then(res => expect(res.body).toBe("Hello Moleculer"));
+		return broker.start()
+			.then(() => (server)
+				.get("/test/hello")
+				.set("Origin", "http://www.a.com")
+				.expect(200)
+				.expect("Access-Control-Allow-Origin", "http://www.a.com")
+				.expect("Vary", "Origin"))
+			.then(res => expect(res.body).toBe("Hello Moleculer"))
+			.catch(() => {}).then(() => broker.stop());
 	});
 
 	it("preflight request with custom route settings", () => {
@@ -1586,19 +1649,21 @@ describe("Test CORS", () => {
 			}]
 		});
 
-		return request(server)
-			.options("/test/hello")
-			.set("Origin", "http://test-server")
-			.set("Access-Control-Request-Method", "GET")
-			.expect(204)
-			.expect("Access-Control-Allow-Origin", "http://test-server")
-			.expect("Access-Control-Allow-Headers", "X-Rate-Limiting")
-			.expect("Access-Control-Allow-Methods", "GET, POST, DELETE")
-			.expect("Access-Control-Allow-Credentials", "true")
-			.expect("Access-Control-Expose-Headers", "X-Custom-Header, X-Response-Time")
-			.expect("Access-Control-Max-Age", "3600")
-			.expect("Vary", "Origin")
-			.then(res => expect(res.text).toBe(""));
+		return broker.start()
+			.then(() => (server)
+				.options("/test/hello")
+				.set("Origin", "http://test-server")
+				.set("Access-Control-Request-Method", "GET")
+				.expect(204)
+				.expect("Access-Control-Allow-Origin", "http://test-server")
+				.expect("Access-Control-Allow-Headers", "X-Rate-Limiting")
+				.expect("Access-Control-Allow-Methods", "GET, POST, DELETE")
+				.expect("Access-Control-Allow-Credentials", "true")
+				.expect("Access-Control-Expose-Headers", "X-Custom-Header, X-Response-Time")
+				.expect("Access-Control-Max-Age", "3600")
+				.expect("Vary", "Origin"))
+			.then(res => expect(res.text).toBe(""))
+			.catch(() => {}).then(() => broker.stop());
 	});
 
 	it("preflight request with default settings", () => {
@@ -1608,14 +1673,16 @@ describe("Test CORS", () => {
 			}
 		});
 
-		return request(server)
-			.options("/test/hello")
-			.set("Origin", "http://localhost:3000")
-			.set("Access-Control-Request-Method", "GET")
-			.expect(204)
-			.expect("Access-Control-Allow-Origin", "*")
-			.expect("Access-Control-Allow-Headers", "X-Custom-Header, X-Response-Time")
-			.then(res => expect(res.text).toBe(""));
+		return broker.start()
+			.then(() => (server)
+				.options("/test/hello")
+				.set("Origin", "http://localhost:3000")
+				.set("Access-Control-Request-Method", "GET")
+				.expect(204)
+				.expect("Access-Control-Allow-Origin", "*")
+				.expect("Access-Control-Allow-Headers", "X-Custom-Header, X-Response-Time"))
+			.then(res => expect(res.text).toBe(""))
+			.catch(() => {}).then(() => broker.stop());
 	});
 
 	it("preflight request with 'Access-Control-Request-Headers'", () => {
@@ -1633,18 +1700,20 @@ describe("Test CORS", () => {
 			}]
 		});
 
-		return request(server)
-			.options("/hello")
-			.set("Origin", "http://localhost:3000")
-			.set("Access-Control-Request-Method", "GET")
-			.set("Access-Control-Request-Headers", "X-Rate-Limiting")
-			.expect(204)
-			.expect("Access-Control-Allow-Origin", "http://localhost:3000")
-			.expect("Access-Control-Allow-Headers", "X-Rate-Limiting")
-			.expect("Access-Control-Allow-Methods", "GET")
-			.expect("Access-Control-Expose-Headers", "X-Custom-Header, X-Response-Time")
-			.expect("Vary", "Access-Control-Request-Headers")
-			.then(res => expect(res.text).toBe(""));
+		return broker.start()
+			.then(() => (server)
+				.options("/hello")
+				.set("Origin", "http://localhost:3000")
+				.set("Access-Control-Request-Method", "GET")
+				.set("Access-Control-Request-Headers", "X-Rate-Limiting")
+				.expect(204)
+				.expect("Access-Control-Allow-Origin", "http://localhost:3000")
+				.expect("Access-Control-Allow-Headers", "X-Rate-Limiting")
+				.expect("Access-Control-Allow-Methods", "GET")
+				.expect("Access-Control-Expose-Headers", "X-Custom-Header, X-Response-Time")
+				.expect("Vary", "Access-Control-Request-Headers"))
+			.then(res => expect(res.text).toBe(""))
+			.catch(() => {}).then(() => broker.stop());
 	});
 });
 
@@ -1664,10 +1733,13 @@ describe("Test Rate Limiter", () => {
 				headers: true
 			}
 		});
+
+		return broker.start();
 	});
 
 	afterAll(() => {
 		clock.uninstall();
+		return broker.stop();
 	});
 
 	it("with headers #1", () => {
@@ -1749,7 +1821,7 @@ describe("Test Rate Limiter", () => {
 describe("Test onBeforeCall & onAfterCall", () => {
 
 	it("should call handlers", () => {
-		const broker = new ServiceBroker();
+		const broker = new ServiceBroker({ logger: false });
 		broker.loadService("./test/services/test.service");
 
 		const beforeCall = jest.fn((ctx, route, req, res) => {
@@ -1790,11 +1862,12 @@ describe("Test onBeforeCall & onAfterCall", () => {
 		expect(service.routes[0].onBeforeCall).toBeDefined();
 		expect(service.routes[0].onAfterCall).toBeDefined();
 
-		return request(server)
-			.get("/test/hello")
-			.expect(200)
-			.expect("Content-Type", "application/json; charset=utf-8")
-			.expect("X-Custom-Header", "working")
+		return broker.start()
+			.then(() => request(server)
+				.get("/test/hello")
+				.expect(200)
+				.expect("Content-Type", "application/json; charset=utf-8")
+				.expect("X-Custom-Header", "working"))
 			.then(res => {
 				expect(res.body).toBe("Hello Moleculer");
 				expect(beforeCall).toHaveBeenCalledTimes(1);
@@ -1803,11 +1876,11 @@ describe("Test onBeforeCall & onAfterCall", () => {
 				expect(afterCall).toHaveBeenCalledTimes(1);
 				expect(afterCall).toHaveBeenCalledWith(jasmine.any(Context), jasmine.any(Object), jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse), "Hello Moleculer");
 				expect(afterCall.mock.calls[0][0].meta.custom).toBe("John");
-			});
+			}).catch(() => {}).then(() => broker.stop());
 	});
 
 	it("should modify response in 'onAfterCall'", () => {
-		const broker = new ServiceBroker();
+		const broker = new ServiceBroker({ logger: false });
 		broker.loadService("./test/services/test.service");
 
 		const afterCall = jest.fn((ctx, route, req, res, data) => {
@@ -1827,10 +1900,11 @@ describe("Test onBeforeCall & onAfterCall", () => {
 		});
 		const server = service.server;
 
-		return request(server)
-			.get("/test/json")
-			.expect(200)
-			.expect("Content-Type", "application/json; charset=utf-8")
+		return broker.start()
+			.then(() => request(server)
+				.get("/test/json")
+				.expect(200)
+				.expect("Content-Type", "application/json; charset=utf-8"))
 			.then(res => {
 				expect(res.body).toEqual({
 					id: 123,
@@ -1841,14 +1915,14 @@ describe("Test onBeforeCall & onAfterCall", () => {
 					}
 				});
 				expect(afterCall).toHaveBeenCalledTimes(1);
-			});
+			}).catch(() => {}).then(() => broker.stop());
 	});
 });
 
 describe("Test route middlewares", () => {
 
 	it("should call global & route middlewares", () => {
-		const broker = new ServiceBroker();
+		const broker = new ServiceBroker({ logger: false });
 		broker.loadService("./test/services/test.service");
 
 		const mwg = jest.fn((req, res, next) => next());
@@ -1873,11 +1947,12 @@ describe("Test route middlewares", () => {
 		});
 		const server = service.server;
 
-		return request(server)
-			.get("/test/hello/")
-			.expect(200)
-			.expect("Content-Type", "application/json; charset=utf-8")
-			.expect("X-Custom-Header", "middleware")
+		return broker.start()
+			.then(() => request(server)
+				.get("/test/hello/")
+				.expect(200)
+				.expect("Content-Type", "application/json; charset=utf-8")
+				.expect("X-Custom-Header", "middleware"))
 			.then(res => {
 				expect(res.body).toBe("Hello Moleculer");
 				expect(mwg).toHaveBeenCalledTimes(1);
@@ -1888,11 +1963,11 @@ describe("Test route middlewares", () => {
 
 				expect(mw2).toHaveBeenCalledTimes(1);
 				expect(mw2).toHaveBeenCalledWith(jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse), jasmine.any(Function));
-			});
+			}).catch(() => {}).then(() => broker.stop());
 	});
 
 	it("should return with error if middlewares call next with error", () => {
-		const broker = new ServiceBroker();
+		const broker = new ServiceBroker({ logger: false });
 		broker.loadService("./test/services/test.service");
 
 		const mw1 = jest.fn((req, res, next) => {
@@ -1913,10 +1988,11 @@ describe("Test route middlewares", () => {
 		});
 		const server = service.server;
 
-		return request(server)
-			.get("/test/hello")
-			.expect(500)
-			.expect("Content-Type", "application/json; charset=utf-8")
+		return broker.start()
+			.then(() => request(server)
+				.get("/test/hello")
+				.expect(500)
+				.expect("Content-Type", "application/json; charset=utf-8"))
 			.then(res => {
 				expect(res.body).toEqual({
 					message: "Something went wrong",
@@ -1927,7 +2003,7 @@ describe("Test route middlewares", () => {
 				expect(mw1).toHaveBeenCalledWith(jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse), jasmine.any(Function));
 
 				expect(mw2).toHaveBeenCalledTimes(0);
-			});
+			}).catch(() => {}).then(() => broker.stop());
 	});
 
 });
@@ -1945,7 +2021,7 @@ describe("Test authorization", () => {
 	});
 
 	it("should return with data", () => {
-		const broker = new ServiceBroker();
+		const broker = new ServiceBroker({ logger: false });
 		broker.loadService("./test/services/test.service");
 
 		const authorize = jest.fn(() => Promise.resolve());
@@ -1963,19 +2039,20 @@ describe("Test authorization", () => {
 
 		expect(service.routes[0].authorization).toBe(true);
 
-		return request(server)
-			.get("/test/hello")
-			.expect(200)
-			.expect("Content-Type", "application/json; charset=utf-8")
+		return broker.start()
+			.then(() => request(server)
+				.get("/test/hello")
+				.expect(200)
+				.expect("Content-Type", "application/json; charset=utf-8"))
 			.then(res => {
 				expect(res.body).toBe("Hello Moleculer");
 				expect(authorize).toHaveBeenCalledTimes(1);
 				expect(authorize).toHaveBeenCalledWith(jasmine.any(Context), jasmine.any(Object), jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse));
-			});
+			}).catch(() => {}).then(() => broker.stop());
 	});
 
 	it("should give back error", () => {
-		const broker = new ServiceBroker();
+		const broker = new ServiceBroker({ logger: false });
 		broker.loadService("./test/services/test.service");
 
 		const authorize = jest.fn(() => Promise.reject(new UnAuthorizedError(ERR_NO_TOKEN)));
@@ -1993,10 +2070,11 @@ describe("Test authorization", () => {
 
 		expect(service.routes[0].authorization).toBe(true);
 
-		return request(server)
-			.get("/test/hello")
+		return broker.start()
+			.then(() => request(server)
+				.get("/test/hello")
 			//.expect(401)
-			.expect("Content-Type", "application/json; charset=utf-8")
+				.expect("Content-Type", "application/json; charset=utf-8"))
 			.then(res => {
 				expect(res.body).toEqual({
 					"message": "Unauthorized",
@@ -2005,7 +2083,7 @@ describe("Test authorization", () => {
 					"name": "UnAuthorizedError"});
 				expect(authorize).toHaveBeenCalledTimes(1);
 				expect(authorize).toHaveBeenCalledWith(jasmine.any(Context), jasmine.any(Object), jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse));
-			});
+			}).catch(() => {}).then(() => broker.stop());
 	});
 
 });
@@ -2013,7 +2091,7 @@ describe("Test authorization", () => {
 describe("Test onError handlers", () => {
 
 	it("should return with JSON error object", () => {
-		const broker = new ServiceBroker();
+		const broker = new ServiceBroker({ logger: false });
 		const service = broker.createService(ApiGateway, {
 			settings: {
 				routes: [{
@@ -2023,10 +2101,11 @@ describe("Test onError handlers", () => {
 		});
 		const server = service.server;
 
-		return request(server)
-			.get("/api/test/hello")
-			.expect(404)
-			.expect("Content-Type", "application/json; charset=utf-8")
+		return broker.start()
+			.then(() => request(server)
+				.get("/api/test/hello")
+				.expect(404)
+				.expect("Content-Type", "application/json; charset=utf-8"))
 			.then(res => {
 				expect(res.body).toEqual({
 					code: 404,
@@ -2037,11 +2116,11 @@ describe("Test onError handlers", () => {
 					name: "ServiceNotFoundError",
 					type: null
 				});
-			});
+			}).catch(() => {}).then(() => broker.stop());
 	});
 
 	it("should return with global error handler response", () => {
-		const broker = new ServiceBroker();
+		const broker = new ServiceBroker({ logger: false });
 		const service = broker.createService(ApiGateway, {
 			settings: {
 				routes: [{
@@ -2056,17 +2135,18 @@ describe("Test onError handlers", () => {
 		});
 		const server = service.server;
 
-		return request(server)
-			.get("/api/test/hello")
-			.expect(501)
-			.expect("Content-Type", "text/plain")
+		return broker.start()
+			.then(() => request(server)
+				.get("/api/test/hello")
+				.expect(501)
+				.expect("Content-Type", "text/plain"))
 			.then(res => {
 				expect(res.text).toBe("Global error: Service 'test.hello' is not found.");
-			});
+			}).catch(() => {}).then(() => broker.stop());
 	});
 
 	it("should return with route error handler response", () => {
-		const broker = new ServiceBroker();
+		const broker = new ServiceBroker({ logger: false });
 		const service = broker.createService(ApiGateway, {
 			settings: {
 				routes: [{
@@ -2087,27 +2167,28 @@ describe("Test onError handlers", () => {
 		});
 		const server = service.server;
 
-		return request(server)
-			.get("/api/test/hello")
-			.expect(500)
-			.expect("Content-Type", "text/plain")
+		return broker.start()
+			.then(() => request(server)
+				.get("/api/test/hello")
+				.expect(500)
+				.expect("Content-Type", "text/plain"))
 			.then(res => {
 				expect(res.text).toBe("Route error: Service 'test.hello' is not found.");
-			});
+			}).catch(() => {}).then(() => broker.stop());
 	});
 });
 
 describe("Test lifecycle events", () => {
 
 	it("`created` with only HTTP", () => {
-		const broker = new ServiceBroker();
+		const broker = new ServiceBroker({ logger: false });
 
 		const service = broker.createService(ApiGateway);
 		expect(service.isHTTPS).toBe(false);
 	});
 
 	it("`created` with HTTPS", () => {
-		const broker = new ServiceBroker();
+		const broker = new ServiceBroker({ logger: false });
 
 		const service = broker.createService(ApiGateway, {
 			settings: {
@@ -2121,7 +2202,7 @@ describe("Test lifecycle events", () => {
 	});
 
 	it("`started`", () => {
-		const broker = new ServiceBroker();
+		const broker = new ServiceBroker({ logger: false });
 		const service = broker.createService(ApiGateway);
 		const server = service.server;
 
@@ -2134,7 +2215,7 @@ describe("Test lifecycle events", () => {
 	});
 
 	it("`stopped`", () => {
-		const broker = new ServiceBroker();
+		const broker = new ServiceBroker({ logger: false });
 		const service = broker.createService(ApiGateway);
 		const server = service.server;
 		server.listen();
@@ -2159,7 +2240,7 @@ describe("Test middleware mode", () => {
 
 	beforeAll(() => {
 
-		broker = new ServiceBroker();
+		broker = new ServiceBroker({ logger: false });
 		broker.loadService("./test/services/test.service");
 
 		service = broker.createService(ApiGateway, {
@@ -2203,3 +2284,4 @@ describe("Test middleware mode", () => {
 			});
 	});
 });
+

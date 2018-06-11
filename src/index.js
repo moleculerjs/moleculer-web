@@ -18,7 +18,6 @@ const nanomatch  				= require("nanomatch");
 const isReadableStream			= require("isstream").isReadable;
 const pathToRegexp 				= require("path-to-regexp");
 
-const { Context } 				= require("moleculer");
 const { MoleculerError, MoleculerServerError, ServiceNotFoundError } = require("moleculer").Errors;
 const { BadRequestError, NotFoundError, ForbiddenError, RateLimitExceeded, ERR_UNABLE_DECODE_PARAM, ERR_ORIGIN_NOT_FOUND, ERR_ORIGIN_NOT_ALLOWED } = require("./errors");
 
@@ -120,15 +119,17 @@ module.exports = {
 				req.$ctx = ctx;
 				res.$ctx = ctx;
 
+				if (ctx.requestID)
+					res.setHeader("X-Request-ID", ctx.requestID);
+
 				this.logRequest(req);
 
 				// Split URL & query params
 				let parsed = this.parseQueryString(req);
 				let url = parsed.url;
+				req.parsedUrl = url; // TODO check ExpressJS
 				if (!req.query)
 					req.query = parsed.query;
-
-				let params = {};
 
 				// Trim trailing slash
 				if (url.length > 1 && url.endsWith("/"))
@@ -136,119 +137,76 @@ module.exports = {
 
 				// Skip if no routes
 				if (!this.routes || this.routes.length == 0)
-					return;
+					return null;
 
 				// Check the URL
 				for(let i = 0; i < this.routes.length; i++) {
 					const route = this.routes[i];
 
 					if (url.startsWith(route.path)) {
-
-						// Pointer to the matched route
-						req.$route = route;
-						res.$route = route;
-
-						return new Promise((resolve, reject) => {
-						// Call middlewares
-							this.compose(...route.middlewares)(req, res, err => {
-								if (err)
-									reject(new MoleculerError(err.message, err.code || err.status, err.type));
-
-								resolve();
-							});
-						}).then(() => {
-
-							// CORS headers
-							if (route.cors) {
-								if (req.method == "OPTIONS" && req.headers["access-control-request-method"]) {
-									// Preflight request
-									this.writeCorsHeaders(route, req, res, true);
-
-									// 204 - No content
-									res.writeHead(204, {
-										"Content-Length": "0"
-									});
-									res.end();
-
-									this.logResponse(req, res);
-									return true;
-								}
-
-								// Set CORS headers to `res`
-								this.writeCorsHeaders(route, req, res, true);
-							}
-
-							// Merge params
-							const body = _.isObject(req.body) ? req.body : {};
-							Object.assign(params, body, req.query);
-							req.$params = params;
-
-							// Resolve action name
-							let urlPath = url.slice(route.path.length);
-							if (urlPath.startsWith("/"))
-								urlPath = urlPath.slice(1);
-
-							urlPath = urlPath.replace(/~/, "$");
-							let actionName = urlPath;
-
-							// Resolve aliases
-							if (route.aliases && route.aliases.length > 0) {
-								const found = this.resolveAlias(route, urlPath, req.method);
-								if (found) {
-									let alias = found.alias;
-									this.logger.debug(`  Alias: ${req.method} ${urlPath} -> ${alias.action}`);
-									Object.assign(params, found.params);
-
-									req.$alias = alias;
-
-									// Custom Action handler
-									if (alias.handler) {
-										//return this.actions.alias(ctx.params, { parentCtx: ctx });
-										return alias.handler.call(this, req, res, err => {
-											if (err)
-												throw new MoleculerError(err.message, err.code || err.status, err.type);
-
-												// If it is reached, there is no real handler for this alias.
-											throw new MoleculerServerError("No alias handler", 500);
-										});
-									}
-
-									actionName = alias.action;
-
-								} else if (route.mappingPolicy == MAPPING_POLICY_RESTRICT) {
-									// Blocking direct access
-									return null;
-								}
-
-							} else if (route.mappingPolicy == MAPPING_POLICY_RESTRICT) {
-								// Blocking direct access
-								return null;
-							}
-
-							actionName = actionName.replace(/\//g, ".");
-
-							if (route.opts.camelCaseNames) {
-								actionName = actionName.split(".").map(_.camelCase).join(".");
-							}
-
-							return this.preActionCall(route, req, res, actionName);
-
-						});
+						return this.routeHandler(ctx, route, req, res);
 					}
 				}
-			}
-		},
 
-		alias: {
-			private: true,
-			handler(ctx) {
-
+				return null;
 			}
 		}
 	},
 
 
 	methods: {
+
+		/**
+		 * HTTP request handler
+		 *
+		 * @param {HttpRequest} req
+		 * @param {HttpResponse} res
+		 * @param {Function} next Call next middleware (for Express)
+		 * @returns {Promise}
+		 */
+		httpHandler(req, res, next) {
+			// Set pointers to service
+			req.$service = this;
+			res.$service = this;
+			req.$next = next;
+
+			res.locals = res.locals || {};
+
+			const requestID = req.headers["x-request-id"];
+debugger; // eslint-disable-line
+
+			return this.actions.rest({ req, res }, { requestID })
+				.then(result => {
+					if (result == null) {
+						// No route
+
+						// Serve assets static files
+						if (this.serve) {
+							this.serve(req, res, err => {
+								this.logger.debug(err);
+								this.send404(req, res);
+							});
+							return;
+						}
+
+						// If no route, send 404
+						this.send404(req, res);
+					}
+				})
+				.catch(err => {
+					this.logger.error(err);
+					this.sendError(req, res, err);
+				});
+		},
+
+		/**
+		 * Middleware for ExpressJS
+		 *
+		 * @returns
+		 */
+		express() {
+			return (req, res, next) => this.httpHandler(req, res, next);
+		},
 
 		/**
 		 * Compose middlewares
@@ -272,190 +230,19 @@ module.exports = {
 		},
 
 		/**
-		 * Create route object from options
-		 *
-		 * @param {Object} opts
-		 * @returns {Object}
+		 * Compose middlewares and return Promise
+		 * @param {...Function} mws
+		 * @returns {Promise}
 		 */
-		createRoute(opts) {
-			this.logger.info(`Register route to '${opts.path}'`);
-			let route = {
-				opts,
-				middlewares: []
-			};
-			if (opts.authorization) {
-				if (!_.isFunction(this.authorize)) {
-					this.logger.warn("Please define 'authorize' method in the service to authorization.");
-					route.authorization = false;
-				} else
-					route.authorization = true;
-			}
+		composeThen(req, res, ...mws) {
+			return new Promise((resolve, reject) => {
+				this.compose(...mws)(req, res, err => {
+					if (err)
+						reject(new MoleculerError(err.message, err.code || err.status, err.type));
 
-			// Call options
-			route.callOptions = opts.callOptions;
-
-			// Create body parsers as middlewares
-			if (opts.bodyParsers) {
-				const bps = opts.bodyParsers;
-				Object.keys(bps).forEach(key => {
-					const opts = _.isObject(bps[key]) ? bps[key] : undefined;
-					if (bps[key] !== false && key in bodyParser)
-						route.middlewares.push(bodyParser[key](opts));
+					resolve();
 				});
-			}
-
-			// Middlewares
-			let mw = [];
-			if (this.settings.use && Array.isArray(this.settings.use) && this.settings.use.length > 0)
-				mw.push(...this.settings.use);
-
-			if (opts.use && Array.isArray(opts.use) && opts.use.length > 0)
-				mw.push(...opts.use);
-
-			if (mw.length > 0) {
-				route.middlewares.push(...mw);
-				this.logger.info(`  Registered ${mw.length} middlewares.`);
-			}
-
-			// CORS
-			if (this.settings.cors || opts.cors) {
-				// Merge cors settings
-				route.cors = Object.assign({}, {
-					origin: "*",
-					methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE"]
-				}, this.settings.cors, opts.cors);
-			} else {
-				route.cors = null;
-			}
-
-			// Rate limiter (Inspired by https://github.com/dotcypress/micro-ratelimit/)
-			if (this.settings.rateLimit) {
-				let opts = Object.assign({}, {
-					window: 60 * 1000,
-					limit: 30,
-					headers: false,
-					key: (req) => {
-						return req.headers["x-forwarded-for"] ||
-							req.connection.remoteAddress ||
-							req.socket.remoteAddress ||
-							req.connection.socket.remoteAddress;
-					}
-				}, this.settings.rateLimit);
-
-				route.rateLimit = opts;
-
-				if (opts.StoreFactory)
-					route.rateLimit.store = new opts.StoreFactory(opts.window, opts);
-				else
-					route.rateLimit.store = new MemoryStore(opts.window, opts);
-
-			}
-
-			// Handle whitelist
-			route.whitelist = opts.whitelist;
-			route.hasWhitelist = Array.isArray(route.whitelist);
-
-			// `onBeforeCall` handler
-			if (opts.onBeforeCall)
-				route.onBeforeCall = this.Promise.method(opts.onBeforeCall);
-
-			// `onAfterCall` handler
-			if (opts.onAfterCall)
-				route.onAfterCall = this.Promise.method(opts.onAfterCall);
-
-			// `onError` handler
-			if (opts.onError)
-				route.onError = opts.onError;
-
-			// Create URL prefix
-			route.path = (this.settings.path || "") + (opts.path || "");
-			route.path = route.path || "/";
-
-			// Helper for aliased routes
-			const createAlias = (matchPath, action) => {
-				let method = "*";
-				if (matchPath.indexOf(" ") !== -1) {
-					const p = matchPath.split(" ");
-					method = p[0];
-					matchPath = p[1];
-				}
-				if (matchPath.startsWith("/"))
-					matchPath = matchPath.slice(1);
-
-				let alias;
-				if (_.isString(action))
-					alias = { action };
-				else if (_.isFunction(action))
-					alias = { handler: action };
-				else if (Array.isArray(action)) {
-					let mws = action.map(mw => {
-						if (_.isString(mw))
-							return (req, res) => this.preActionCall(route, req, res, mw);
-						else if(_.isFunction(mw))
-							return mw;
-					});
-					alias = { handler: this.compose(...mws) };
-				} else {
-					alias = action;
-				}
-
-				alias.path = matchPath;
-				alias.method = method;
-
-				let keys = [];
-				alias.re = pathToRegexp(matchPath, keys, {}); // Options: https://github.com/pillarjs/path-to-regexp#usage
-
-				this.logger.info(`  Alias: ${method} ${route.path + (route.path.endsWith("/") ? "": "/")}${matchPath} -> ${alias.handler != null ? "<Function>" : alias.action}`);
-
-				alias.match = url => {
-					const m = alias.re.exec(url);
-					if (!m) return false;
-
-					const params = {};
-
-					let key, param;
-					for (let i = 0; i < keys.length; i++) {
-						key = keys[i];
-						param = m[i + 1];
-						if (!param) continue;
-
-						params[key.name] = decodeParam(param);
-
-						if (key.repeat)
-							params[key.name] = params[key.name].split(key.delimiter);
-					}
-
-					return params;
-				};
-
-				return alias;
-			};
-
-			// Handle aliases
-			if (opts.aliases && Object.keys(opts.aliases).length > 0) {
-				route.aliases = [];
-				_.forIn(opts.aliases, (action, matchPath) => {
-					if (matchPath.startsWith("REST ")) {
-						const p = matchPath.split(" ");
-						const pathName = p[1];
-
-						// Generate RESTful API. More info http://www.restapitutorial.com/
-						route.aliases.push(createAlias(`GET ${pathName}`, 			`${action}.list`));
-						route.aliases.push(createAlias(`GET ${pathName}/:id`, 		`${action}.get`));
-						route.aliases.push(createAlias(`POST ${pathName}`, 			`${action}.create`));
-						route.aliases.push(createAlias(`PUT ${pathName}/:id`, 		`${action}.update`));
-						//route.aliases.push(createAlias(`PATCH ${pathName}/:id`, 	`${action}.patch`));
-						route.aliases.push(createAlias(`DELETE ${pathName}/:id`, 	`${action}.remove`));
-
-					} else {
-						route.aliases.push(createAlias(matchPath, action));
-					}
-				});
-			}
-
-			route.mappingPolicy = opts.mappingPolicy || MAPPING_POLICY_ALL;
-
-			return route;
+			});
 		},
 
 		/**
@@ -467,7 +254,7 @@ module.exports = {
 			if (req.$next)
 				return req.$next();
 
-			this.sendError(req, res, new MoleculerError("Not found", 404));
+			this.sendError(req, res, new NotFoundError());
 		},
 
 		/**
@@ -491,12 +278,21 @@ module.exports = {
 			if (req.$next)
 				return req.$next(err);
 
+			if (res.headersSent) {
+				this.logger.info("Headers has already sent");
+				return;
+			}
+
 			if (!err || !(err instanceof Error)) {
 				res.writeHead(500);
 				res.end("Internal Server Error");
 
 				this.logResponse(req, res);
 				return;
+			}
+
+			if (!(err instanceof MoleculerError)) {
+				err = new MoleculerError(err.message, err.code || err.status, err.type);
 			}
 
 			// Return with the error as JSON object
@@ -544,44 +340,92 @@ module.exports = {
 			return {query, url};
 		},
 
-		/**
-		 * HTTP request handler
-		 *
-		 * @param {HttpRequest} req
-		 * @param {HttpResponse} res
-		 * @param {Function} next Call next middleware (for Express)
-		 * @returns {Promise}
-		 */
-		httpHandler(req, res, next) {
-			// Set pointers to service
-			req.$service = this;
-			res.$service = this;
-			req.$next = next;
+		routeHandler(ctx, route, req, res) {
+			// Pointer to the matched route
+			req.$route = route;
+			res.$route = route;
 
-			res.locals = res.locals || {};
+			return this.composeThen(req, res, ...route.middlewares)
+				.then(() => {
+					let params = {};
 
-			return this.actions.rest({ req, res })
-				.then(result => {
-					if (result == null) {
-						// No route
+					// CORS headers
+					if (route.cors) {
+						if (req.method == "OPTIONS" && req.headers["access-control-request-method"]) {
+						// Preflight request
+							this.writeCorsHeaders(route, req, res, true);
 
-						// Serve assets static files
-						if (this.serve) {
-							this.serve(req, res, err => {
-								this.logger.debug(err);
-								this.send404(req, res);
+							// 204 - No content
+							res.writeHead(204, {
+								"Content-Length": "0"
 							});
-							return;
+							res.end();
+
+							this.logResponse(req, res);
+							return true;
 						}
 
-						// If no route, send 404
-						this.send404(req, res);
+						// Set CORS headers to `res`
+						this.writeCorsHeaders(route, req, res, true);
 					}
-				})
-				.catch(err => {
-					this.logger.error(err);
-					this.sendError(req, res, err);
+
+					// Merge params
+					if (route.opts.mergeParams === false) { // TODO test
+						params = { body: req.body, query: req.query };
+					} else {
+						const body = _.isObject(req.body) ? req.body : {};
+						Object.assign(params, body, req.query);
+					}
+					req.$params = params;
+
+					// Resolve action name
+					let urlPath = req.parsedUrl.slice(route.path.length);
+					if (urlPath.startsWith("/"))
+						urlPath = urlPath.slice(1);
+
+					urlPath = urlPath.replace(/~/, "$");
+					let action = urlPath;
+
+					// Resolve aliases
+					if (route.aliases && route.aliases.length > 0) {
+						const found = this.resolveAlias(route, urlPath, req.method);
+						if (found) {
+							let alias = found.alias;
+							this.logger.debug(`  Alias: ${req.method} ${urlPath} -> ${alias.action}`);
+
+							if (route.opts.mergeParams === false) { // TODO: test
+								params.params = found.params;
+							} else {
+								Object.assign(params, found.params);
+							}
+
+							req.$alias = alias;
+
+							// Alias handler
+							return this.aliasHandler(req, res, alias);
+
+						} else if (route.mappingPolicy == MAPPING_POLICY_RESTRICT) {
+							// Blocking direct access
+							return null;
+						}
+
+					} else if (route.mappingPolicy == MAPPING_POLICY_RESTRICT) {
+						// Blocking direct access
+						return null;
+					}
+
+					if (!action)
+						return null;
+
+					// Not found alias, call services by action name
+					action = action.replace(/\//g, ".");
+					if (route.opts.camelCaseNames) {
+						action = action.split(".").map(_.camelCase).join(".");
+					}
+
+					return this.aliasHandler(req, res, { action });
 				});
+
 		},
 
 		/**
@@ -590,19 +434,20 @@ module.exports = {
 		 * 	- CORS
 		 * 	- Rate limiter
 		 *
-		 * @param {Object} route
 		 * @param {HttpRequest} req
 		 * @param {HttpResponse} res
-		 * @param {String} actionName
+		 * @param {Object} alias
 		 * @returns
 		 */
-		preActionCall(route, req, res, actionName) {
+		aliasHandler(req, res, alias) {
+			const route = req.$route;
+			const ctx = req.$ctx;
 
 			// Whitelist check
-			if (route.hasWhitelist) {
-				if (!this.checkWhitelist(route, actionName)) {
-					this.logger.debug(`  The '${actionName}' action is not in the whitelist!`);
-					throw new ServiceNotFoundError(actionName);
+			if (alias.action && route.hasWhitelist) {
+				if (!this.checkWhitelist(route, alias.action)) {
+					this.logger.debug(`  The '${alias.action}' action is not in the whitelist!`);
+					throw new ServiceNotFoundError({ action: alias.action });
 				}
 			}
 
@@ -625,87 +470,7 @@ module.exports = {
 				}
 			}
 
-			// Call the action
-			return this.callAction(route, actionName, req, res, req.$params);
-		},
-
-		/**
-		 * Middleware for ExpressJS
-		 *
-		 * @returns
-		 */
-		express() {
-			return (req, res, next) => this.httpHandler(req, res, next);
-		},
-
-		/**
-		 * Create a wrapper context for the request
-		 *
-		 * @param {Object} route 		Route options
-		 * @param {HttpRequest} req 	Request object
-		 * @param {HttpResponse} res 	Response object
-		 * @param {Object} params		Merged query params + named parameters from URL
-		 * @returns {Context}
-		 */
-		createRestContext(route, req, res, params) {
-			const vName = this.version ? `${this.version}.${this.name}` : this.name;
-			const method = req.method.toLowerCase();
-			const restAction = {
-				name: vName + "." + method //"api.post"
-			};
-
-			// Pass the `req` & `res` vars to ctx.params.
-			if (req.$alias && req.$alias.passReqResToParams) {
-				params.$req = req;
-				params.$res = res;
-			}
-
-			// Create a new context to wrap the request
-			return Context.create(this.broker, restAction, this.broker.nodeID, params, route.callOptions || {});
-		},
-
-		/**
-		 * Call an action via broker
-		 *
-		 * @param {Object} route 		Route options
-		 * @param {String} actionName 	Name of action
-		 * @param {HttpRequest} req 	Request object
-		 * @param {HttpResponse} res 	Response object
-		 * @param {Object} params		Merged query params + named parameters from URL
-		 * @returns {Promise}
-		 */
-		callAction(route, actionName, req, res, params) {
-			let endpoint, ctx;
-
 			return this.Promise.resolve()
-
-				// Create a new context for request
-				.then(() => {
-
-					this.logger.info(`  Call '${actionName}' action`);
-					if (this.settings.logRequestParams && this.settings.logRequestParams in this.logger)
-						this.logger[this.settings.logRequestParams]("  Params:", params);
-
-					ctx = this.createRestContext(route, req, res, params);
-
-					return ctx;
-				})
-
-				// Resolve action by name
-				.then(() => {
-					endpoint = this.broker.findNextActionEndpoint(actionName);
-					if (endpoint instanceof Error)
-						throw endpoint;
-
-					if (endpoint.action.publish === false) {
-						// Action is not publishable
-						throw new ServiceNotFoundError(actionName);
-					}
-
-					req.$endpoint = endpoint;
-
-					return endpoint;
-				})
 				// onBeforeCall handling
 				.then(() => {
 					if (route.onBeforeCall)
@@ -719,15 +484,74 @@ module.exports = {
 				})
 
 				// Call the action
+				.then(() => {
+					if (alias.action)
+						return this.callAction(route, alias.action, req, res, req.$params);
+
+					// Call custom alias handler
+					alias.handler.call(this, req, res, err => {
+						if (err)
+							this.sendError(req, res, err);
+
+						throw new MoleculerServerError("No alias handler", 500, "NO_ALIAS_HANDLER", { alias });
+					});
+
+					return true;
+				});
+		},
+
+		/**
+		 * Call an action via broker
+		 *
+		 * @param {Object} route 		Route options
+		 * @param {String} actionName 	Name of action
+		 * @param {HttpRequest} req 	Request object
+		 * @param {HttpResponse} res 	Response object
+		 * @param {Object} params		Merged query params + named parameters from URL
+		 * @returns {Promise}
+		 */
+		callAction(route, actionName, req, res, params) {
+			const ctx = req.$ctx;
+			let endpoint;
+
+			return this.Promise.resolve()
+
+				// Create a new context for request
+				.then(() => {
+
+					this.logger.info(`  Call '${actionName}' action`);
+					if (this.settings.logRequestParams && this.settings.logRequestParams in this.logger)
+						this.logger[this.settings.logRequestParams]("  Params:", params);
+
+					// Pass the `req` & `res` vars to ctx.params.
+					if (req.$alias && req.$alias.passReqResToParams) {
+						params.$req = req;
+						params.$res = res;
+					}
+				})
+
+				// Resolve action by name
+				.then(() => {
+					endpoint = this.broker.findNextActionEndpoint(actionName);
+					if (endpoint instanceof Error)
+						throw endpoint;
+
+					if (endpoint.action.publish === false) {
+						// Action is not publishable
+						throw new ServiceNotFoundError({ action: actionName });
+					}
+
+					req.$endpoint = endpoint;
+
+					return endpoint;
+				})
+
+				// Call the action
 				.then(() => ctx.call(endpoint, params, route.callOptions || {}))
 
 				// Process the response
 				.then(data => {
 					res.statusCode = 200;
-
-					// Return with the response
-					if (ctx.requestID)
-						res.setHeader("X-Request-ID", ctx.requestID);
 
 					//if (ctx.cachedResult)
 					//	res.setHeader("X-From-Cache", "true");
@@ -754,11 +578,6 @@ module.exports = {
 						return;
 
 					this.logger.error("  Request error!", err.name, ":", err.message, "\n", err.stack, "\nData:", err.data);
-
-					// Finish the context
-					if (ctx) {
-						res.setHeader("X-Request-ID", ctx.requestID);
-					}
 
 					throw err;
 				});
@@ -1020,8 +839,10 @@ module.exports = {
 		 * @returns {Boolean}
 		 */
 		checkWhitelist(route, action) {
+			// Rewrite to for iterator (faster)
 			return route.whitelist.find(mask => {
 				if (_.isString(mask)) {
+					// TODO change to Moleculer utils.match
 					return nanomatch.isMatch(action, mask, { unixify: false });
 				}
 				else if (_.isRegExp(mask)) {
@@ -1036,7 +857,7 @@ module.exports = {
 		 * @param {Object} route
 		 * @param {String} url
 		 * @param {string} [method="GET"]
-		 * @returns {String} Resolved actionName
+		 * @returns {Object} Resolved alas & params
 		 */
 		resolveAlias(route, url, method = "GET") {
 			for(let i = 0; i < route.aliases.length; i++) {
@@ -1052,7 +873,194 @@ module.exports = {
 				}
 			}
 			return false;
-		}
+		},
+
+		/**
+		 * Create route object from options
+		 *
+		 * @param {Object} opts
+		 * @returns {Object}
+		 */
+		createRoute(opts) {
+			this.logger.info(`Register route to '${opts.path}'`);
+			let route = {
+				opts,
+				middlewares: []
+			};
+			if (opts.authorization) {
+				if (!_.isFunction(this.authorize)) {
+					this.logger.warn("Please define 'authorize' method in the service to authorization.");
+					route.authorization = false;
+				} else
+					route.authorization = true;
+			}
+
+			// Call options
+			route.callOptions = opts.callOptions;
+
+			// Create body parsers as middlewares
+			if (opts.bodyParsers) {
+				const bps = opts.bodyParsers;
+				Object.keys(bps).forEach(key => {
+					const opts = _.isObject(bps[key]) ? bps[key] : undefined;
+					if (bps[key] !== false && key in bodyParser)
+						route.middlewares.push(bodyParser[key](opts));
+				});
+			}
+
+			// Middlewares
+			let mw = [];
+			if (this.settings.use && Array.isArray(this.settings.use) && this.settings.use.length > 0)
+				mw.push(...this.settings.use);
+
+			if (opts.use && Array.isArray(opts.use) && opts.use.length > 0)
+				mw.push(...opts.use);
+
+			if (mw.length > 0) {
+				route.middlewares.push(...mw);
+				this.logger.info(`  Registered ${mw.length} middlewares.`);
+			}
+
+			// CORS
+			if (this.settings.cors || opts.cors) {
+				// Merge cors settings
+				route.cors = Object.assign({}, {
+					origin: "*",
+					methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE"]
+				}, this.settings.cors, opts.cors);
+			} else {
+				route.cors = null;
+			}
+
+			// Rate limiter (Inspired by https://github.com/dotcypress/micro-ratelimit/)
+			if (this.settings.rateLimit) {
+				let opts = Object.assign({}, {
+					window: 60 * 1000,
+					limit: 30,
+					headers: false,
+					key: (req) => {
+						return req.headers["x-forwarded-for"] ||
+							req.connection.remoteAddress ||
+							req.socket.remoteAddress ||
+							req.connection.socket.remoteAddress;
+					}
+				}, this.settings.rateLimit);
+
+				route.rateLimit = opts;
+
+				if (opts.StoreFactory)
+					route.rateLimit.store = new opts.StoreFactory(opts.window, opts);
+				else
+					route.rateLimit.store = new MemoryStore(opts.window, opts);
+
+			}
+
+			// Handle whitelist
+			route.whitelist = opts.whitelist;
+			route.hasWhitelist = Array.isArray(route.whitelist);
+
+			// `onBeforeCall` handler
+			if (opts.onBeforeCall)
+				route.onBeforeCall = this.Promise.method(opts.onBeforeCall);
+
+			// `onAfterCall` handler
+			if (opts.onAfterCall)
+				route.onAfterCall = this.Promise.method(opts.onAfterCall);
+
+			// `onError` handler
+			if (opts.onError)
+				route.onError = opts.onError;
+
+			// Create URL prefix
+			route.path = (this.settings.path || "") + (opts.path || "");
+			route.path = route.path || "/";
+
+			// Helper for aliased routes
+			const createAlias = (matchPath, action) => {
+				let method = "*";
+				if (matchPath.indexOf(" ") !== -1) {
+					const p = matchPath.split(" ");
+					method = p[0];
+					matchPath = p[1];
+				}
+				if (matchPath.startsWith("/"))
+					matchPath = matchPath.slice(1);
+
+				let alias;
+				if (_.isString(action))
+					alias = { action };
+				else if (_.isFunction(action))
+					alias = { handler: action };
+				else if (Array.isArray(action)) {
+					const mws = action.map(mw => {
+						if (_.isString(mw))
+							return (req, res) => this.aliasHandler(req, res, { action: mw });
+						else if(_.isFunction(mw))
+							return mw;
+					});
+					alias = { handler: this.compose(...mws) };
+				} else {
+					alias = action;
+				}
+
+				alias.path = matchPath;
+				alias.method = method;
+
+				let keys = [];
+				alias.re = pathToRegexp(matchPath, keys, {}); // Options: https://github.com/pillarjs/path-to-regexp#usage
+
+				this.logger.info(`  Alias: ${method} ${route.path + (route.path.endsWith("/") ? "": "/")}${matchPath} -> ${alias.handler != null ? "<Function>" : alias.action}`);
+
+				alias.match = url => {
+					const m = alias.re.exec(url);
+					if (!m) return false;
+
+					const params = {};
+
+					let key, param;
+					for (let i = 0; i < keys.length; i++) {
+						key = keys[i];
+						param = m[i + 1];
+						if (!param) continue;
+
+						params[key.name] = decodeParam(param);
+
+						if (key.repeat)
+							params[key.name] = params[key.name].split(key.delimiter);
+					}
+
+					return params;
+				};
+
+				return alias;
+			};
+
+			// Handle aliases
+			if (opts.aliases && Object.keys(opts.aliases).length > 0) {
+				route.aliases = [];
+				_.forIn(opts.aliases, (action, matchPath) => {
+					if (matchPath.startsWith("REST ")) {
+						const p = matchPath.split(" ");
+						const pathName = p[1];
+
+						// Generate RESTful API. More info http://www.restapitutorial.com/
+						route.aliases.push(createAlias(`GET ${pathName}`, 			`${action}.list`));
+						route.aliases.push(createAlias(`GET ${pathName}/:id`, 		`${action}.get`));
+						route.aliases.push(createAlias(`POST ${pathName}`, 			`${action}.create`));
+						route.aliases.push(createAlias(`PUT ${pathName}/:id`, 		`${action}.update`));
+						//route.aliases.push(createAlias(`PATCH ${pathName}/:id`, 	`${action}.patch`));
+						route.aliases.push(createAlias(`DELETE ${pathName}/:id`, 	`${action}.remove`));
+
+					} else {
+						route.aliases.push(createAlias(matchPath, action));
+					}
+				});
+			}
+
+			route.mappingPolicy = opts.mappingPolicy || MAPPING_POLICY_ALL;
+
+			return route;
+		},
 
 	},
 

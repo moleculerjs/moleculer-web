@@ -25,6 +25,7 @@
 			"program": "${workspaceRoot}\\node_modules\\jest-cli\\bin\\jest.js",
 			"args": ["--runInBand"],
 			"cwd": "${workspaceRoot}",
+			"console": "internalConsole",
 			"runtimeArgs": [
                 "--nolazy"
             ]

@@ -134,7 +134,7 @@ class NotFoundError extends MoleculerError {
 	 * @memberOf NotFoundError
 	 */
 	constructor(type, data) {
-		super("Not found", 404, type, data);
+		super("Not found", 404, type || "NOT_FOUND", data);
 	}
 }
 
