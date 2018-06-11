@@ -42,7 +42,7 @@ function decodeParam(param) {
 module.exports = {
 
 	// Service name
-	name: "api-gw",
+	name: "api",
 
 	// Default settings
 	settings: {
@@ -71,10 +71,7 @@ module.exports = {
 		logRequestParams: "debug",
 
 		// Log the response data (default to disable)
-		logResponseData: null,
-
-		// Pre-validation
-		preValidate: false
+		logResponseData: null
 	},
 
 	/**
@@ -110,6 +107,146 @@ module.exports = {
 
 		this.logger.info("API Gateway created!");
 	},
+
+	actions: {
+		// REST request handler
+		rest: {
+			private: true,
+			handler(ctx) {
+				const req = ctx.params.req;
+				const res = ctx.params.res;
+
+				// Set pointers to Context
+				req.$ctx = ctx;
+				res.$ctx = ctx;
+
+				this.logRequest(req);
+
+				// Split URL & query params
+				let parsed = this.parseQueryString(req);
+				let url = parsed.url;
+				if (!req.query)
+					req.query = parsed.query;
+
+				let params = {};
+
+				// Trim trailing slash
+				if (url.length > 1 && url.endsWith("/"))
+					url = url.slice(0, -1);
+
+				// Skip if no routes
+				if (!this.routes || this.routes.length == 0)
+					return;
+
+				// Check the URL
+				for(let i = 0; i < this.routes.length; i++) {
+					const route = this.routes[i];
+
+					if (url.startsWith(route.path)) {
+
+						// Pointer to the matched route
+						req.$route = route;
+						res.$route = route;
+
+						return new Promise((resolve, reject) => {
+						// Call middlewares
+							this.compose(...route.middlewares)(req, res, err => {
+								if (err)
+									reject(new MoleculerError(err.message, err.code || err.status, err.type));
+
+								resolve();
+							});
+						}).then(() => {
+
+							// CORS headers
+							if (route.cors) {
+								if (req.method == "OPTIONS" && req.headers["access-control-request-method"]) {
+									// Preflight request
+									this.writeCorsHeaders(route, req, res, true);
+
+									// 204 - No content
+									res.writeHead(204, {
+										"Content-Length": "0"
+									});
+									res.end();
+
+									this.logResponse(req, res);
+									return true;
+								}
+
+								// Set CORS headers to `res`
+								this.writeCorsHeaders(route, req, res, true);
+							}
+
+							// Merge params
+							const body = _.isObject(req.body) ? req.body : {};
+							Object.assign(params, body, req.query);
+							req.$params = params;
+
+							// Resolve action name
+							let urlPath = url.slice(route.path.length);
+							if (urlPath.startsWith("/"))
+								urlPath = urlPath.slice(1);
+
+							urlPath = urlPath.replace(/~/, "$");
+							let actionName = urlPath;
+
+							// Resolve aliases
+							if (route.aliases && route.aliases.length > 0) {
+								const found = this.resolveAlias(route, urlPath, req.method);
+								if (found) {
+									let alias = found.alias;
+									this.logger.debug(`  Alias: ${req.method} ${urlPath} -> ${alias.action}`);
+									Object.assign(params, found.params);
+
+									req.$alias = alias;
+
+									// Custom Action handler
+									if (alias.handler) {
+										//return this.actions.alias(ctx.params, { parentCtx: ctx });
+										return alias.handler.call(this, req, res, err => {
+											if (err)
+												throw new MoleculerError(err.message, err.code || err.status, err.type);
+
+												// If it is reached, there is no real handler for this alias.
+											throw new MoleculerServerError("No alias handler", 500);
+										});
+									}
+
+									actionName = alias.action;
+
+								} else if (route.mappingPolicy == MAPPING_POLICY_RESTRICT) {
+									// Blocking direct access
+									return null;
+								}
+
+							} else if (route.mappingPolicy == MAPPING_POLICY_RESTRICT) {
+								// Blocking direct access
+								return null;
+							}
+
+							actionName = actionName.replace(/\//g, ".");
+
+							if (route.opts.camelCaseNames) {
+								actionName = actionName.split(".").map(_.camelCase).join(".");
+							}
+
+							return this.preActionCall(route, req, res, actionName);
+
+						});
+					}
+				}
+			}
+		},
+
+		alias: {
+			private: true,
+			handler(ctx) {
+
+			}
+		}
+	},
+
 
 	methods: {
 
@@ -413,152 +550,38 @@ module.exports = {
 		 * @param {HttpRequest} req
 		 * @param {HttpResponse} res
 		 * @param {Function} next Call next middleware (for Express)
-		 * @returns
+		 * @returns {Promise}
 		 */
 		httpHandler(req, res, next) {
-			req.$service = this; // pointer to this service
-			res.$service = this; // pointer to this service
+			// Set pointers to service
+			req.$service = this;
+			res.$service = this;
 			req.$next = next;
 
 			res.locals = res.locals || {};
-			this.logRequest(req);
 
-			try {
-				// Split URL & query params
-				let parsed = this.parseQueryString(req);
-				let url = parsed.url;
-				if (!req.query)
-					req.query = parsed.query;
+			return this.actions.rest({ req, res })
+				.then(result => {
+					if (result == null) {
+						// No route
 
-				let params = {};
-
-				// Trim trailing slash
-				if (url.length > 1 && url.endsWith("/"))
-					url = url.slice(0, -1);
-
-				// Check the URL
-				if (this.routes && this.routes.length > 0) {
-					for(let i = 0; i < this.routes.length; i++) {
-						const route = this.routes[i];
-
-						if (url.startsWith(route.path)) {
-
-							// Pointer to the matched route
-							req.$route = route;
-							res.$route = route;
-
-							// Call middlewares
-							this.compose(...route.middlewares)(req, res, err => {
-								if (err) {
-									const error = new MoleculerError(err.message, err.code || err.status, err.type);
-									this.logger.error("Middleware error!", error);
-									return this.sendError(req, res, error);
-								}
-
-								// CORS headers
-								if (route.cors) {
-									if (req.method == "OPTIONS" && req.headers["access-control-request-method"]) {
-										// Preflight request
-										this.writeCorsHeaders(route, req, res, true);
-
-										// 204 - No content
-										res.writeHead(204, {
-											"Content-Length": "0"
-										});
-										res.end();
-
-										this.logResponse(req, res);
-										return;
-									}
-
-									// Set CORS headers to `res`
-									this.writeCorsHeaders(route, req, res, true);
-								}
-
-								// Merge params
-								const body = _.isObject(req.body) ? req.body : {};
-								Object.assign(params, body, req.query);
-								req.$params = params;
-
-								// Resolve action name
-								let urlPath = url.slice(route.path.length);
-								if (urlPath.startsWith("/"))
-									urlPath = urlPath.slice(1);
-
-								urlPath = urlPath.replace(/~/, "$");
-								let actionName = urlPath;
-
-								// Resolve aliases
-								if (route.aliases && route.aliases.length > 0) {
-									const found = this.resolveAlias(route, urlPath, req.method);
-									if (found) {
-										let alias = found.alias;
-										this.logger.debug(`  Alias: ${req.method} ${urlPath} -> ${alias.action}`);
-										Object.assign(params, found.params);
-
-										req.$alias = alias;
-
-										// Custom Action handler
-										if (alias.handler) {
-											return alias.handler.call(this, req, res, err => {
-												if (err) {
-													const error = new MoleculerError(err.message, err.code || err.status, err.type);
-													this.logger.error("Alias middleware error!", error);
-													return this.sendError(req, res, error);
-												}
-
-												if (req.$next)
-													return req.$next();
-
-												// If it is reached, there is no real handler for this alias.
-												const error = new MoleculerServerError("No alias handler", 500);
-												this.logger.error(error);
-												return this.sendError(req, res, error);
-											});
-										}
-
-										actionName = alias.action;
-
-									} else if (route.mappingPolicy == MAPPING_POLICY_RESTRICT) {
-										// Blocking direct access
-										return this.send404(req, res);
-									}
-
-								} else if (route.mappingPolicy == MAPPING_POLICY_RESTRICT) {
-									// Blocking direct access
-									return this.send404(req, res);
-								}
-
-								actionName = actionName.replace(/\//g, ".");
-
-								if (route.opts.camelCaseNames) {
-									actionName = actionName.split(".").map(_.camelCase).join(".");
-								}
-
-								this.preActionCall(route, req, res, actionName);
+						// Serve assets static files
+						if (this.serve) {
+							this.serve(req, res, err => {
+								this.logger.debug(err);
+								this.send404(req, res);
 							});
-
 							return;
 						}
-					}
-				}
 
-				// Serve assets static files
-				if (this.serve) {
-					this.serve(req, res, err => {
-						this.logger.debug(err);
+						// If no route, send 404
 						this.send404(req, res);
-					});
-					return;
-				}
-
-				// If no route, send 404
-				this.send404(req, res);
-
-			} catch(err) {
-				this.logger.error("Handler error!", err);
-				return this.sendError(req, res, err);
-			}
+					}
+				})
+				.catch(err => {
+					this.logger.error(err);
+					this.sendError(req, res, err);
+				});
 		},
 
 		/**
@@ -579,7 +602,7 @@ module.exports = {
 			if (route.hasWhitelist) {
 				if (!this.checkWhitelist(route, actionName)) {
 					this.logger.debug(`  The '${actionName}' action is not in the whitelist!`);
-					return this.sendError(req, res, new ServiceNotFoundError(actionName));
+					throw new ServiceNotFoundError(actionName);
 				}
 			}
 
@@ -597,7 +620,7 @@ module.exports = {
 						res.setHeader("X-Rate-Limit-Reset", store.resetTime);
 					}
 					if (remaining < 0) {
-						return this.sendError(req, res, new RateLimitExceeded());
+						throw new RateLimitExceeded();
 					}
 				}
 			}
@@ -654,7 +677,7 @@ module.exports = {
 		callAction(route, actionName, req, res, params) {
 			let endpoint, ctx;
 
-			const p = this.Promise.resolve()
+			return this.Promise.resolve()
 
 				// Create a new context for request
 				.then(() => {
@@ -664,7 +687,6 @@ module.exports = {
 						this.logger[this.settings.logRequestParams]("  Params:", params);
 
 					ctx = this.createRestContext(route, req, res, params);
-					ctx._metricStart(ctx.metrics);
 
 					return ctx;
 				})
@@ -679,10 +701,6 @@ module.exports = {
 						// Action is not publishable
 						throw new ServiceNotFoundError(actionName);
 					}
-
-					// Validate params if neccessary
-					if (this.settings.preValidate && this.broker.validator && endpoint.action.params)
-						this.broker.validator.validate(params, endpoint.action.params);
 
 					req.$endpoint = endpoint;
 
@@ -725,9 +743,9 @@ module.exports = {
 				.then(data => {
 					this.sendResponse(ctx, route, req, res, data, endpoint.action);
 
-					ctx._metricFinish(null, ctx.metrics);
-
 					this.logResponse(req, res, ctx, data);
+
+					return true;
 				})
 
 				// Error handling
@@ -739,16 +757,11 @@ module.exports = {
 
 					// Finish the context
 					if (ctx) {
-						res.setHeader("X-Request-ID", ctx.id);
-
-						ctx._metricFinish(err, ctx.metrics);
+						res.setHeader("X-Request-ID", ctx.requestID);
 					}
 
-					// Return with the error
-					this.sendError(req, res, err);
+					throw err;
 				});
-
-			return p;
 		},
 
 		/**
@@ -916,7 +929,7 @@ module.exports = {
 					const wildcard = new RegExp(`^${_.escapeRegExp(settings).replace(/\\\*/g, ".*").replace(/\\\?/g, ".")}$`);
 					if (origin.match(wildcard)) {
 						return true;
-					}					
+					}
 				} else if(settings.indexOf(origin) !== -1) {
 					return true;
 				}
@@ -1077,12 +1090,6 @@ module.exports = {
 			});
 		}
 	},
-
-	actions: {
-		// Virtual action
-		rest() {}
-	},
-
 
 	bodyParser,
 	serveStatic,

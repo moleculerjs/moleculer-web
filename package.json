@@ -41,6 +41,7 @@
     "lolex": "2.7.0",
     "mkdirp": "0.5.1",
     "moleculer": "0.12.6",
+    "moleculer-repl": "0.4.0",
     "multer": "1.3.0",
     "nats": "0.8.10",
     "nodemon": "1.17.5",
