@@ -71,6 +71,12 @@ module.exports = {
 			}
 		},
 
+		patch: {
+			handler(ctx) {
+				return this.actions.update(ctx.params, { parentCtx: ctx });
+			}
+		},
+
 		remove: {
 			handler(ctx) {
 				this.rows = this.rows.filter(row => row.id != ctx.params.id);

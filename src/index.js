@@ -9,6 +9,7 @@
 const http 						= require("http");
 const https 					= require("https");
 const queryString 				= require("qs");
+const chalk						= require("chalk");
 const deprecate 				= require("depd")("moleculer-web");
 
 const _ 						= require("lodash");
@@ -127,13 +128,15 @@ module.exports = {
 				// Split URL & query params
 				let parsed = this.parseQueryString(req);
 				let url = parsed.url;
-				req.parsedUrl = url; // TODO check ExpressJS
-				if (!req.query)
-					req.query = parsed.query;
 
 				// Trim trailing slash
 				if (url.length > 1 && url.endsWith("/"))
 					url = url.slice(0, -1);
+
+				req.parsedUrl = url; // TODO check ExpressJS
+
+				if (!req.query)
+					req.query = parsed.query;
 
 				// Skip if no routes
 				if (!this.routes || this.routes.length == 0)
@@ -157,7 +160,7 @@ module.exports = {
 	methods: {
 
 		/**
-		 * HTTP request handler
+		 * HTTP request handler. It is called from native NodeJS HTTP server.
 		 *
 		 * @param {HttpRequest} req
 		 * @param {HttpResponse} res
@@ -166,19 +169,19 @@ module.exports = {
 		 */
 		httpHandler(req, res, next) {
 			// Set pointers to service
+			req.$startTime = process.hrtime();
 			req.$service = this;
-			res.$service = this;
 			req.$next = next;
 
+			res.$service = this;
 			res.locals = res.locals || {};
 
 			const requestID = req.headers["x-request-id"];
-debugger; // eslint-disable-line
 
 			return this.actions.rest({ req, res }, { requestID })
 				.then(result => {
 					if (result == null) {
-						// No route
+						// Not routed.
 
 						// Serve assets static files
 						if (this.serve) {
@@ -189,12 +192,12 @@ debugger; // eslint-disable-line
 							return;
 						}
 
-						// If no route, send 404
+						// If not routed and not served static asset, send 404
 						this.send404(req, res);
 					}
 				})
 				.catch(err => {
-					this.logger.error(err);
+					this.logger.error("   Request error!", err.name, ":", err.message, "\n", err.stack, "\nData:", err.data);
 					this.sendError(req, res, err);
 				});
 		},
@@ -202,7 +205,7 @@ debugger; // eslint-disable-line
 		/**
 		 * Middleware for ExpressJS
 		 *
-		 * @returns
+		 * @returns {Function}
 		 */
 		express() {
 			return (req, res, next) => this.httpHandler(req, res, next);
@@ -216,13 +219,21 @@ debugger; // eslint-disable-line
 		compose(...mws) {
 			return (req, res, done) => {
 				const next = (i, err) => {
-					if (i >= mws.length || err) {
+					if (i >= mws.length) {
 						if (_.isFunction(done))
 							return done.call(this, err);
 						return;
 					}
 
-					mws[i].call(this, req, res, err => next(i + 1, err));
+					if (err) {
+						// Call only error middlewares (err, req, res, next)
+						if (mws[i].length == 4)
+							mws[i].call(this, err, req, res, err => next(i + 1, err));
+						else
+							next(i + 1, err);
+					} else {
+						mws[i].call(this, req, res, err => next(i + 1, err));
+					}
 				};
 
 				return next(0);
@@ -237,8 +248,16 @@ debugger; // eslint-disable-line
 		composeThen(req, res, ...mws) {
 			return new Promise((resolve, reject) => {
 				this.compose(...mws)(req, res, err => {
-					if (err)
-						reject(new MoleculerError(err.message, err.code || err.status, err.type));
+					if (err) {
+						if (err instanceof MoleculerError)
+							reject(err);
+						if (err instanceof Error)
+							reject(new MoleculerError(err.message, err.code || err.status, err.type));
+
+						reject(new MoleculerError(err));
+
+						return;
+					}
 
 					resolve();
 				});
@@ -279,7 +298,7 @@ debugger; // eslint-disable-line
 				return req.$next(err);
 
 			if (res.headersSent) {
-				this.logger.info("Headers has already sent");
+				this.logger.warn("Headers have already sent");
 				return;
 			}
 
@@ -303,7 +322,7 @@ debugger; // eslint-disable-line
 			const errObj = _.pick(err, ["name", "message", "code", "type", "data"]);
 			res.end(JSON.stringify(errObj, null, 2));
 
-			this.logResponse(req, res, err? err.ctx : null);
+			this.logResponse(req, res);
 		},
 
 		/**
@@ -489,13 +508,19 @@ debugger; // eslint-disable-line
 						return this.callAction(route, alias.action, req, res, req.$params);
 
 					// Call custom alias handler
-					alias.handler.call(this, req, res, err => {
+					this.logger.info(`   Call custom function in '${req.$alias.method} ${req.$alias.path}' alias`);
+					const result = alias.handler.call(this, req, res, err => {
 						if (err)
 							this.sendError(req, res, err);
 
 						throw new MoleculerServerError("No alias handler", 500, "NO_ALIAS_HANDLER", { alias });
 					});
 
+					// Check the response is Promise. If yes, we chain back to the flow.
+					if (result && _.isFunction(result.then))
+						return result;
+
+					// If not, it handles request/response by itself. Break the flow.
 					return true;
 				});
 		},
@@ -507,21 +532,20 @@ debugger; // eslint-disable-line
 		 * @param {String} actionName 	Name of action
 		 * @param {HttpRequest} req 	Request object
 		 * @param {HttpResponse} res 	Response object
-		 * @param {Object} params		Merged query params + named parameters from URL
+		 * @param {Object} params		Incoming params from request
 		 * @returns {Promise}
 		 */
 		callAction(route, actionName, req, res, params) {
 			const ctx = req.$ctx;
-			let endpoint;
 
 			return this.Promise.resolve()
 
 				// Create a new context for request
 				.then(() => {
 
-					this.logger.info(`  Call '${actionName}' action`);
+					this.logger.info(`   Call '${actionName}' action`);
 					if (this.settings.logRequestParams && this.settings.logRequestParams in this.logger)
-						this.logger[this.settings.logRequestParams]("  Params:", params);
+						this.logger[this.settings.logRequestParams]("   Params:", params);
 
 					// Pass the `req` & `res` vars to ctx.params.
 					if (req.$alias && req.$alias.passReqResToParams) {
@@ -532,7 +556,7 @@ debugger; // eslint-disable-line
 
 				// Resolve action by name
 				.then(() => {
-					endpoint = this.broker.findNextActionEndpoint(actionName);
+					const endpoint = this.broker.findNextActionEndpoint(actionName);
 					if (endpoint instanceof Error)
 						throw endpoint;
 
@@ -542,16 +566,13 @@ debugger; // eslint-disable-line
 					}
 
 					req.$endpoint = endpoint;
-
-					return endpoint;
 				})
 
 				// Call the action
-				.then(() => ctx.call(endpoint, params, route.callOptions || {}))
+				.then(() => ctx.call(req.$endpoint, params, route.callOptions))
 
 				// Process the response
 				.then(data => {
-					res.statusCode = 200;
 
 					//if (ctx.cachedResult)
 					//	res.setHeader("X-From-Cache", "true");
@@ -565,9 +586,9 @@ debugger; // eslint-disable-line
 
 				// Send back the response
 				.then(data => {
-					this.sendResponse(ctx, route, req, res, data, endpoint.action);
+					this.sendResponse(ctx, route, req, res, data, req.$endpoint.action);
 
-					this.logResponse(req, res, ctx, data);
+					this.logResponse(req, res, data);
 
 					return true;
 				})
@@ -576,8 +597,6 @@ debugger; // eslint-disable-line
 				.catch(err => {
 					if (!err)
 						return;
-
-					this.logger.error("  Request error!", err.name, ":", err.message, "\n", err.stack, "\nData:", err.data);
 
 					throw err;
 				});
@@ -588,12 +607,21 @@ debugger; // eslint-disable-line
 		 *
 		 * @param {Context} ctx
 		 * @param {Object} route
-		 * @param {HttpIncomingRequest} req
+		 * @param {HttpIncomingMessage} req
 		 * @param {HttpResponse} res
 		 * @param {any} data
 		 * @param {Object} action
 		 */
 		sendResponse(ctx, route, req, res, data, action) {
+
+			if (res.headersSent) {
+				this.logger.warn("Headers have already sent");
+				return;
+			}
+
+			if (!res.statusCode)
+				res.statusCode = 200;
+
 			// Status code & message
 			if (ctx.meta.$statusCode) {
 				res.statusCode = ctx.meta.$statusCode;
@@ -686,7 +714,7 @@ debugger; // eslint-disable-line
 		/**
 		 * Log the request
 		 *
-		 * @param {HttpIncomingRequest} req
+		 * @param {HttpIncomingMessage} req
 		 */
 		logRequest(req) {
 			this.logger.info(`=> ${req.method} ${req.url}`);
@@ -700,33 +728,34 @@ debugger; // eslint-disable-line
 		 */
 		coloringStatusCode(code) {
 			if (code >= 500)
-				return code;
+				return chalk.red.bold(code);
 			if (code >= 400 && code < 500)
-				return code;
+				return chalk.red.bold(code);
 			if (code >= 300 && code < 400)
-				return code;
+				return chalk.cyan.bold(code);
 			if (code >= 200 && code < 300)
-				return code;
+				return chalk.green.bold(code);
 			return code;
 		},
 
 		/**
 		 * Log the response
 		 *
-		 * @param {HttpIncomingRequest} req
+		 * @param {HttpIncomingMessage} req
 		 * @param {HttpResponse} res
-		 * @param {Context} ctx
 		 * @param {any} data
 		 */
-		logResponse(req, res, ctx, data) {
+		logResponse(req, res, data) {
 			let time = "";
-			if (ctx && ctx.duration) {
-				if (ctx.duration > 1000)
-					time = `[+${Number(ctx.duration / 1000).toFixed(3)} s]`;
+			if (req.$startTime) {
+				const diff = process.hrtime(req.$startTime);
+				const duration = (diff[0] + diff[1] / 1e9) * 1000;
+				if (duration > 1000)
+					time = chalk.red(`[+${Number(duration / 1000).toFixed(3)} s]`);
 				else
-					time = `[+${Number(ctx.duration).toFixed(3)} ms]`;
+					time = chalk.grey(`[+${Number(duration).toFixed(3)} ms]`);
 			}
-			this.logger.info(`<= ${this.coloringStatusCode(res.statusCode)} ${req.method} ${req.url} ${time}`);
+			this.logger.info(`<= ${this.coloringStatusCode(res.statusCode)} ${req.method} ${chalk.bold(req.url)} ${time}`);
 
 			if (this.settings.logResponseData && this.settings.logResponseData in this.logger) {
 				this.logger[this.settings.logResponseData]("  Data:", data);
@@ -738,7 +767,7 @@ debugger; // eslint-disable-line
 		 * Check origin(s)
 		 *
 		 * @param {String} origin
-		 * @param {any} settings
+		 * @param {String|Array<String>} settings
 		 * @returns {Boolean}
 		 */
 		checkOrigin(origin, settings) {
@@ -766,8 +795,10 @@ debugger; // eslint-disable-line
 		/**
 		 * Write CORS header
 		 *
+		 * Based on: https://github.com/expressjs/cors
+		 *
 		 * @param {Object} route
-		 * @param {HttpIncomingRequest} req
+		 * @param {HttpIncomingMessage} req
 		 * @param {HttpResponse} res
 		 * @param {Boolean} isPreFlight
 		 */
@@ -1048,7 +1079,7 @@ debugger; // eslint-disable-line
 						route.aliases.push(createAlias(`GET ${pathName}/:id`, 		`${action}.get`));
 						route.aliases.push(createAlias(`POST ${pathName}`, 			`${action}.create`));
 						route.aliases.push(createAlias(`PUT ${pathName}/:id`, 		`${action}.update`));
-						//route.aliases.push(createAlias(`PATCH ${pathName}/:id`, 	`${action}.patch`));
+						route.aliases.push(createAlias(`PATCH ${pathName}/:id`, 	`${action}.patch`));
 						route.aliases.push(createAlias(`DELETE ${pathName}/:id`, 	`${action}.remove`));
 
 					} else {

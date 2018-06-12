@@ -8,28 +8,22 @@ module.exports = {
 		image: {
 			responseType: "image/png",
 			handler(ctx) {
-				return new this.Promise((resolve, reject) => {
-					fs.readFile(path.join(__dirname, "full", "assets", "images", "logo.png"), (err, content) => {
-						if (err)
-							return reject(err);
-
-						resolve(content);
-					});
-				});
+				// Return as stream
+				return fs.createReadStream(path.join(__dirname, "full", "assets", "images", "logo.png"));
 			}
 		},
 
 		html: {
 			responseType: "text/html",
 			handler(ctx) {
-				return `
+				return Buffer.from(`
 <html>
 <body>
 	<h1>Hello API Gateway!</h1>
 	<img src="/api/file.image" />
 </body>
-</html>				
-				`;
+</html>
+				`);
 			}
 		}
 	}
