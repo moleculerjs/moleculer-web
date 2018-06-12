@@ -1,4 +1,4 @@
-const { MoleculerError } = require("moleculer").Errors;
+const { MoleculerClientError } = require("moleculer").Errors;
 
 module.exports = {
 	name: "math",
@@ -24,7 +24,7 @@ module.exports = {
 		div: {
 			params: {
 				a: { type: "number", convert: true },
-				b: { type: "number", notEqual: 0, convert: true }
+				b: { type: "number", convert: true }
 			},
 			handler(ctx) {
 				let a = Number(ctx.params.a);
@@ -32,7 +32,7 @@ module.exports = {
 				if (b != 0 && !Number.isNaN(b))
 					return a / b;
 				else
-					throw new MoleculerError("Divide by zero!", 422, null, ctx.params);
+					throw new MoleculerClientError("Divide by zero!", 422, null, ctx.params);
 			}
 		}
 	}
