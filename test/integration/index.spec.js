@@ -211,9 +211,11 @@ describe("Test responses", () => {
 	it("GET /test/text-plain with 'text/plain'", () => {
 		return request(server)
 			.get("/test/text-plain")
+			.set("X-Correlation-Id", "abcd1234")
 			.then(res => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("text/plain");
+				expect(res.header["x-request-id"]).toBe("abcd1234");
 				expect(res.text).toEqual("Plain text");
 			});
 	});

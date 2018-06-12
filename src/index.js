@@ -176,7 +176,9 @@ module.exports = {
 			res.$service = this;
 			res.locals = res.locals || {};
 
-			const requestID = req.headers["x-request-id"];
+			let requestID = req.headers["x-request-id"];
+			if (req.headers["x-correlation-id"])
+				requestID = req.headers["x-correlation-id"];
 
 			return this.actions.rest({ req, res }, { requestID })
 				.then(result => {
