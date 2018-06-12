@@ -50,6 +50,13 @@ module.exports = {
 			}
 		},
 
+		dangerZone2: {
+			visibility: "public",
+			handler(ctx) {
+				return "Danger zone 2!";
+			}
+		},
+
 		text(ctx) {
 			return "String text";
 		},

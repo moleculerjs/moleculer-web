@@ -148,6 +148,24 @@ describe("Test default settings", () => {
 				});
 			});
 	});
+
+	it("GET /test/dangerZone2", () => {
+		return request(server)
+			.get("/test/dangerZone2")
+			.then(res => {
+				expect(res.statusCode).toBe(404);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toEqual({
+					code: 404,
+					message: "Service 'test.dangerZone2' is not found.",
+					name: "ServiceNotFoundError",
+					type: "SERVICE_NOT_FOUND",
+					data: {
+						action: "test.dangerZone2"
+					}
+				});
+			});
+	});
 });
 
 describe("Test responses", () => {
