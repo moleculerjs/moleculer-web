@@ -150,6 +150,7 @@ broker.createService({
 ## Changes
 - `preValidate` has been removed.
 - fix multiple CORS origin handling. Thanks for [@felipegcampos](https://github.com/felipegcampos)
+- if `X-Correlation-Id` is in the request header, it is used as `requestID` in `Context`.
 
 -----------------------------
 <a name="0.6.4"></a>
