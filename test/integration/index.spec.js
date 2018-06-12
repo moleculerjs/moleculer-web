@@ -10,14 +10,14 @@ const ApiGateway = require("../../index");
 const { ServiceBroker, Context } = require("moleculer");
 const { MoleculerError } = require("moleculer").Errors;
 const { UnAuthorizedError, ERR_NO_TOKEN } = ApiGateway.Errors;
-
-function protectReject(err) {
-	if (err && err.stack) {
-		console.error(err);
-		console.error(err.stack);
-	}
-	expect(err).toBe(true);
-}
+/*
+setTimeout(() => {
+	const util = require("util");
+	fs.writeFileSync("d:\\handlers.json", util.inspect(process._getActiveHandles()));
+	fs.writeFileSync("d:\\requests.json", util.inspect(process._getActiveRequests()));
+	//console.log(process._getActiveHandles());
+	//console.log(process._getActiveRequests());
+}, 10 * 1000).unref();*/
 
 function setup(settings, brokerSettings = {}) {
 	const broker = new ServiceBroker(Object.assign({}, { nodeID: undefined, logger: false }, brokerSettings));
@@ -1011,6 +1011,186 @@ describe("Test aliases", () => {
 	});
 });
 
+describe("Test un-merged params", () => {
+	let broker;
+	let service;
+	let server;
+
+	beforeAll(() => {
+		[ broker, service, server] = setup({
+			routes: [{
+				path: "/api",
+				mergeParams: false,
+				aliases: {
+					"GET echo": "test.echo",
+					"POST /echo": "test.echo",
+					"param-test/:name": "test.echo",
+					"opt-test/:name?": "test.echo",
+					"repeat-test/:args*": "test.echo",
+				}
+			}]
+		});
+		return broker.start();
+	});
+
+	afterAll(() => broker.stop());
+
+	it("GET /api/echo", () => {
+		return request(server)
+			.get("/api/echo")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body.params).toEqual({
+					body: {},
+					params: {},
+					query: {}
+				});
+			});
+	});
+
+	it("GET /api/echo?a=5&b=8", () => {
+		return request(server)
+			.get("/api/echo")
+			.query({ a: 5, b: 8 })
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body.params).toEqual({
+					body: {},
+					params: {},
+					query: {
+						a: "5",
+						b: "8"
+					}
+				});
+			});
+	});
+
+	it("POST /api/echo", () => {
+		return request(server)
+			.post("/api/echo")
+			.send({ a: 5, b: 8 })
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body.params).toEqual({
+					body: {
+						a: 5,
+						b: 8
+					},
+					params: {},
+					query: {}
+				});
+			});
+	});
+
+	it("POST /api/echo?a=5&b=8", () => {
+		return request(server)
+			.post("/api/echo")
+			.query({ a: 5, b: 8 })
+			.send({ a: 10, b: 20 })
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body.params).toEqual({
+					body: {
+						a: 10,
+						b: 20
+					},
+					params: {},
+					query: {
+						a: "5",
+						b: "8"
+					}
+				});
+			});
+	});
+
+	it("GET opt-test/:name? with name", () => {
+		return request(server)
+			.get("/api/opt-test/John")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body.params).toEqual({
+					body: {},
+					params: {
+						name: "John"
+					},
+					query: {}
+				});
+			});
+	});
+
+	it("GET opt-test with array params", () => {
+		return request(server)
+			.get("/api/opt-test")
+			.query("a=1&a=2")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body.params).toEqual({
+					body: {},
+					params: {},
+					query: {
+						a: ["1", "2"]
+					}
+				});
+			});
+	});
+
+	it("GET opt-test with nested params", () => {
+		return request(server)
+			.get("/api/opt-test")
+			.query("foo[bar]=a&foo[bar]=b&foo[baz]=c")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body.params).toEqual({
+					body: {},
+					params: {},
+					query: {
+						foo: { bar: ["a", "b"], baz: "c" }
+					}
+				});
+			});
+	});
+
+	it("GET opt-test/:name? without name", () => {
+		return request(server)
+			.get("/api/opt-test")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body.params).toEqual({
+					body: {},
+					params: {},
+					query: {}
+				});
+			});
+	});
+
+	it("GET repeat-test/:args?", () => {
+		return request(server)
+			.get("/api/repeat-test/John/Jane/Adam/Walter")
+			.query("foo[bar]=a&foo[bar]=b&foo[baz]=c")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body.params).toEqual({
+					body: {},
+					params: {
+						args: ["John", "Jane", "Adam", "Walter"]
+					},
+					query: {
+						foo: { bar: ["a", "b"], baz: "c" }
+					}
+				});
+			});
+	});
+});
+
 describe("Test REST shorthand aliases", () => {
 	let broker;
 	let service;
@@ -1234,7 +1414,7 @@ describe("Test body-parsers", () => {
 					"name": "ValidationError",
 					"type": "VALIDATION_ERROR"
 				});
-			}).catch(protectReject).then(() => broker.stop());
+			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
 	});
 
 	it("POST /api/test.gretter with JSON parser", () => {
@@ -1254,7 +1434,7 @@ describe("Test body-parsers", () => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
 				expect(res.body).toBe("Hello John");
-			}).catch(protectReject).then(() => broker.stop());
+			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
 	});
 
 	it("POST /api/test.gretter with JSON parser & invalid JSON", () => {
@@ -1280,7 +1460,7 @@ describe("Test body-parsers", () => {
 					"message": "Unexpected token i in JSON at position 0",
 					"name": "MoleculerError"
 				});
-			}).catch(protectReject).then(() => broker.stop());
+			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
 	});
 
 
@@ -1301,7 +1481,7 @@ describe("Test body-parsers", () => {
 			.then(res => {
 				expect(res.statusCode).toBe(422);
 			})
-			.catch(protectReject).then(() => broker.stop());
+			.then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
 	});
 
 	it("POST /api/test.gretter with urlencoder parser", () => {
@@ -1322,7 +1502,7 @@ describe("Test body-parsers", () => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
 				expect(res.body).toBe("Hello Adam");
-			}).catch(protectReject).then(() => broker.stop());
+			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
 	});
 });
 
@@ -1590,7 +1770,7 @@ describe("Test CORS", () => {
 					"code": 404,
 					"type": "ERR_ORIGIN_NOT_FOUND",
 					"name": "NotFoundError"});
-			}).then(() => broker.stop()).catch(err => { broker.stop(); throw err; });
+			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
 	});
 
 	it("errors on mismatching origin header", () => {
@@ -1610,7 +1790,7 @@ describe("Test CORS", () => {
 					"code": 403,
 					"type": "ERR_ORIGIN_NOT_ALLOWED",
 					"name": "ForbiddenError"});
-			}).then(() => broker.stop()).catch(err => { broker.stop(); throw err; });
+			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
 	});
 
 	it("with default settings", () => {
@@ -1629,7 +1809,7 @@ describe("Test CORS", () => {
 
 				expect(res.body).toBe("Hello Moleculer");
 			})
-			.then(() => broker.stop()).catch(err => { broker.stop(); throw err; });
+			.then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
 	});
 
 	it("with custom global settings (string)", () => {
@@ -1654,7 +1834,7 @@ describe("Test CORS", () => {
 
 				expect(res.body).toBe("Hello Moleculer");
 			})
-			.then(() => broker.stop()).catch(err => { broker.stop(); throw err; });
+			.then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
 	});
 
 	it("with custom global settings (array)", () => {
@@ -1679,7 +1859,7 @@ describe("Test CORS", () => {
 
 				expect(res.body).toBe("Hello Moleculer");
 			})
-			.then(() => broker.stop()).catch(err => { broker.stop(); throw err; });
+			.then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
 	});
 
 	it("with custom route settings", () => {
@@ -1710,7 +1890,7 @@ describe("Test CORS", () => {
 
 				expect(res.body).toBe("Hello Moleculer");
 			})
-			.then(() => broker.stop()).catch(err => { broker.stop(); throw err; });
+			.then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
 	});
 
 	it("returns matching CORS origin wildcard with single origin", () => {
@@ -1732,7 +1912,7 @@ describe("Test CORS", () => {
 
 				expect(res.body).toBe("Hello Moleculer");
 			})
-			.then(() => broker.stop()).catch(err => { broker.stop(); throw err; });
+			.then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
 	});
 
 	it("returns matching CORS origin wildcard", () => {
@@ -1754,7 +1934,7 @@ describe("Test CORS", () => {
 
 				expect(res.body).toBe("Hello Moleculer");
 			})
-			.then(() => broker.stop()).catch(err => { broker.stop(); throw err; });
+			.then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
 	});
 
 	it("returns matching CORS origin wildcard when more than one wildcard", () => {
@@ -1776,7 +1956,7 @@ describe("Test CORS", () => {
 
 				expect(res.body).toBe("Hello Moleculer");
 			})
-			.then(() => broker.stop()).catch(err => { broker.stop(); throw err; });
+			.then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
 	});
 
 	it("preflight request with custom route settings", () => {
@@ -1813,7 +1993,7 @@ describe("Test CORS", () => {
 
 				expect(res.text).toBe("");
 			})
-			.then(() => broker.stop()).catch(err => { broker.stop(); throw err; });
+			.then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
 	});
 
 	it("preflight request with default settings", () => {
@@ -1835,7 +2015,7 @@ describe("Test CORS", () => {
 
 				expect(res.text).toBe("");
 			})
-			.then(() => broker.stop()).catch(err => { broker.stop(); throw err; });
+			.then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
 	});
 
 	it("preflight request with 'Access-Control-Request-Headers'", () => {
@@ -1869,7 +2049,7 @@ describe("Test CORS", () => {
 
 				expect(res.text).toBe("");
 			})
-			.then(() => broker.stop()).catch(err => { broker.stop(); throw err; });
+			.then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
 	});
 });
 
@@ -2004,7 +2184,6 @@ describe("Test onBeforeCall & onAfterCall", () => {
 			expect(res.$route).toBeDefined();
 
 			ctx.meta.custom = "John";
-			return Promise.resolve();
 		});
 		const afterCall = jest.fn((ctx, route, req, res, data) => {
 			expect(req.$service).toBeDefined();
@@ -2062,7 +2241,7 @@ describe("Test onBeforeCall & onAfterCall", () => {
 				expect(beforeCall).toHaveBeenCalledWith(jasmine.any(Context), jasmine.any(Object), jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse));
 
 				expect(afterCall).toHaveBeenCalledTimes(0);
-			}).then(() => broker.stop()).catch(err => { broker.stop(); throw err; });
+			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
 	});
 
 	it("should modify response in 'onAfterCall'", () => {
@@ -2101,7 +2280,7 @@ describe("Test onBeforeCall & onAfterCall", () => {
 					}
 				});
 				expect(afterCall).toHaveBeenCalledTimes(1);
-			}).then(() => broker.stop()).catch(err => { broker.stop(); throw err; });
+			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
 	});
 });
 
@@ -2135,7 +2314,7 @@ describe("Test route middlewares", () => {
 
 		return broker.start()
 			.then(() => request(server)
-				.get("/test/hello"))
+				.get("/test/hello/"))
 			.then(res => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
@@ -2150,7 +2329,7 @@ describe("Test route middlewares", () => {
 
 				expect(mw2).toHaveBeenCalledTimes(1);
 				expect(mw2).toHaveBeenCalledWith(jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse), jasmine.any(Function));
-			}).then(() => broker.stop()).catch(err => { broker.stop(); throw err; });
+			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
 	});
 
 	it("should return with error if middlewares call next with error", () => {
@@ -2191,7 +2370,7 @@ describe("Test route middlewares", () => {
 				expect(mw1).toHaveBeenCalledWith(jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse), jasmine.any(Function));
 
 				expect(mw2).toHaveBeenCalledTimes(0);
-			}).then(() => broker.stop()).catch(err => { broker.stop(); throw err; });
+			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
 	});
 
 });
@@ -2237,7 +2416,7 @@ describe("Test authorization", () => {
 				expect(res.body).toBe("Hello Moleculer");
 				expect(authorize).toHaveBeenCalledTimes(1);
 				expect(authorize).toHaveBeenCalledWith(jasmine.any(Context), jasmine.any(Object), jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse));
-			}).then(() => broker.stop()).catch(err => { broker.stop(); throw err; });
+			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
 	});
 
 	it("should give back error", () => {
@@ -2272,7 +2451,7 @@ describe("Test authorization", () => {
 					"name": "UnAuthorizedError"});
 				expect(authorize).toHaveBeenCalledTimes(1);
 				expect(authorize).toHaveBeenCalledWith(jasmine.any(Context), jasmine.any(Object), jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse));
-			}).then(() => broker.stop()).catch(err => { broker.stop(); throw err; });
+			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
 	});
 
 });
@@ -2305,7 +2484,7 @@ describe("Test onError handlers", () => {
 					name: "ServiceNotFoundError",
 					type: "SERVICE_NOT_FOUND"
 				});
-			}).then(() => broker.stop()).catch(err => { broker.stop(); throw err; });
+			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
 	});
 
 	it("should return with global error handler response", () => {
@@ -2332,7 +2511,7 @@ describe("Test onError handlers", () => {
 				expect(res.headers["content-type"]).toBe("text/plain");
 
 				expect(res.text).toBe("Global error: Service 'test.hello' is not found.");
-			}).then(() => broker.stop()).catch(err => { broker.stop(); throw err; });
+			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
 	});
 
 	it("should return with route error handler response", () => {
@@ -2365,7 +2544,7 @@ describe("Test onError handlers", () => {
 				expect(res.headers["content-type"]).toBe("text/plain");
 
 				expect(res.text).toBe("Route error: Service 'test.hello' is not found.");
-			}).then(() => broker.stop()).catch(err => { broker.stop(); throw err; });
+			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
 	});
 });
 

@@ -509,16 +509,12 @@ module.exports = {
 
 					// Call custom alias handler
 					this.logger.info(`   Call custom function in '${req.$alias.method} ${req.$alias.path}' alias`);
-					const result = alias.handler.call(this, req, res, err => {
+					alias.handler.call(this, req, res, err => {
 						if (err)
 							this.sendError(req, res, err);
 
 						throw new MoleculerServerError("No alias handler", 500, "NO_ALIAS_HANDLER", { alias });
 					});
-
-					// Check the response is Promise. If yes, we chain back to the flow.
-					if (result && _.isFunction(result.then))
-						return result;
 
 					// If not, it handles request/response by itself. Break the flow.
 					return true;
@@ -561,6 +557,11 @@ module.exports = {
 						throw endpoint;
 
 					if (endpoint.action.publish === false) {
+						// Action is not publishable (Deprecated in >=0.13)
+						throw new ServiceNotFoundError({ action: actionName });
+					}
+
+					if (endpoint.action.visibility != null && endpoint.action.visibility != "published") {
 						// Action is not publishable
 						throw new ServiceNotFoundError({ action: actionName });
 					}
