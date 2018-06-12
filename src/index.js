@@ -111,7 +111,7 @@ module.exports = {
 	actions: {
 		// REST request handler
 		rest: {
-			private: true,
+			visibility: "private",
 			handler(ctx) {
 				const req = ctx.params.req;
 				const res = ctx.params.res;

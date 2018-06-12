@@ -1,6 +1,6 @@
 -----------------------------
-<a name="0.7.0"></a>
-# 0.7.0 (2018-xx-xx)
+<a name="0.8.0"></a>
+# 0.8.0 (2018-xx-xx)
 
 ## Breaking changes
 
@@ -39,6 +39,10 @@ broker.createService(ApiGatewayService, {
     }
 });
 ```
+
+### Custom alias hooks
+The `onBeforeCall` and `authorize` hooks is called before custom alias functions too.
+And you have access to Context as `req.$ctx` or `res.$ctx`
 
 ## New
 
@@ -112,10 +116,39 @@ foo: {
 }
 ```
 
+### Support error-handler middlewares
+There is support to use error-handler middlewares in the API Gateway.
 
+```js
+broker.createService({
+    mixins: [ApiService],
+    settings: {
+        // Global middlewares. Applied to all routes.
+        use: [
+            cookieParser(),
+            helmet()
+        ],
+
+        routes: [
+            {
+                path: "/",
+
+                // Route-level middlewares.
+                use: [
+                    compression(),
+                    
+                    passport.initialize(),
+                    passport.session(),
+
+                    function(err, req, res, next) {
+						this.logger.error("Error is occured in middlewares!");
+						this.sendError(req, res, err);
+					}
+                ],
+```
 
 ## Changes
-- `preValidate` default value is changed to `false`.
+- `preValidate` has been removed.
 - fix multiple CORS origin handling. Thanks for [@felipegcampos](https://github.com/felipegcampos)
 
 -----------------------------
