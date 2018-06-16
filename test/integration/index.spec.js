@@ -395,11 +395,11 @@ describe("Test responses", () => {
 		return request(server)
 			.get("/test/error")
 			.then(res => {
-				expect(res.statusCode).toBe(505);
+				expect(res.statusCode).toBe(500);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
 				expect(res.header["x-request-id"]).toBeDefined();
 				expect(res.body).toEqual({
-					"code": 505,
+					"code": 500,
 					"message": "I'm dangerous",
 					"name": "MoleculerServerError"
 				});

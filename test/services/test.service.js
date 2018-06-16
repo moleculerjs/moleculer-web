@@ -181,7 +181,7 @@ module.exports = {
 		},
 
 		error() {
-			throw new MoleculerServerError("I'm dangerous", 505);
+			throw new MoleculerServerError("I'm dangerous", 500);
 		}
 	}
 };

@@ -313,7 +313,9 @@ module.exports = {
 			}
 
 			if (!(err instanceof MoleculerError)) {
-				err = new MoleculerError(err.message, err.code || err.status, err.type);
+				const e = err;
+				err = new MoleculerError(e.message, e.code || e.status, e.type, e.data);
+				err.name = e.name;
 			}
 
 			// Return with the error as JSON object
