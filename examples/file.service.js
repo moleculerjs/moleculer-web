@@ -6,16 +6,16 @@ module.exports = {
 	name: "file",
 	actions: {
 		image: {
-			responseType: "image/png",
 			handler(ctx) {
+				ctx.meta.$responseType = "image/png";
 				// Return as stream
 				return fs.createReadStream(path.join(__dirname, "full", "assets", "images", "logo.png"));
 			}
 		},
 
 		html: {
-			responseType: "text/html",
 			handler(ctx) {
+				ctx.meta.$responseType = "text/html";
 				return Buffer.from(`
 <html>
 <body>

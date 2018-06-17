@@ -87,7 +87,7 @@ module.exports = {
 		},
 
 		clearCache() {
-			this.broker.emitLocal("cache.clean", this.name + ".*");
+			this.broker.broadcast("cache.clean", this.name + ".*");
 		}
 	},
 

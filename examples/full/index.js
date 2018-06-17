@@ -136,7 +136,7 @@ broker.createService({
 
 				// Route CORS settings
 				cors: {
-					origin: ["https://localhost:4000"],
+					origin: ["https://localhost:3000", "https://localhost:4000"],
 					methods: ["GET", "OPTIONS", "POST"],
 				},
 
@@ -163,6 +163,7 @@ broker.createService({
 				onAfterCall(ctx, route, req, res, data) {
 					this.logger.info("onAfterCall in protected route");
 					res.setHeader("X-Custom-Header", "Authorized path");
+					return data;
 				},
 
 				// Route error handler
@@ -219,7 +220,7 @@ broker.createService({
 
 				onBeforeCall(ctx, route, req, res) {
 					return new this.Promise(resolve => {
-						this.logger.info("async onBeforeCall in public. Action:", req.$endpoint.action.name);
+						this.logger.info("async onBeforeCall in public. Action:", ctx.action.name);
 						ctx.meta.userAgent = req.headers["user-agent"];
 						//ctx.meta.headers = req.headers;
 						resolve();
@@ -230,7 +231,7 @@ broker.createService({
 					this.logger.info("async onAfterCall in public");
 					return new this.Promise(resolve => {
 						res.setHeader("X-Response-Type", typeof(data));
-						resolve();
+						resolve(data);
 					});
 				},
 			}
