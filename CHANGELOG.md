@@ -5,7 +5,7 @@
 ## Breaking changes
 
 ### The `onAfterCall` hook has changed
-In previous versions of Moleculer Web, you couldn't manipulate the `data`. Now you can, but you must always return the new or old `data`.
+In previous versions of Moleculer Web, you couldn't manipulate the `data` in `onAfterCall`. Now you can, but you must always return the new or original `data`.
 
 **Modify only headers**
 ```js
@@ -15,7 +15,7 @@ broker.createService(ApiGatewayService, {
             onAfterCall(ctx, route, req, res, data) {
                 res.setHeader("X-Custom-Header", "123456");
 
-                // Must return the `data`
+                // Must return the original `data`
                 return data;
             }
         }]
@@ -41,14 +41,14 @@ broker.createService(ApiGatewayService, {
 ```
 
 ### Custom alias hooks
-The `onBeforeCall` and `authorize` hooks is called before custom alias functions too.
+The `onBeforeCall` and `authorize` hooks are called before custom alias functions too.
 And you have access to Context as `req.$ctx` or `res.$ctx`
 
 ## New
 
 ### Response header data from `ctx.meta`
 Since Moleculer v0.12, you can use `ctx.meta` to send back response headers to the Moleculer Web.
-The old method is deprecated but works.
+>The old method is deprecated but works.
 
 **Available meta fields:**
 * `ctx.meta.$statusCode` - set `res.statusCode`.
@@ -76,7 +76,7 @@ module.exports = {
 }
 ```
 
-**New (recommended) method**
+**New method**
 ```js
 module.exports = {
     name: "export",
@@ -117,7 +117,7 @@ foo: {
 ```
 
 ### Support error-handler middlewares
-There is support to use error-handler middlewares in the API Gateway.
+There is support to use error-handler middlewares in the API Gateway. So if you pass an `Error` to the `next(err)` function, it will call error handler middlewares which have signature as `(err, req, res, next)`.
 
 ```js
 broker.createService({
@@ -151,6 +151,7 @@ broker.createService({
 - `preValidate` has been removed.
 - fix multiple CORS origin handling. Thanks for [@felipegcampos](https://github.com/felipegcampos)
 - if `X-Correlation-Id` is in the request header, it is used as `requestID` in `Context`.
+- types in errors have been changed (removed `ERR_` prefix)
 
 -----------------------------
 <a name="0.6.4"></a>

@@ -10,12 +10,11 @@ const http 						= require("http");
 const https 					= require("https");
 const queryString 				= require("qs");
 const chalk						= require("chalk");
-const deprecate 				= require("depd")("moleculer-web");
+const { match, deprecate }		= require("moleculer").Utils;
 
 const _ 						= require("lodash");
 const bodyParser 				= require("body-parser");
 const serveStatic 				= require("serve-static");
-const nanomatch  				= require("nanomatch");
 const isReadableStream			= require("isstream").isReadable;
 const pathToRegexp 				= require("path-to-regexp");
 
@@ -393,7 +392,7 @@ module.exports = {
 					}
 
 					// Merge params
-					if (route.opts.mergeParams === false) { // TODO test
+					if (route.opts.mergeParams === false) {
 						params = { body: req.body, query: req.query };
 					} else {
 						const body = _.isObject(req.body) ? req.body : {};
@@ -416,7 +415,7 @@ module.exports = {
 							let alias = found.alias;
 							this.logger.debug(`  Alias: ${req.method} ${urlPath} -> ${alias.action}`);
 
-							if (route.opts.mergeParams === false) { // TODO: test
+							if (route.opts.mergeParams === false) {
 								params.params = found.params;
 							} else {
 								Object.assign(params, found.params);
@@ -561,12 +560,13 @@ module.exports = {
 						throw endpoint;
 
 					if (endpoint.action.publish === false) {
+						deprecate("The 'publish: false' action property has been deprecated. Use 'visibility: public' instead.");
 						// Action is not publishable (Deprecated in >=0.13)
 						throw new ServiceNotFoundError({ action: actionName });
 					}
 
 					if (endpoint.action.visibility != null && endpoint.action.visibility != "published") {
-						// Action is not publishable
+						// Action can't be published
 						throw new ServiceNotFoundError({ action: actionName });
 					}
 
@@ -647,12 +647,12 @@ module.exports = {
 			// Override responseType by action (Deprecated)
 			let responseType = action.responseType;
 			if (responseType) {
-				deprecate("The 'responseType' in action definition is deprecated. Use 'ctx.meta.$responseType'");
+				deprecate("The 'responseType' action property has been deprecated. Use 'ctx.meta.$responseType' instead");
 			}
 
 			// Custom headers (Deprecated)
 			if (action.responseHeaders) {
-				deprecate("The 'responseHeaders' in action definition is deprecated. Use 'ctx.meta.$responseHeaders'");
+				deprecate("The 'responseHeaders' action property has been deprecated. Use 'ctx.meta.$responseHeaders' instead");
 				Object.keys(action.responseHeaders).forEach(key => {
 					res.setHeader(key, action.responseHeaders[key]);
 					if (key == "Content-Type" && !responseType)
@@ -877,13 +877,10 @@ module.exports = {
 		checkWhitelist(route, action) {
 			// Rewrite to for iterator (faster)
 			return route.whitelist.find(mask => {
-				if (_.isString(mask)) {
-					// TODO change to Moleculer utils.match
-					return nanomatch.isMatch(action, mask, { unixify: false });
-				}
-				else if (_.isRegExp(mask)) {
+				if (_.isString(mask))
+					return match(action, mask);
+				else if (_.isRegExp(mask))
 					return mask.test(action);
-				}
 			}) != null;
 		},
 

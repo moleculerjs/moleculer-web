@@ -8,11 +8,11 @@
 
 const { MoleculerError, MoleculerClientError } = require("moleculer").Errors;
 
-const ERR_NO_TOKEN = "ERR_NO_TOKEN";
-const ERR_INVALID_TOKEN = "ERR_INVALID_TOKEN";
-const ERR_UNABLE_DECODE_PARAM = "ERR_UNABLE_DECODE_PARAM";
-const ERR_ORIGIN_NOT_FOUND = "ERR_ORIGIN_NOT_FOUND";
-const ERR_ORIGIN_NOT_ALLOWED = "ERR_ORIGIN_NOT_ALLOWED";
+const ERR_NO_TOKEN = "NO_TOKEN";
+const ERR_INVALID_TOKEN = "INVALID_TOKEN";
+const ERR_UNABLE_DECODE_PARAM = "UNABLE_DECODE_PARAM";
+const ERR_ORIGIN_NOT_FOUND = "ORIGIN_NOT_FOUND";
+const ERR_ORIGIN_NOT_ALLOWED = "ORIGIN_NOT_ALLOWED";
 
 /**
  * Invalid request body
@@ -30,7 +30,7 @@ class InvalidRequestBodyError extends MoleculerError {
 	 * @memberOf InvalidRequestBodyError
 	 */
 	constructor(body, error) {
-		super("Invalid request body", 400, null, {
+		super("Invalid request body", 400, "INVALID_REQUEST_BODY", {
 			body,
 			error
 		});
@@ -52,7 +52,7 @@ class InvalidResponseTypeError extends MoleculerError {
 	 * @memberOf InvalidResponseTypeError
 	 */
 	constructor(dataType) {
-		super(`Invalid response type '${dataType}'`, 500, null, {
+		super(`Invalid response type '${dataType}'`, 500, "INVALID_RESPONSE_TYPE", {
 			dataType
 		});
 	}

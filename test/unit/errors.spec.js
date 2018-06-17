@@ -11,7 +11,7 @@ describe("Test Errors", () => {
 		expect(err).toBeInstanceOf(Error);
 		expect(err).toBeInstanceOf(errors.InvalidRequestBodyError);
 		expect(err.code).toBe(400);
-		expect(err.type).toBe(null);
+		expect(err.type).toBe("INVALID_REQUEST_BODY");
 		expect(err.name).toBe("InvalidRequestBodyError");
 		expect(err.message).toBe("Invalid request body");
 		expect(err.data).toEqual({
@@ -26,7 +26,7 @@ describe("Test Errors", () => {
 		expect(err).toBeInstanceOf(Error);
 		expect(err).toBeInstanceOf(errors.InvalidResponseTypeError);
 		expect(err.code).toBe(500);
-		expect(err.type).toBe(null);
+		expect(err.type).toBe("INVALID_RESPONSE_TYPE");
 		expect(err.name).toBe("InvalidResponseTypeError");
 		expect(err.message).toBe("Invalid response type 'person'");
 	});

@@ -1788,7 +1788,7 @@ describe("Test CORS", () => {
 				expect(res.body).toEqual({
 					"message": "Not found",
 					"code": 404,
-					"type": "ERR_ORIGIN_NOT_FOUND",
+					"type": "ORIGIN_NOT_FOUND",
 					"name": "NotFoundError"});
 			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
 	});
@@ -1808,7 +1808,7 @@ describe("Test CORS", () => {
 				expect(res.body).toEqual({
 					"message": "Forbidden",
 					"code": 403,
-					"type": "ERR_ORIGIN_NOT_ALLOWED",
+					"type": "ORIGIN_NOT_ALLOWED",
 					"name": "ForbiddenError"});
 			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
 	});
@@ -2467,7 +2467,7 @@ describe("Test authorization", () => {
 				expect(res.body).toEqual({
 					"message": "Unauthorized",
 					"code": 401,
-					"type": "ERR_NO_TOKEN",
+					"type": "NO_TOKEN",
 					"name": "UnAuthorizedError"});
 				expect(authorize).toHaveBeenCalledTimes(1);
 				expect(authorize).toHaveBeenCalledWith(jasmine.any(Context), jasmine.any(Object), jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse));
