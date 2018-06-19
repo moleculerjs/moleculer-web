@@ -155,9 +155,7 @@ module.exports = {
 		}
 	},
 
-
 	methods: {
-
 		/**
 		 * HTTP request handler. It is called from native NodeJS HTTP server.
 		 *
@@ -201,6 +199,370 @@ module.exports = {
 					this.logger.error("   Request error!", err.name, ":", err.message, "\n", err.stack, "\nData:", err.data);
 					this.sendError(req, res, err);
 				});
+		},
+
+		/**
+		 * Handle request in the matched route
+		 * @param {Context} ctx
+		 * @param {Route} route
+		 * @param {HttpRequest} req
+		 * @param {HttpResponse} res
+		 */
+		routeHandler(ctx, route, req, res) {
+			// Pointer to the matched route
+			req.$route = route;
+			res.$route = route;
+
+			return this.composeThen(req, res, ...route.middlewares)
+				.then(() => {
+					let params = {};
+
+					// CORS headers
+					if (route.cors) {
+						// Set CORS headers to `res`
+						this.writeCorsHeaders(route, req, res, true);
+
+						// Is it a Preflight request?
+						if (req.method == "OPTIONS" && req.headers["access-control-request-method"]) {
+							// 204 - No content
+							res.writeHead(204, {
+								"Content-Length": "0"
+							});
+							res.end();
+
+							this.logResponse(req, res);
+							return true;
+						}
+					}
+
+					// Merge params
+					if (route.opts.mergeParams === false) {
+						params = { body: req.body, query: req.query };
+					} else {
+						const body = _.isObject(req.body) ? req.body : {};
+						Object.assign(params, body, req.query);
+					}
+					req.$params = params;
+
+					// Resolve action name
+					let urlPath = req.parsedUrl.slice(route.path.length);
+					if (urlPath.startsWith("/"))
+						urlPath = urlPath.slice(1);
+
+					urlPath = urlPath.replace(/~/, "$");
+					let action = urlPath;
+
+					// Resolve aliases
+					if (route.aliases && route.aliases.length > 0) {
+						const found = this.resolveAlias(route, urlPath, req.method);
+						if (found) {
+							let alias = found.alias;
+							this.logger.debug(`  Alias: ${req.method} ${urlPath} -> ${alias.action}`);
+
+							if (route.opts.mergeParams === false) {
+								params.params = found.params;
+							} else {
+								Object.assign(params, found.params);
+							}
+
+							req.$alias = alias;
+
+							// Alias handler
+							return this.aliasHandler(req, res, alias);
+
+						} else if (route.mappingPolicy == MAPPING_POLICY_RESTRICT) {
+							// Blocking direct access
+							return null;
+						}
+
+					} else if (route.mappingPolicy == MAPPING_POLICY_RESTRICT) {
+						// Blocking direct access
+						return null;
+					}
+
+					if (!action)
+						return null;
+
+					// Not found alias, call services by action name
+					action = action.replace(/\//g, ".");
+					if (route.opts.camelCaseNames) {
+						action = action.split(".").map(_.camelCase).join(".");
+					}
+
+					return this.aliasHandler(req, res, { action });
+				});
+
+		},
+
+		/**
+		 * Alias handler. Call action or call custom function
+		 * 	- check whitelist
+		 * 	- Rate limiter
+		 *  - Resolve endpoint
+		 *  - onBeforeCall
+		 *  - Authorization
+		 *  - Call the action
+		 *
+		 * @param {HttpRequest} req
+		 * @param {HttpResponse} res
+		 * @param {Object} alias
+		 * @returns
+		 */
+		aliasHandler(req, res, alias) {
+			const route = req.$route;
+			const ctx = req.$ctx;
+
+			// Whitelist check
+			if (alias.action && route.hasWhitelist) {
+				if (!this.checkWhitelist(route, alias.action)) {
+					this.logger.debug(`  The '${alias.action}' action is not in the whitelist!`);
+					throw new ServiceNotFoundError({ action: alias.action });
+				}
+			}
+
+			// Rate limiter
+			if (route.rateLimit) {
+				const opts = route.rateLimit;
+				const store = route.rateLimit.store;
+
+				const key = opts.key(req);
+				if (key) {
+					const remaining = opts.limit - store.inc(key);
+					if (opts.headers) {
+						res.setHeader("X-Rate-Limit-Limit", opts.limit);
+						res.setHeader("X-Rate-Limit-Remaining", Math.max(0, remaining));
+						res.setHeader("X-Rate-Limit-Reset", store.resetTime);
+					}
+					if (remaining < 0) {
+						throw new RateLimitExceeded();
+					}
+				}
+			}
+
+			return this.Promise.resolve()
+				// Resolve endpoint by action name
+				.then(() => {
+					if (alias.action) {
+						const endpoint = this.broker.findNextActionEndpoint(alias.action);
+						if (endpoint instanceof Error)
+							throw endpoint;
+
+						if (endpoint.action.publish === false) {
+							deprecate("The 'publish: false' action property has been deprecated. Use 'visibility: public' instead.");
+							// Action is not publishable (Deprecated in >=0.13)
+							throw new ServiceNotFoundError({ action: alias.action });
+						}
+
+						if (endpoint.action.visibility != null && endpoint.action.visibility != "published") {
+							// Action can't be published
+							throw new ServiceNotFoundError({ action: alias.action });
+						}
+
+						req.$endpoint = endpoint;
+						req.$action = endpoint.action;
+					}
+				})
+
+				// onBeforeCall handling
+				.then(() => {
+					if (route.onBeforeCall)
+						return route.onBeforeCall.call(this, ctx, route, req, res);
+				})
+
+				// Authorization
+				.then(() => {
+					if (route.authorization)
+						return this.authorize(ctx, route, req, res);
+				})
+
+				// Call the action or alias
+				.then(() => {
+					if (alias.action)
+						return this.callAction(route, alias.action, req, res, req.$params);
+
+					// Call custom alias handler
+					this.logger.info(`   Call custom function in '${req.$alias.method} ${req.$alias.path}' alias`);
+					alias.handler.call(this, req, res, err => {
+						if (err)
+							this.sendError(req, res, err);
+
+						throw new MoleculerServerError("No alias handler", 500, "NO_ALIAS_HANDLER", { alias });
+					});
+
+					// If not, it handled request/response by itself. Break the flow.
+					return true;
+				});
+		},
+
+		/**
+		 * Call an action via broker
+		 *
+		 * @param {Object} route 		Route options
+		 * @param {String} actionName 	Name of action
+		 * @param {HttpRequest} req 	Request object
+		 * @param {HttpResponse} res 	Response object
+		 * @param {Object} params		Incoming params from request
+		 * @returns {Promise}
+		 */
+		callAction(route, actionName, req, res, params) {
+			const ctx = req.$ctx;
+
+			return this.Promise.resolve()
+
+				// Logging params
+				.then(() => {
+					this.logger.info(`   Call '${actionName}' action`);
+					if (this.settings.logRequestParams && this.settings.logRequestParams in this.logger)
+						this.logger[this.settings.logRequestParams]("   Params:", params);
+
+					// Pass the `req` & `res` vars to ctx.params.
+					if (req.$alias && req.$alias.passReqResToParams) {
+						params.$req = req;
+						params.$res = res;
+					}
+				})
+
+				// Call the action
+				.then(() => ctx.call(req.$endpoint, params, route.callOptions))
+
+				// Process the response
+				.then(data => {
+
+					//if (ctx.cachedResult)
+					//	res.setHeader("X-From-Cache", "true");
+
+					// onAfterCall handling
+					if (route.onAfterCall)
+						return route.onAfterCall.call(this, ctx, route, req, res, data);
+
+					return data;
+				})
+
+				// Send back the response
+				.then(data => {
+					this.sendResponse(ctx, route, req, res, data, req.$endpoint.action);
+
+					this.logResponse(req, res, data);
+
+					return true;
+				})
+
+				// Error handling
+				.catch(err => {
+					if (!err)
+						return;
+
+					throw err;
+				});
+		},
+
+		/**
+		 * Convert data & send back to client
+		 *
+		 * @param {Context} ctx
+		 * @param {Object} route
+		 * @param {HttpIncomingMessage} req
+		 * @param {HttpResponse} res
+		 * @param {any} data
+		 * @param {Object} action
+		 */
+		sendResponse(ctx, route, req, res, data, action) {
+
+			if (res.headersSent) {
+				this.logger.warn("Headers have already sent");
+				return;
+			}
+
+			if (!res.statusCode)
+				res.statusCode = 200;
+
+			// Status code & message
+			if (ctx.meta.$statusCode) {
+				res.statusCode = ctx.meta.$statusCode;
+			}
+			if (ctx.meta.$statusMessage) {
+				res.statusMessage = ctx.meta.$statusMessage;
+			}
+
+			// Redirect
+			if (res.statusCode >= 300 && res.statusCode < 400) {
+				const location = ctx.meta.$location;
+				if (!location)
+					this.logger.warn(`The 'ctx.meta.$location' is missing for status code ${res.statusCode}!`);
+				else
+					res.setHeader("Location", location);
+			}
+
+			// Override responseType by action (Deprecated)
+			let responseType = action.responseType;
+			if (responseType) {
+				deprecate("The 'responseType' action property has been deprecated. Use 'ctx.meta.$responseType' instead");
+			}
+
+			// Custom headers (Deprecated)
+			if (action.responseHeaders) {
+				deprecate("The 'responseHeaders' action property has been deprecated. Use 'ctx.meta.$responseHeaders' instead");
+				Object.keys(action.responseHeaders).forEach(key => {
+					res.setHeader(key, action.responseHeaders[key]);
+					if (key == "Content-Type" && !responseType)
+						responseType = action.responseHeaders[key];
+				});
+			}
+
+			// Custom responseType from ctx.meta
+			if (ctx.meta.$responseType) {
+				responseType = ctx.meta.$responseType;
+			}
+
+			// Custom headers from ctx.meta
+			if (ctx.meta.$responseHeaders) {
+				Object.keys(ctx.meta.$responseHeaders).forEach(key => {
+					if (key == "Content-Type" && !responseType)
+						responseType = ctx.meta.$responseHeaders[key];
+					else
+						res.setHeader(key, ctx.meta.$responseHeaders[key]);
+				});
+			}
+
+			if (data == null)
+				return res.end();
+
+			// Buffer
+			if (Buffer.isBuffer(data)) {
+				res.setHeader("Content-Type", responseType || "application/octet-stream");
+				res.setHeader("Content-Length", data.length);
+				res.end(data);
+			}
+			// Buffer from Object
+			else if (_.isObject(data) && data.type == "Buffer") {
+				const buf = Buffer.from(data);
+				res.setHeader("Content-Type", responseType || "application/octet-stream");
+				res.setHeader("Content-Length", buf.length);
+				res.end(buf);
+			}
+			// Stream
+			else if (isReadableStream(data)) {
+				res.setHeader("Content-Type", responseType || "application/octet-stream");
+				data.pipe(res);
+			}
+			// Object or Array
+			else if (_.isObject(data) || Array.isArray(data)) {
+				res.setHeader("Content-Type", responseType || "application/json; charset=utf-8");
+				res.end(JSON.stringify(data));
+			}
+			// Other
+			else {
+				if (!responseType) {
+					res.setHeader("Content-Type", "application/json; charset=utf-8");
+					res.end(JSON.stringify(data));
+				} else {
+					res.setHeader("Content-Type", responseType);
+					if (_.isString(data))
+						res.end(data);
+					else
+						res.end(data.toString());
+				}
+			}
 		},
 
 		/**
@@ -360,360 +722,6 @@ module.exports = {
 				url = req.url.substring(0, questionIdx);
 			}
 			return {query, url};
-		},
-
-		routeHandler(ctx, route, req, res) {
-			// Pointer to the matched route
-			req.$route = route;
-			res.$route = route;
-
-			return this.composeThen(req, res, ...route.middlewares)
-				.then(() => {
-					let params = {};
-
-					// CORS headers
-					if (route.cors) {
-						if (req.method == "OPTIONS" && req.headers["access-control-request-method"]) {
-						// Preflight request
-							this.writeCorsHeaders(route, req, res, true);
-
-							// 204 - No content
-							res.writeHead(204, {
-								"Content-Length": "0"
-							});
-							res.end();
-
-							this.logResponse(req, res);
-							return true;
-						}
-
-						// Set CORS headers to `res`
-						this.writeCorsHeaders(route, req, res, true);
-					}
-
-					// Merge params
-					if (route.opts.mergeParams === false) {
-						params = { body: req.body, query: req.query };
-					} else {
-						const body = _.isObject(req.body) ? req.body : {};
-						Object.assign(params, body, req.query);
-					}
-					req.$params = params;
-
-					// Resolve action name
-					let urlPath = req.parsedUrl.slice(route.path.length);
-					if (urlPath.startsWith("/"))
-						urlPath = urlPath.slice(1);
-
-					urlPath = urlPath.replace(/~/, "$");
-					let action = urlPath;
-
-					// Resolve aliases
-					if (route.aliases && route.aliases.length > 0) {
-						const found = this.resolveAlias(route, urlPath, req.method);
-						if (found) {
-							let alias = found.alias;
-							this.logger.debug(`  Alias: ${req.method} ${urlPath} -> ${alias.action}`);
-
-							if (route.opts.mergeParams === false) {
-								params.params = found.params;
-							} else {
-								Object.assign(params, found.params);
-							}
-
-							req.$alias = alias;
-
-							// Alias handler
-							return this.aliasHandler(req, res, alias);
-
-						} else if (route.mappingPolicy == MAPPING_POLICY_RESTRICT) {
-							// Blocking direct access
-							return null;
-						}
-
-					} else if (route.mappingPolicy == MAPPING_POLICY_RESTRICT) {
-						// Blocking direct access
-						return null;
-					}
-
-					if (!action)
-						return null;
-
-					// Not found alias, call services by action name
-					action = action.replace(/\//g, ".");
-					if (route.opts.camelCaseNames) {
-						action = action.split(".").map(_.camelCase).join(".");
-					}
-
-					return this.aliasHandler(req, res, { action });
-				});
-
-		},
-
-		/**
-		 * Route handler.
-		 * 	- check whitelist
-		 * 	- CORS
-		 * 	- Rate limiter
-		 *
-		 * @param {HttpRequest} req
-		 * @param {HttpResponse} res
-		 * @param {Object} alias
-		 * @returns
-		 */
-		aliasHandler(req, res, alias) {
-			const route = req.$route;
-			const ctx = req.$ctx;
-
-			// Whitelist check
-			if (alias.action && route.hasWhitelist) {
-				if (!this.checkWhitelist(route, alias.action)) {
-					this.logger.debug(`  The '${alias.action}' action is not in the whitelist!`);
-					throw new ServiceNotFoundError({ action: alias.action });
-				}
-			}
-
-			// Rate limiter
-			if (route.rateLimit) {
-				const opts = route.rateLimit;
-				const store = route.rateLimit.store;
-
-				const key = opts.key(req);
-				if (key) {
-					const remaining = opts.limit - store.inc(key);
-					if (opts.headers) {
-						res.setHeader("X-Rate-Limit-Limit", opts.limit);
-						res.setHeader("X-Rate-Limit-Remaining", Math.max(0, remaining));
-						res.setHeader("X-Rate-Limit-Reset", store.resetTime);
-					}
-					if (remaining < 0) {
-						throw new RateLimitExceeded();
-					}
-				}
-			}
-
-			return this.Promise.resolve()
-				// onBeforeCall handling
-				.then(() => {
-					if (route.onBeforeCall)
-						return route.onBeforeCall.call(this, ctx, route, req, res);
-				})
-
-				// Authorization
-				.then(() => {
-					if (route.authorization)
-						return this.authorize(ctx, route, req, res);
-				})
-
-				// Call the action
-				.then(() => {
-					if (alias.action)
-						return this.callAction(route, alias.action, req, res, req.$params);
-
-					// Call custom alias handler
-					this.logger.info(`   Call custom function in '${req.$alias.method} ${req.$alias.path}' alias`);
-					alias.handler.call(this, req, res, err => {
-						if (err)
-							this.sendError(req, res, err);
-
-						throw new MoleculerServerError("No alias handler", 500, "NO_ALIAS_HANDLER", { alias });
-					});
-
-					// If not, it handles request/response by itself. Break the flow.
-					return true;
-				});
-		},
-
-		/**
-		 * Call an action via broker
-		 *
-		 * @param {Object} route 		Route options
-		 * @param {String} actionName 	Name of action
-		 * @param {HttpRequest} req 	Request object
-		 * @param {HttpResponse} res 	Response object
-		 * @param {Object} params		Incoming params from request
-		 * @returns {Promise}
-		 */
-		callAction(route, actionName, req, res, params) {
-			const ctx = req.$ctx;
-
-			return this.Promise.resolve()
-
-				// Create a new context for request
-				.then(() => {
-
-					this.logger.info(`   Call '${actionName}' action`);
-					if (this.settings.logRequestParams && this.settings.logRequestParams in this.logger)
-						this.logger[this.settings.logRequestParams]("   Params:", params);
-
-					// Pass the `req` & `res` vars to ctx.params.
-					if (req.$alias && req.$alias.passReqResToParams) {
-						params.$req = req;
-						params.$res = res;
-					}
-				})
-
-				// Resolve action by name
-				.then(() => {
-					const endpoint = this.broker.findNextActionEndpoint(actionName);
-					if (endpoint instanceof Error)
-						throw endpoint;
-
-					if (endpoint.action.publish === false) {
-						deprecate("The 'publish: false' action property has been deprecated. Use 'visibility: public' instead.");
-						// Action is not publishable (Deprecated in >=0.13)
-						throw new ServiceNotFoundError({ action: actionName });
-					}
-
-					if (endpoint.action.visibility != null && endpoint.action.visibility != "published") {
-						// Action can't be published
-						throw new ServiceNotFoundError({ action: actionName });
-					}
-
-					req.$endpoint = endpoint;
-				})
-
-				// Call the action
-				.then(() => ctx.call(req.$endpoint, params, route.callOptions))
-
-				// Process the response
-				.then(data => {
-
-					//if (ctx.cachedResult)
-					//	res.setHeader("X-From-Cache", "true");
-
-					// onAfterCall handling
-					if (route.onAfterCall)
-						return route.onAfterCall.call(this, ctx, route, req, res, data);
-
-					return data;
-				})
-
-				// Send back the response
-				.then(data => {
-					this.sendResponse(ctx, route, req, res, data, req.$endpoint.action);
-
-					this.logResponse(req, res, data);
-
-					return true;
-				})
-
-				// Error handling
-				.catch(err => {
-					if (!err)
-						return;
-
-					throw err;
-				});
-		},
-
-		/**
-		 * Convert data & send back to client
-		 *
-		 * @param {Context} ctx
-		 * @param {Object} route
-		 * @param {HttpIncomingMessage} req
-		 * @param {HttpResponse} res
-		 * @param {any} data
-		 * @param {Object} action
-		 */
-		sendResponse(ctx, route, req, res, data, action) {
-
-			if (res.headersSent) {
-				this.logger.warn("Headers have already sent");
-				return;
-			}
-
-			if (!res.statusCode)
-				res.statusCode = 200;
-
-			// Status code & message
-			if (ctx.meta.$statusCode) {
-				res.statusCode = ctx.meta.$statusCode;
-			}
-			if (ctx.meta.$statusMessage) {
-				res.statusMessage = ctx.meta.$statusMessage;
-			}
-
-			// Redirect
-			if (res.statusCode >= 300 && res.statusCode < 400) {
-				const location = ctx.meta.$location;
-				if (!location)
-					this.logger.warn(`The 'ctx.meta.$location' is missing for status code ${res.statusCode}!`);
-				else
-					res.setHeader("Location", location);
-			}
-
-			// Override responseType by action (Deprecated)
-			let responseType = action.responseType;
-			if (responseType) {
-				deprecate("The 'responseType' action property has been deprecated. Use 'ctx.meta.$responseType' instead");
-			}
-
-			// Custom headers (Deprecated)
-			if (action.responseHeaders) {
-				deprecate("The 'responseHeaders' action property has been deprecated. Use 'ctx.meta.$responseHeaders' instead");
-				Object.keys(action.responseHeaders).forEach(key => {
-					res.setHeader(key, action.responseHeaders[key]);
-					if (key == "Content-Type" && !responseType)
-						responseType = action.responseHeaders[key];
-				});
-			}
-
-			// Custom responseType from ctx.meta
-			if (ctx.meta.$responseType) {
-				responseType = ctx.meta.$responseType;
-			}
-
-			// Custom headers from ctx.meta
-			if (ctx.meta.$responseHeaders) {
-				Object.keys(ctx.meta.$responseHeaders).forEach(key => {
-					if (key == "Content-Type" && !responseType)
-						responseType = ctx.meta.$responseHeaders[key];
-					else
-						res.setHeader(key, ctx.meta.$responseHeaders[key]);
-				});
-			}
-
-			if (data == null)
-				return res.end();
-
-			// Buffer
-			if (Buffer.isBuffer(data)) {
-				res.setHeader("Content-Type", responseType || "application/octet-stream");
-				res.setHeader("Content-Length", data.length);
-				res.end(data);
-			}
-			// Buffer from Object
-			else if (_.isObject(data) && data.type == "Buffer") {
-				const buf = Buffer.from(data);
-				res.setHeader("Content-Type", responseType || "application/octet-stream");
-				res.setHeader("Content-Length", buf.length);
-				res.end(buf);
-			}
-			// Stream
-			else if (isReadableStream(data)) {
-				res.setHeader("Content-Type", responseType || "application/octet-stream");
-				data.pipe(res);
-			}
-			// Object or Array
-			else if (_.isObject(data) || Array.isArray(data)) {
-				res.setHeader("Content-Type", responseType || "application/json; charset=utf-8");
-				res.end(JSON.stringify(data));
-			}
-			// Other
-			else {
-				if (!responseType) {
-					res.setHeader("Content-Type", "application/json; charset=utf-8");
-					res.end(JSON.stringify(data));
-				} else {
-					res.setHeader("Content-Type", responseType);
-					if (_.isString(data))
-						res.end(data);
-					else
-						res.end(data.toString());
-				}
-			}
 		},
 
 		/**

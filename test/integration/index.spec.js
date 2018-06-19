@@ -2196,14 +2196,11 @@ describe("Test onBeforeCall & onAfterCall", () => {
 		broker.loadService("./test/services/test.service");
 
 		const beforeCall = jest.fn((ctx, route, req, res) => {
-			expect(req.$service).toBeDefined();
-			expect(req.$route).toBeDefined();
-			expect(req.$params).toBeDefined();
-
-			expect(res.$service).toBeDefined();
-			expect(res.$route).toBeDefined();
+			expect(ctx.action.name).toBe("api.rest");
 
 			ctx.meta.custom = "John";
+			ctx.meta.endpoint = req.$endpoint ? req.$endpoint.name: null;
+			ctx.meta.action = req.$action ? req.$action.name: null;
 		});
 		const afterCall = jest.fn((ctx, route, req, res, data) => {
 			expect(req.$service).toBeDefined();
@@ -2245,6 +2242,25 @@ describe("Test onBeforeCall & onAfterCall", () => {
 				expect(beforeCall).toHaveBeenCalledTimes(1);
 				expect(beforeCall).toHaveBeenCalledWith(jasmine.any(Context), jasmine.any(Object), jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse));
 
+				const ctx = beforeCall.mock.calls[0][0];
+				const req = beforeCall.mock.calls[0][2];
+				const response = beforeCall.mock.calls[0][3];
+
+				expect(ctx.action.name).toBe("api.rest");
+				expect(ctx.meta.endpoint).toBe(broker.nodeID + ":test.hello");
+				expect(ctx.meta.action).toBe("test.hello");
+
+				expect(req.$service).toBeDefined();
+				expect(req.$route).toBeDefined();
+				expect(req.$params).toBeDefined();
+				expect(req.$endpoint).toBeDefined();
+				expect(req.$action).toBeDefined();
+				expect(req.$action.name).toBe("test.hello");
+
+				expect(response.$service).toBeDefined();
+				expect(response.$route).toBeDefined();
+
+
 				expect(afterCall).toHaveBeenCalledTimes(1);
 				expect(afterCall).toHaveBeenCalledWith(jasmine.any(Context), jasmine.any(Object), jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse), "Hello Moleculer");
 				expect(afterCall.mock.calls[0][0].meta.custom).toBe("John");
@@ -2259,6 +2275,22 @@ describe("Test onBeforeCall & onAfterCall", () => {
 				expect(res.text).toBe("Hello Custom");
 				expect(beforeCall).toHaveBeenCalledTimes(1);
 				expect(beforeCall).toHaveBeenCalledWith(jasmine.any(Context), jasmine.any(Object), jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse));
+
+				const ctx = beforeCall.mock.calls[0][0];
+				const req = beforeCall.mock.calls[0][2];
+				const response = beforeCall.mock.calls[0][3];
+
+				expect(ctx.action.name).toBe("api.rest");
+				expect(ctx.meta.endpoint).toBeNull();
+				expect(ctx.meta.action).toBeNull();
+
+				expect(req.$service).toBeDefined();
+				expect(req.$route).toBeDefined();
+				expect(req.$params).toBeDefined();
+				expect(req.$endpoint).toBeUndefined();
+
+				expect(response.$service).toBeDefined();
+				expect(response.$route).toBeDefined();
 
 				expect(afterCall).toHaveBeenCalledTimes(0);
 			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
