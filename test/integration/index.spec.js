@@ -463,6 +463,47 @@ describe("Test with `path` prefix", () => {
 
 });
 
+describe("Test with `/` path prefix", () => {
+	let broker;
+	let service;
+	let server;
+
+	beforeAll(() => {
+		[ broker, service, server] = setup({
+			path: "/"
+		});
+		//broker.loadService("./test/services/math.service");
+		return broker.start();
+	});
+	afterAll(() => broker.stop());
+
+	it("GET /", () => {
+		return request(server)
+			.get("/")
+			.then(res => {
+				expect(res.statusCode).toBe(404);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toEqual({
+					"code": 404,
+					"message": "Not found",
+					"name": "NotFoundError",
+					"type": "NOT_FOUND"
+				});
+			});
+	});
+
+	it("GET /test/hello", () => {
+		return request(server)
+			.get("/test/hello")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toBe("Hello Moleculer");
+			});
+	});
+
+});
+
 describe("Test only assets", () => {
 	let broker;
 	let service;

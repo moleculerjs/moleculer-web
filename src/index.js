@@ -1011,7 +1011,8 @@ module.exports = {
 				route.onError = opts.onError;
 
 			// Create URL prefix
-			route.path = (this.settings.path || "") + (opts.path || "");
+			const globalPath = this.settings.path && this.settings.path != "/" ? this.settings.path : "";
+			route.path = globalPath + (opts.path || "");
 			route.path = route.path || "/";
 
 			// Helper for aliased routes
