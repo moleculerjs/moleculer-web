@@ -1776,7 +1776,7 @@ describe("Test CORS", () => {
 	beforeAll(() => {
 	});
 
-	it("errors on missing origin header", () => {
+	it("no errors if missing origin header", () => {
 		[ broker, service, server] = setup({
 			cors: {}
 		});
@@ -1784,12 +1784,8 @@ describe("Test CORS", () => {
 			.then(() => request(server)
 				.get("/test/hello"))
 			.then(res => {
-				expect(res.statusCode).toBe(404);
-				expect(res.body).toEqual({
-					"message": "Not found",
-					"code": 404,
-					"type": "ORIGIN_NOT_FOUND",
-					"name": "NotFoundError"});
+				expect(res.statusCode).toBe(200);
+				expect(res.body).toEqual("Hello Moleculer");
 			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
 	});
 

@@ -785,14 +785,13 @@ module.exports = {
 		 */
 		checkOrigin(origin, settings) {
 			if (_.isString(settings)) {
+				if (settings.indexOf(origin) !== -1)
+					return true;
+
 				if (settings.indexOf("*") !== -1) {
 					// Based on: https://github.com/hapijs/hapi
 					const wildcard = new RegExp(`^${_.escapeRegExp(settings).replace(/\\\*/g, ".*").replace(/\\\?/g, ".")}$`);
-					if (origin.match(wildcard)) {
-						return true;
-					}
-				} else if(settings.indexOf(origin) !== -1) {
-					return true;
+					return origin.match(wildcard);
 				}
 			} else if (Array.isArray(settings)) {
 				for(let i = 0; i < settings.length; i++) {
@@ -819,10 +818,9 @@ module.exports = {
 			if (!route.cors) return;
 
 			const origin = req.headers["origin"];
-
-			if (!origin) {
-				throw new NotFoundError(ERR_ORIGIN_NOT_FOUND);
-			}
+			// It's not presented, when it's a local request (origin and target same)
+			if (!origin)
+				return;
 
 			// Access-Control-Allow-Origin
 			if (!route.cors.origin || route.cors.origin === "*") {
