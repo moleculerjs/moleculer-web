@@ -152,6 +152,7 @@ broker.createService({
 - fix multiple CORS origin handling. Thanks for [@felipegcampos](https://github.com/felipegcampos)
 - if `X-Correlation-Id` is in the request header, it is used as `requestID` in `Context`.
 - types in errors have been changed (removed `ERR_` prefix)
+- `path-to-regexp` is updated to v2.x.x
 
 -----------------------------
 <a name="0.6.4"></a>

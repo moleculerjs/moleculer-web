@@ -61,7 +61,7 @@
     "es6-error": "4.1.1",
     "isstream": "0.1.2",
     "lodash": "4.17.10",
-    "path-to-regexp": "1.7.0",
+    "path-to-regexp": "2.2.1",
     "qs": "6.5.2",
     "serve-static": "1.13.2"
   },
