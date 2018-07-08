@@ -141,9 +141,9 @@ broker.createService({
                     passport.session(),
 
                     function(err, req, res, next) {
-						this.logger.error("Error is occured in middlewares!");
-						this.sendError(req, res, err);
-					}
+                        this.logger.error("Error is occured in middlewares!");
+                        this.sendError(req, res, err);
+                    }
                 ],
 ```
 
