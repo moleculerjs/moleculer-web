@@ -12,10 +12,10 @@
 			"program": "${workspaceRoot}\\examples\\index.js",
 			"cwd": "${workspaceRoot}",
 			"env": {
-				"PORT": "3000"
+				"PORT": "4000"
 			},
 			"args": [
-				"full"
+				"www"
 			]
 		},
 		{
@@ -25,6 +25,7 @@
 			"program": "${workspaceRoot}\\node_modules\\jest-cli\\bin\\jest.js",
 			"args": ["--runInBand"],
 			"cwd": "${workspaceRoot}",
+			"console": "internalConsole",
 			"runtimeArgs": [
                 "--nolazy"
             ]

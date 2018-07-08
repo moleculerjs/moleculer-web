@@ -50,6 +50,13 @@ module.exports = {
 			}
 		},
 
+		dangerZone2: {
+			visibility: "public",
+			handler(ctx) {
+				return "Danger zone 2!";
+			}
+		},
+
 		text(ctx) {
 			return "String text";
 		},
@@ -174,7 +181,7 @@ module.exports = {
 		},
 
 		error() {
-			throw new MoleculerServerError("I'm dangerous", 505);
+			throw new MoleculerServerError("I'm dangerous", 500);
 		}
 	}
 };

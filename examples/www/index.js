@@ -33,16 +33,14 @@ let ApiGatewayService 	= require("../../index");
 
 // Create broker
 let broker = new ServiceBroker({
-	logger: console,
 	//logLevel: "debug",
-	metrics: true,
-	statistics: true,
-	validation: true
+	metrics: true
 });
 
 // Load other services
 broker.loadService(path.join(__dirname, "..", "math.service"));
 broker.loadService(path.join(__dirname, "..", "file.service"));
+broker.createService(require("moleculer-console-tracer"));
 
 // Load API Gateway
 broker.createService({
@@ -73,7 +71,19 @@ broker.createService({
 				aliases: {
 					"add": "math.add",
 					"GET health": "$node.health",
-					"POST divide": "math.div"
+					"POST divide": "math.div",
+					"other": [
+						function(req, res, next) { this.logger.info("Middleware 1"); next(); },
+						function(req, res, next) { this.logger.info("Middleware 2"); next(); },
+						//"file.html"
+						function(req, res, next) {
+							this.logger.info("Custom alias", req.$ctx.id);
+							//res.end();
+							next(new Error("Wrong"));
+						},
+						function(req, res, next) { this.logger.info("Middleware 3"); res.end(); },
+						function(err, req, res, next) { this.logger.info("Error Middleware 4"); res.end(err.message); },
+					]
 				},
 
 				// Use bodyparser modules
