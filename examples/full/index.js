@@ -134,7 +134,11 @@ broker.createService({
 				// Action aliases
 				aliases: {
 					"POST users": "users.create",
-					"health": "$node.health"
+					"health": "$node.health",
+					"custom"(req, res) {
+						res.writeHead(201);
+						res.end();
+					}
 				},
 
 				// Use bodyparser module
