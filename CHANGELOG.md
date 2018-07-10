@@ -44,6 +44,9 @@ broker.createService(ApiGatewayService, {
 The `onBeforeCall` and `authorize` hooks are called before custom alias functions too.
 And you have access to Context as `req.$ctx` or `res.$ctx`
 
+### Whitelist string matcher changed
+In early versions the `*` match string is enabled to call all services & actions. The matcher changed, in new versions use the `**` (double star) match string for the same function.
+
 ## New
 
 ### Response header data from `ctx.meta`
