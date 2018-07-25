@@ -60,6 +60,7 @@
   },
   "dependencies": {
     "body-parser": "1.18.3",
+    "chalk": "^2.4.1",
     "es6-error": "4.1.1",
     "isstream": "0.1.2",
     "lodash": "4.17.10",
