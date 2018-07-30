@@ -301,7 +301,7 @@ broker.createService({
 		 * @returns {Promise}
 		 */
 		authorize(ctx, route, req) {
-			let authValue = req.headers["authorization"];
+			/*let authValue = req.headers["authorization"];
 			if (authValue && authValue.startsWith("Bearer ")) {
 				let token = authValue.slice(7);
 
@@ -330,6 +330,23 @@ broker.createService({
 
 			} else
 				return this.Promise.reject(new UnAuthorizedError(ERR_NO_TOKEN));
+
+				*/
+			let token;
+			if (req.headers.authorization) {
+				let type = req.headers.authorization.split(" ")[0];
+				if (type === "Token") {
+					token = req.headers.authorization.split(" ")[1];
+				}
+			}
+			if (!token) {
+				return Promise.reject(new UnAuthorizedError(ERR_NO_TOKEN));
+			}
+			// Verify JWT token
+			return ctx.call("auth.resolveToken", { token })
+				.then(user => {
+					return Promise.reject(new UnAuthorizedError(ERR_NO_TOKEN));
+				});
 		}
 	}
 });

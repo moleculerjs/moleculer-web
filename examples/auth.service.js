@@ -28,14 +28,14 @@ module.exports = {
 
 	actions: {
 		/**
-		 * Login action. 
-		 * 
-		 * Required params: 
+		 * Login action.
+		 *
+		 * Required params:
 		 * 	- 'username'
 		 *  - 'password'
-		 * 
-		 * @param {any} ctx 
-		 * @returns 
+		 *
+		 * @param {any} ctx
+		 * @returns
 		 */
 		login(ctx) {
 			let user = users.find(u => u.username == ctx.params.username && u.password == ctx.params.password);
@@ -44,15 +44,15 @@ module.exports = {
 				return this.generateToken(user).then(token => {
 					return { token };
 				});
-			} else 
+			} else
 				return Promise.reject(new MoleculerError("Invalid credentials", 400));
 		},
 
 		/**
 		 * Verify a JWT token
-		 * 
-		 * @param {any} ctx 
-		 * @returns 
+		 *
+		 * @param {any} ctx
+		 * @returns
 		 */
 		verifyToken(ctx) {
 			return this.verify(ctx.params.token, JWT_SECRET);
@@ -60,13 +60,37 @@ module.exports = {
 
 		/**
 		 * Get User entity by ID
-		 * 
-		 * @param {any} ctx 
-		 * @returns 
+		 *
+		 * @param {any} ctx
+		 * @returns
 		 */
 		getUserByID(ctx) {
 			return users.find(u => u.id == ctx.params.id);
-		}
+		},
+
+		resolveToken: {
+			cache: {
+				keys: ["token"],
+				ttl: 60 * 60 // 1 hour
+			},
+			params: {
+				token: "string"
+			},
+			handler (ctx) {
+				return new this.Promise((resolve, reject) => {
+					jwt.verify(ctx.params.token, JWT_SECRET, (err, decoded) => {
+						if (err) {
+							return reject(err);
+						}
+						resolve(decoded);
+					});
+				}).then(decoded => {
+					if (decoded.id) {
+						return users.find(u => u.id == decoded.id);
+					}
+				});
+			}
+		},
 	},
 
 	created() {
@@ -78,9 +102,9 @@ module.exports = {
 	methods: {
 		/**
 		 * Generate JWT token
-		 * 
-		 * @param {any} user 
-		 * @returns 
+		 *
+		 * @param {any} user
+		 * @returns
 		 */
 		generateToken(user) {
 			return this.encode(_.pick(user, ["id", "role"]), JWT_SECRET);
