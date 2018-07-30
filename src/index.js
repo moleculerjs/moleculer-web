@@ -377,20 +377,26 @@ module.exports = {
 
 				// Call the action or alias
 				.then(() => {
-					if (alias.action)
+					if (_.isFunction(alias.handler)) {
+						// Call custom alias handler
+						this.logger.info(`   Call custom function in '${req.$alias.method} ${req.$alias.path}' alias`);
+						return new Promise((resolve, reject) => {
+							alias.handler.call(this, req, res, err => {
+								if (err)
+									reject(err);
+								else
+									resolve();
+							});
+						}).then(() => {
+							if (alias.action)
+								return this.callAction(route, alias.action, req, res, req.$params);
+							else
+								throw new MoleculerServerError("No alias handler", 500, "NO_ALIAS_HANDLER", { alias });
+						});
+
+					} else if (alias.action) {
 						return this.callAction(route, alias.action, req, res, req.$params);
-
-					// Call custom alias handler
-					this.logger.info(`   Call custom function in '${req.$alias.method} ${req.$alias.path}' alias`);
-					alias.handler.call(this, req, res, err => {
-						if (err)
-							this.sendError(req, res, err);
-
-						throw new MoleculerServerError("No alias handler", 500, "NO_ALIAS_HANDLER", { alias });
-					});
-
-					// If not, it handled request/response by itself. Break the flow.
-					return true;
+					}
 				});
 		},
 
@@ -613,13 +619,11 @@ module.exports = {
 				this.compose(...mws)(req, res, err => {
 					if (err) {
 						if (err instanceof MoleculerError)
-							reject(err);
+							return reject(err);
 						if (err instanceof Error)
-							reject(new MoleculerError(err.message, err.code || err.status, err.type));
+							return reject(new MoleculerError(err.message, err.code || err.status, err.type));
 
-						reject(new MoleculerError(err));
-
-						return;
+						return reject(new MoleculerError(err));
 					}
 
 					resolve();
@@ -1032,13 +1036,15 @@ module.exports = {
 				else if (_.isFunction(action))
 					alias = { handler: action };
 				else if (Array.isArray(action)) {
-					const mws = action.map(mw => {
+					alias = {};
+					const mws = _.compact(action.map(mw => {
 						if (_.isString(mw))
-							return (req, res) => this.aliasHandler(req, res, { action: mw });
+							alias.action = mw;
 						else if(_.isFunction(mw))
 							return mw;
-					});
-					alias = { handler: this.compose(...mws) };
+					}));
+					alias.handler = this.compose(...mws);
+
 				} else {
 					alias = action;
 				}
