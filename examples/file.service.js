@@ -1,6 +1,11 @@
 const fs = require("fs");
 const path = require("path");
-//const { MoleculerError } = require("moleculer").Errors;
+const { NotFoundError } = require("../src/errors");
+const mkdir = require("mkdirp").sync;
+const mime = require("mime-types");
+
+const uploadDir = path.join(__dirname, "full", "uploads");
+mkdir(uploadDir);
 
 module.exports = {
 	name: "file",
@@ -24,6 +29,34 @@ module.exports = {
 </body>
 </html>
 				`);
+			}
+		},
+
+		get: {
+			handler(ctx) {
+				const filePath = path.join(__dirname, "full", "uploads", ctx.params.file);
+				if (!fs.existsSync(filePath))
+					return new NotFoundError();
+
+				ctx.meta.$responseType = mime.lookup(ctx.params.file);
+				// Return as stream
+				return fs.createReadStream(filePath);
+			}
+		},
+
+		save: {
+			handler(ctx) {
+				return new this.Promise((resolve, reject) => {
+					const filePath = path.join(__dirname, "full", "uploads", ctx.meta.filename);
+					const f = fs.createWriteStream(filePath);
+					f.on("close", () => {
+						this.logger.info(`Uploaded file stored in '${filePath}'`);
+						resolve(filePath);
+					});
+					f.on("error", err => reject(err));
+
+					ctx.params.pipe(f);
+				});
 			}
 		}
 	}

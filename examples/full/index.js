@@ -50,21 +50,8 @@ const path 					= require("path");
 const { ServiceBroker } 	= require("moleculer");
 const { MoleculerError } 	= require("moleculer").Errors;
 const { ForbiddenError, UnAuthorizedError, ERR_NO_TOKEN, ERR_INVALID_TOKEN } = require("../../src/errors");
-const multer  				= require("multer");
-const mkdirp  				= require("mkdirp").sync;
+const multiparty 			= require("multiparty");
 
-// File upload storage with multer
-const uploadDir = path.join(__dirname, "./uploads");
-const storage = multer.diskStorage({
-	destination: (req, file, callback) => {
-		callback(null, uploadDir);
-	},
-	filename: (req, file, callback) => {
-		callback(null, file.originalname);
-	}
-});
-const upload = multer({ storage : storage}).single("myfile");
-mkdirp(uploadDir);
 // ----
 
 const ApiGatewayService = require("../../index");
@@ -147,7 +134,11 @@ broker.createService({
 				// Action aliases
 				aliases: {
 					"POST users": "users.create",
-					"health": "$node.health"
+					"health": "$node.health",
+					"custom"(req, res) {
+						res.writeHead(201);
+						res.end();
+					}
 				},
 
 				// Use bodyparser module
@@ -175,12 +166,55 @@ broker.createService({
 
 			},
 
+			{
+				path: "/upload",
+
+				authorization: false,
+
+				bodyParsers: {
+					json: false,
+					urlencoded: false
+				},
+
+				aliases: {
+					"GET /": "file.get",
+
+					"POST /"(req, res) {
+						const form = new multiparty.Form();
+						form.on("part", part => {
+							if (part.name == "myfile" && part.filename) {
+								return this.broker.call("file.save", part, { meta: { filename: part.filename }})
+									.then(filePath => {
+										this.logger.info("File uploaded successfully!", filePath);
+										this.sendRedirect(res, "upload?file=" + part.filename);
+									})
+									.catch(err => {
+										this.logger.error("File upload error!", err);
+										this.sendError(req, res, err);
+									});
+							}
+						});
+
+						form.parse(req);
+					}
+
+				},
+
+				mappingPolicy: "restrict"
+			},
+
 			/**
 			 * This route demonstrates a public `/api` path to access `posts`, `file` and `math` actions.
 			 */
 			{
 				// Path prefix to this route
 				path: "/",
+
+				// Middlewares
+				use: [
+					// To handle file uploads
+					//multer({ limit: { fieldSize: 2 * 1024 * 1024 }}).single("myfile")
+				],
 
 				// Whitelist of actions (array of string mask or regex)
 				whitelist: [
@@ -201,10 +235,7 @@ broker.createService({
 					"add": "math.add",
 					"add/:a/:b": "math.add",
 					"GET sub": "math.sub",
-					"POST divide": "math.div",
-					"POST upload"(req, res) {
-						this.parseUploadedFile(req, res);
-					}
+					"POST divide": "math.div"
 				},
 
 				// Use bodyparser module
@@ -299,26 +330,6 @@ broker.createService({
 
 			} else
 				return this.Promise.reject(new UnAuthorizedError(ERR_NO_TOKEN));
-		},
-
-		parseUploadedFile(req, res) {
-			this.logger.info("Incoming file!");
-
-			upload(req, res, err => {
-				if (err) {
-					this.logger.error("Error uploading file!", err);
-					res.writeHead(500);
-					return res.end("Error uploading file!", err);
-				}
-
-				res.writeHead(201);
-				res.end();
-
-				this.logger.info("File uploaded!", req.file);
-
-				this.broker.emit("file.uploaded", res.file);
-			});
-
 		}
 	}
 });

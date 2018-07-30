@@ -1,6 +1,6 @@
 -----------------------------
 <a name="0.8.0"></a>
-# 0.8.0 (2018-xx-xx)
+# 0.8.0 (2018-07-08)
 
 ## Breaking changes
 
@@ -43,6 +43,9 @@ broker.createService(ApiGatewayService, {
 ### Custom alias hooks
 The `onBeforeCall` and `authorize` hooks are called before custom alias functions too.
 And you have access to Context as `req.$ctx` or `res.$ctx`
+
+### Whitelist string matcher changed
+In early versions the `*` match string is enabled to call all services & actions. The matcher changed, in new versions use the `**` (double star) match string for the same function.
 
 ## New
 
@@ -141,9 +144,9 @@ broker.createService({
                     passport.session(),
 
                     function(err, req, res, next) {
-						this.logger.error("Error is occured in middlewares!");
-						this.sendError(req, res, err);
-					}
+                        this.logger.error("Error is occured in middlewares!");
+                        this.sendError(req, res, err);
+                    }
                 ],
 ```
 

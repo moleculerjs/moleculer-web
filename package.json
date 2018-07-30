@@ -1,6 +1,6 @@
 {
   "name": "moleculer-web",
-  "version": "0.8.0-rc1",
+  "version": "0.8.0",
   "description": "Official API Gateway service for Moleculer framework",
   "main": "index.js",
   "scripts": {
@@ -39,18 +39,20 @@
     "jest": "23.3.0",
     "jest-cli": "23.3.0",
     "jsonwebtoken": "8.3.0",
-    "lolex": "2.7.0",
+    "lolex": "2.7.1",
+    "mime-types": "2.1.18",
     "mkdirp": "0.5.1",
-    "moleculer": "0.13.0-rc1",
+    "moleculer": "0.13.0",
     "moleculer-console-tracer": "0.1.1",
     "moleculer-repl": "0.4.0",
     "multer": "1.3.1",
+    "multiparty": "4.1.4",
     "nats": "1.0.0",
     "nodemon": "1.17.5",
     "npm-check": "5.7.1",
     "socket.io": "2.1.1",
     "supertest": "3.1.0",
-    "webpack": "4.15.0",
+    "webpack": "4.15.1",
     "webpack-dev-middleware": "3.1.3"
   },
   "peerDependencies": {
@@ -58,6 +60,7 @@
   },
   "dependencies": {
     "body-parser": "1.18.3",
+    "chalk": "^2.4.1",
     "es6-error": "4.1.1",
     "isstream": "0.1.2",
     "lodash": "4.17.10",
