@@ -223,7 +223,7 @@ module.exports = {
 						this.writeCorsHeaders(route, req, res, true);
 
 						// Is it a Preflight request?
-						if (req.method == "OPTIONS" && req.headers["access-control-request-method"]) {
+						if (req.method == "OPTIONS" && req.headers["access-control-request-headers"] || req.headers["access-control-request-method"]) {
 							// 204 - No content
 							res.writeHead(204, {
 								"Content-Length": "0"

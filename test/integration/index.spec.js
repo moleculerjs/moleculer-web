@@ -2075,6 +2075,39 @@ describe("Test CORS", () => {
 			.then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
 	});
 
+	it("preflight request with 'Access-Control-Request-Headers' only", () => {
+		[ broker, service, server] = setup({
+			cors: {
+				origin: "http://localhost:3000",
+				exposedHeaders: ["X-Custom-Header", "X-Response-Time"],
+				methods: "GET",
+			},
+			routes: [{
+				aliases: {
+					"GET hello": "test.hello"
+				},
+				mappingPolicy: "restrict"
+			}]
+		});
+
+		return broker.start()
+			.then(() => request(server)
+				.options("/hello")
+				.set("Origin", "http://localhost:3000")
+				.set("Access-Control-Request-Headers", "X-Rate-Limiting"))
+			.then(res => {
+				expect(res.statusCode).toBe(204);
+				expect(res.headers["access-control-allow-origin"]).toBe("http://localhost:3000");
+				expect(res.headers["access-control-allow-headers"]).toBe("X-Rate-Limiting");
+				expect(res.headers["access-control-allow-methods"]).toBe("GET");
+				expect(res.headers["access-control-expose-headers"]).toBe("X-Custom-Header, X-Response-Time");
+				expect(res.headers["vary"]).toBe("Access-Control-Request-Headers");
+
+				expect(res.text).toBe("");
+			})
+			.then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
+	});
+
 	it("preflight request with 'Access-Control-Request-Headers'", () => {
 		[ broker, service, server] = setup({
 			cors: {
