@@ -213,85 +213,91 @@ module.exports = {
 			req.$route = route;
 			res.$route = route;
 
-			return this.composeThen(req, res, ...route.middlewares)
-				.then(() => {
-					let params = {};
+			return new this.Promise((resolve, reject) => {
+				res.once("finish", () => resolve(true));
 
-					// CORS headers
-					if (route.cors) {
-						// Set CORS headers to `res`
-						this.writeCorsHeaders(route, req, res, true);
+				return this.composeThen(req, res, ...route.middlewares)
+					.then(() => {
+						let params = {};
 
-						// Is it a Preflight request?
-						if (req.method == "OPTIONS" && req.headers["access-control-request-method"]) {
-							// 204 - No content
-							res.writeHead(204, {
-								"Content-Length": "0"
-							});
-							res.end();
+						// CORS headers
+						if (route.cors) {
+							// Set CORS headers to `res`
+							this.writeCorsHeaders(route, req, res, true);
 
-							this.logResponse(req, res);
-							return true;
-						}
-					}
+							// Is it a Preflight request?
+							if (req.method == "OPTIONS" && req.headers["access-control-request-method"]) {
+								// 204 - No content
+								res.writeHead(204, {
+									"Content-Length": "0"
+								});
+								res.end();
 
-					// Merge params
-					if (route.opts.mergeParams === false) {
-						params = { body: req.body, query: req.query };
-					} else {
-						const body = _.isObject(req.body) ? req.body : {};
-						Object.assign(params, body, req.query);
-					}
-					req.$params = params;
-
-					// Resolve action name
-					let urlPath = req.parsedUrl.slice(route.path.length);
-					if (urlPath.startsWith("/"))
-						urlPath = urlPath.slice(1);
-
-					urlPath = urlPath.replace(/~/, "$");
-					let action = urlPath;
-
-					// Resolve aliases
-					if (route.aliases && route.aliases.length > 0) {
-						const found = this.resolveAlias(route, urlPath, req.method);
-						if (found) {
-							let alias = found.alias;
-							this.logger.debug(`  Alias: ${req.method} ${urlPath} -> ${alias.action}`);
-
-							if (route.opts.mergeParams === false) {
-								params.params = found.params;
-							} else {
-								Object.assign(params, found.params);
+								this.logResponse(req, res);
+								return true;
 							}
+						}
 
-							req.$alias = alias;
+						// Merge params
+						if (route.opts.mergeParams === false) {
+							params = { body: req.body, query: req.query };
+						} else {
+							const body = _.isObject(req.body) ? req.body : {};
+							Object.assign(params, body, req.query);
+						}
+						req.$params = params;
 
-							// Alias handler
-							return this.aliasHandler(req, res, alias);
+						// Resolve action name
+						let urlPath = req.parsedUrl.slice(route.path.length);
+						if (urlPath.startsWith("/"))
+							urlPath = urlPath.slice(1);
+
+						urlPath = urlPath.replace(/~/, "$");
+						let action = urlPath;
+
+						// Resolve aliases
+						if (route.aliases && route.aliases.length > 0) {
+							const found = this.resolveAlias(route, urlPath, req.method);
+							if (found) {
+								let alias = found.alias;
+								this.logger.debug(`  Alias: ${req.method} ${urlPath} -> ${alias.action}`);
+
+								if (route.opts.mergeParams === false) {
+									params.params = found.params;
+								} else {
+									Object.assign(params, found.params);
+								}
+
+								req.$alias = alias;
+
+								// Alias handler
+								return this.aliasHandler(req, res, alias);
+
+							} else if (route.mappingPolicy == MAPPING_POLICY_RESTRICT) {
+								// Blocking direct access
+								return null;
+							}
 
 						} else if (route.mappingPolicy == MAPPING_POLICY_RESTRICT) {
 							// Blocking direct access
 							return null;
 						}
 
-					} else if (route.mappingPolicy == MAPPING_POLICY_RESTRICT) {
-						// Blocking direct access
-						return null;
-					}
+						if (!action)
+							return null;
 
-					if (!action)
-						return null;
+						// Not found alias, call services by action name
+						action = action.replace(/\//g, ".");
+						if (route.opts.camelCaseNames) {
+							action = action.split(".").map(_.camelCase).join(".");
+						}
 
-					// Not found alias, call services by action name
-					action = action.replace(/\//g, ".");
-					if (route.opts.camelCaseNames) {
-						action = action.split(".").map(_.camelCase).join(".");
-					}
+						return this.aliasHandler(req, res, { action });
+					})
+					.then(resolve)
+					.catch(reject);
 
-					return this.aliasHandler(req, res, { action });
-				});
-
+			});
 		},
 
 		/**
@@ -601,7 +607,10 @@ module.exports = {
 						else
 							next(i + 1, err);
 					} else {
-						mws[i].call(this, req, res, err => next(i + 1, err));
+						if (mws[i].length < 4)
+							mws[i].call(this, req, res, err => next(i + 1, err));
+						else
+							next(i + 1);
 					}
 				};
 
