@@ -386,7 +386,7 @@ module.exports = {
 					if (_.isFunction(alias.handler)) {
 						// Call custom alias handler
 						this.logger.info(`   Call custom function in '${req.$alias.method} ${req.$alias.path}' alias`);
-						return new Promise((resolve, reject) => {
+						return new this.Promise((resolve, reject) => {
 							alias.handler.call(this, req, res, err => {
 								if (err)
 									reject(err);
@@ -624,7 +624,7 @@ module.exports = {
 		 * @returns {Promise}
 		 */
 		composeThen(req, res, ...mws) {
-			return new Promise((resolve, reject) => {
+			return new this.Promise((resolve, reject) => {
 				this.compose(...mws)(req, res, err => {
 					if (err) {
 						if (err instanceof MoleculerError)
