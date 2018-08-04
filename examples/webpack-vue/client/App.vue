@@ -17,8 +17,10 @@
 </script>
 
 <style lang="scss" scoped>
+	$headerColor: red;
+
 	h1 {
-		color: red;
+		color: $headerColor;
 	}
 
 	h2 {

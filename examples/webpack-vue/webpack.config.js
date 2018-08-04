@@ -1,8 +1,10 @@
 const path = require("path");
 const webpack = require("webpack");
+const VueLoaderPlugin = require("vue-loader/lib/plugin");
 
 module.exports = {
-	devtool: "#inline-source-map",
+	mode: "development",
+	devtool: "#eval-source-map",
 
 	entry: {
 		app: ["webpack-hot-middleware/client", path.join(__dirname, "client", "main.js")]
@@ -14,31 +16,60 @@ module.exports = {
 		publicPath: "/"
 	},
 
-	plugins: [
-		new webpack.HotModuleReplacementPlugin(),
-		new webpack.NoEmitOnErrorsPlugin()
-	],
-
 	module: {
 		rules: [
 			{
-				test: /\.js?$/,
+				test: /\.vue$/,
+				loader: "vue-loader",
+				options: {
+					loaders: {
+						"scss": [
+							"vue-style-loader",
+							"css-loader",
+							"sass-loader"
+						],
+					}
+				}
+			},
+			// this will apply to both plain `.js` files
+			// AND `<script>` blocks in `.vue` files
+			{
+				test: /\.js$/,
 				loader: "babel-loader",
-				exclude: /node_modules/,
+				exclude: /node_modules/
 			},
 			{
-				test: /\.vue?$/,
-				loader: "vue-loader",
+				test: /\.scss$/,
+				use: [
+					"vue-style-loader",
+					"css-loader",
+					"sass-loader"
+				]
+			},
+			// this will apply to both plain `.css` files
+			// AND `<style>` blocks in `.vue` files
+			{
+				test: /\.css$/,
+				use: [
+					"vue-style-loader",
+					"css-loader"
+				]
 			}
 		]
 
 	},
 
+	plugins: [
+		new webpack.HotModuleReplacementPlugin(),
+		new webpack.NoEmitOnErrorsPlugin(),
+		new VueLoaderPlugin()
+	],
+
 	resolve: {
 		extensions: [".vue", ".js", ".json"],
 		mainFiles: ["index"],
 		alias: {
-			"vue$": "vue/dist/vue.common.js"
+			"vue$": "vue/dist/vue.esm.js"
 		}
 	},
 
