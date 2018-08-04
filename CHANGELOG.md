@@ -6,6 +6,7 @@
 - fix missing dependency.
 - fix middleware array promise-chaining bug
 - handle terminated requests in middlewares
+- update webpack-vue example to be up-to-date.
 
 -----------------------------
 <a name="0.8.0"></a>
