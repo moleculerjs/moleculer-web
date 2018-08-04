@@ -1,4 +1,13 @@
 -----------------------------
+<a name="0.8.1"></a>
+# 0.8.1 (2018-08-04)
+
+## Changes
+- fix missing dependency.
+- fix middleware array promise-chaining bug
+- handle terminated requests in middlewares
+
+-----------------------------
 <a name="0.8.0"></a>
 # 0.8.0 (2018-07-08)
 
