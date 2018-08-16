@@ -24,6 +24,16 @@ module.exports = {
 			}
 		},
 
+		whoami: {
+			handler(ctx) {
+				if (ctx.params.user) {
+					return `Hello ${ctx.params.user.username || "no-name-user"}`;
+				} else {
+					return "Who are you?";
+				}
+			}
+		},
+
 		echo: {
 			handler(ctx) {
 				return {

@@ -379,7 +379,20 @@ module.exports = {
 				// Authentication
 				.then(() => {
 					if (route.authentication)
-						return this.authenticate(ctx, route, req, res);
+						return this.authenticate(ctx, route, req, res)
+							.then(user => {
+								if (user) {
+									this.logger.debug("Authenticate user", user);
+									ctx.params.user = user;
+								} else {
+									this.logger.debug("Anonymous user");
+									ctx.params.user = null;
+								}
+							})
+							.catch(err => {
+								this.logger.warn("Unable to authenticate request, proceed as anonymous.", err);
+								ctx.params.user = null;	
+							});
 				})
 
 				// Authorization
@@ -438,6 +451,12 @@ module.exports = {
 					if (req.$alias && req.$alias.passReqResToParams) {
 						params.$req = req;
 						params.$res = res;
+					}
+				})
+
+				.then(() => {
+					if (ctx.params.user) {
+						params.user = ctx.params.user;
 					}
 				})
 

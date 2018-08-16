@@ -2464,6 +2464,121 @@ describe("Test route middlewares", () => {
 
 });
 
+describe("Test authentication", () => {
+
+	it("don't enabled authentication if missing 'authenticate' method", () => {
+		let service = setup({
+			routes: [{
+				authentication: true
+			}]
+		})[1];
+
+		expect(service.routes[0].authentication).toBe(false);
+	});
+
+	it("authenticated user", () => {
+		const broker = new ServiceBroker({ logger: false });
+		broker.loadService("./test/services/test.service");
+
+		const user = {
+			id: "my-user-id",
+			username: "my-user-name",
+			email: "my@user.mail"
+		};
+		const authenticate = jest.fn(() => Promise.resolve(user));
+		const service = broker.createService(ApiGateway, {
+			settings: {
+				routes: [{
+					authentication: true
+				}]
+			},
+			methods: {
+				authenticate
+			}
+		});
+		const server = service.server;
+
+		expect(service.routes[0].authentication).toBe(true);
+
+		return broker.start()
+			.then(() => request(server)
+				.get("/test/whoami"))
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+
+				expect(res.body).toBe(`Hello ${user.username}`);
+				expect(authenticate).toHaveBeenCalledTimes(1);
+				expect(authenticate).toHaveBeenCalledWith(jasmine.any(Context), jasmine.any(Object), jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse));
+			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
+	});
+
+	it("anonymous user", () => {
+		const broker = new ServiceBroker({ logger: false });
+		broker.loadService("./test/services/test.service");
+
+		const authenticate = jest.fn(() => Promise.resolve(null));
+		const service = broker.createService(ApiGateway, {
+			settings: {
+				routes: [{
+					authentication: true
+				}]
+			},
+			methods: {
+				authenticate
+			}
+		});
+		const server = service.server;
+
+		expect(service.routes[0].authentication).toBe(true);
+
+		return broker.start()
+			.then(() => request(server)
+				.get("/test/whoami"))
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+
+				expect(res.body).toBe("Who are you?");
+				expect(authenticate).toHaveBeenCalledTimes(1);
+				expect(authenticate).toHaveBeenCalledWith(jasmine.any(Context), jasmine.any(Object), jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse));
+			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
+	});
+
+	it("authentication failed", () => {
+		const broker = new ServiceBroker({ logger: false });
+		broker.loadService("./test/services/test.service");
+
+		const authenticate = jest.fn(() => Promise.reject());
+		const service = broker.createService(ApiGateway, {
+			settings: {
+				routes: [{
+					authentication: true
+				}]
+			},
+			methods: {
+				authenticate
+			}
+		});
+		const server = service.server;
+
+		expect(service.routes[0].authentication).toBe(true);
+
+		return broker.start()
+			.then(() => request(server)
+				.get("/test/whoami"))
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+
+				expect(res.body).toBe("Who are you?");
+				expect(authenticate).toHaveBeenCalledTimes(1);
+				expect(authenticate).toHaveBeenCalledWith(jasmine.any(Context), jasmine.any(Object), jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse));
+			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
+	});
+
+});
+
 describe("Test authorization", () => {
 
 	it("don't enabled authorization if missing 'authorize' method", () => {
