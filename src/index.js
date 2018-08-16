@@ -383,15 +383,15 @@ module.exports = {
 							.then(user => {
 								if (user) {
 									this.logger.debug("Authenticate user", user);
-									ctx.params.user = user;
+									ctx.meta.user = user;
 								} else {
 									this.logger.debug("Anonymous user");
-									ctx.params.user = null;
+									ctx.meta.user = null;
 								}
 							})
-							.catch(err => {
-								this.logger.warn("Unable to authenticate request, proceed as anonymous.", err);
-								ctx.params.user = null;	
+							.catch(() => {
+								this.logger.warn("Unable to authenticate request, proceed as anonymous.");
+								ctx.meta.user = null;	
 							});
 				})
 
@@ -451,12 +451,6 @@ module.exports = {
 					if (req.$alias && req.$alias.passReqResToParams) {
 						params.$req = req;
 						params.$res = res;
-					}
-				})
-
-				.then(() => {
-					if (ctx.params.user) {
-						params.user = ctx.params.user;
 					}
 				})
 

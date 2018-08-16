@@ -25,8 +25,8 @@ module.exports = {
 
 		whoami: {
 			handler(ctx) {
-				if (ctx.params.user) {
-					return `Hello ${ctx.params.user.username || "no-name-user"}`;
+				if (ctx.meta.user) {
+					return `Hello ${ctx.meta.user.username || "no-name-user"}`;
 				} else {
 					return "Who are you?";
 				}
