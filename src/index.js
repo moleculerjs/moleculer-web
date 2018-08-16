@@ -306,6 +306,7 @@ module.exports = {
 		 * 	- Rate limiter
 		 *  - Resolve endpoint
 		 *  - onBeforeCall
+		 *  - Authentication
 		 *  - Authorization
 		 *  - Call the action
 		 *
@@ -373,6 +374,12 @@ module.exports = {
 				.then(() => {
 					if (route.onBeforeCall)
 						return route.onBeforeCall.call(this, ctx, route, req, res);
+				})
+
+				// Authentication
+				.then(() => {
+					if (route.authentication)
+						return this.authenticate(ctx, route, req, res);
 				})
 
 				// Authorization
@@ -945,6 +952,13 @@ module.exports = {
 					route.authorization = false;
 				} else
 					route.authorization = true;
+			}
+			if (opts.authentication) {
+				if (!_.isFunction(this.authenticate)) {
+					this.logger.warn("Please define 'authenticate' method in the service to authentication.");
+					route.authentication = false;
+				} else
+					route.authentication = true;
 			}
 
 			// Call options
