@@ -40,6 +40,7 @@ module.exports = {
 
 ## Changes
 - update dependencies.
+- added `.npmignore`
 -----------------------------
 
 <a name="0.8.1"></a>
