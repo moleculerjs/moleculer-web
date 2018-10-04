@@ -2549,7 +2549,7 @@ describe("Test authentication", () => {
 		const broker = new ServiceBroker({ logger: false });
 		broker.loadService("./test/services/test.service");
 
-		const authenticate = jest.fn(() => Promise.reject());
+		const authenticate = jest.fn(() => Promise.reject(new MoleculerError("Not available", 400)));
 		const service = broker.createService(ApiGateway, {
 			settings: {
 				routes: [{
@@ -2568,10 +2568,14 @@ describe("Test authentication", () => {
 			.then(() => request(server)
 				.get("/test/whoami"))
 			.then(res => {
-				expect(res.statusCode).toBe(200);
+				expect(res.statusCode).toBe(400);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
 
-				expect(res.body).toBe("Who are you?");
+				expect(res.body).toEqual({
+					code: 400,
+					message: "Not available",
+					name: "MoleculerError"
+				});
 				expect(authenticate).toHaveBeenCalledTimes(1);
 				expect(authenticate).toHaveBeenCalledWith(jasmine.any(Context), jasmine.any(Object), jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse));
 			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));

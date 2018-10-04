@@ -958,14 +958,14 @@ module.exports = {
 			};
 			if (opts.authorization) {
 				if (!_.isFunction(this.authorize)) {
-					this.logger.warn("Please define 'authorize' method in the service to authorization.");
+					this.logger.warn("Define 'authorize' method in the service to enable authorization.");
 					route.authorization = false;
 				} else
 					route.authorization = true;
 			}
 			if (opts.authentication) {
 				if (!_.isFunction(this.authenticate)) {
-					this.logger.warn("Please define 'authenticate' method in the service to authentication.");
+					this.logger.warn("Define 'authenticate' method in the service to enable authentication.");
 					route.authentication = false;
 				} else
 					route.authentication = true;
