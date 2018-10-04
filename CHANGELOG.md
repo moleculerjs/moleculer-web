@@ -9,32 +9,32 @@ The returned data is saved to the `ctx.meta.user`. To enable this logic set `aut
 **Example**
 ```js
 module.exports = {
-	name: "api",
-	mixins: [ApiGatewayService],
+    name: "api",
+    mixins: [ApiGatewayService],
 
-	settings: {
-		routes: [
-			{
-				// Enable authentication
-				authentication: true
-			}
-		]
-	},
+    settings: {
+        routes: [
+            {
+                // Enable authentication
+                authentication: true
+            }
+        ]
+    },
 
-	methods: {
-		authenticate(ctx, route, req, res) {
-			let accessToken = req.query["access_token"];
-			if (accessToken) {
-				if (accessToken === "12345") {
-					return Promise.resolve({ id: 1, username: "john.doe", name: "John Doe" });
-				} else {
-					return Promise.reject();
-				}
-			} else {
-				return Promise.resolve(null);
-			}
-		}
-	}
+    methods: {
+        authenticate(ctx, route, req, res) {
+            let accessToken = req.query["access_token"];
+            if (accessToken) {
+                if (accessToken === "12345") {
+                    return Promise.resolve({ id: 1, username: "john.doe", name: "John Doe" });
+                } else {
+                    return Promise.reject();
+                }
+            } else {
+                return Promise.resolve(null);
+            }
+        }
+    }
 });
 ```
 
