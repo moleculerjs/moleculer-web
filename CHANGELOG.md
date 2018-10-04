@@ -1,4 +1,47 @@
 -----------------------------
+<a name="0.8.2"></a>
+# 0.8.2 (2018-10-04)
+
+# New `authenticate` method.
+This `authenticate` method is similar to `authorize`. You have access to `req`, `res` and `route` objects and you can authenticate the user from the request.
+The returned data is saved to the `ctx.meta.user`. To enable this logic set `authentication: true` in route options.
+
+**Example**
+```js
+module.exports = {
+	name: "api",
+	mixins: [ApiGatewayService],
+
+	settings: {
+		routes: [
+			{
+				// Enable authentication
+				authentication: true
+			}
+		]
+	},
+
+	methods: {
+		authenticate(ctx, route, req, res) {
+			let accessToken = req.query["access_token"];
+			if (accessToken) {
+				if (accessToken === "12345") {
+					return Promise.resolve({ id: 1, username: "john.doe", name: "John Doe" });
+				} else {
+					return Promise.reject();
+				}
+			} else {
+				return Promise.resolve(null);
+			}
+		}
+	}
+});
+```
+
+## Changes
+- update dependencies.
+-----------------------------
+
 <a name="0.8.1"></a>
 # 0.8.1 (2018-08-04)
 
