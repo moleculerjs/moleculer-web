@@ -378,21 +378,18 @@ module.exports = {
 
 				// Authentication
 				.then(() => {
-					if (route.authentication)
+					if (route.authentication) {
 						return this.authenticate(ctx, route, req, res)
 							.then(user => {
 								if (user) {
-									this.logger.debug("Authenticate user", user);
+									this.logger.debug("Authenticated user", user);
 									ctx.meta.user = user;
 								} else {
 									this.logger.debug("Anonymous user");
 									ctx.meta.user = null;
 								}
-							})
-							.catch(() => {
-								this.logger.warn("Unable to authenticate request, proceed as anonymous.");
-								ctx.meta.user = null;	
 							});
+					}
 				})
 
 				// Authorization
