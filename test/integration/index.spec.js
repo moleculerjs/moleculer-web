@@ -2545,7 +2545,7 @@ describe("Test authentication", () => {
 			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
 	});
 
-	it.skip("authentication failed", () => {
+	it("authentication failed", () => {
 		const broker = new ServiceBroker({ logger: false });
 		broker.loadService("./test/services/test.service");
 
