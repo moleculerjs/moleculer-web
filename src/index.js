@@ -19,7 +19,7 @@ const isReadableStream			= require("isstream").isReadable;
 const pathToRegexp 				= require("path-to-regexp");
 
 const { MoleculerError, MoleculerServerError, ServiceNotFoundError } = require("moleculer").Errors;
-const { BadRequestError, NotFoundError, ForbiddenError, RateLimitExceeded, ERR_UNABLE_DECODE_PARAM, ERR_ORIGIN_NOT_FOUND, ERR_ORIGIN_NOT_ALLOWED } = require("./errors");
+const { BadRequestError, NotFoundError, ForbiddenError, RateLimitExceeded, ERR_UNABLE_DECODE_PARAM, ERR_ORIGIN_NOT_ALLOWED } = require("./errors");
 
 const MemoryStore				= require("./memory-store");
 
@@ -70,7 +70,10 @@ module.exports = {
 		logRequestParams: "debug",
 
 		// Log the response data (default to disable)
-		logResponseData: null
+		logResponseData: null,
+
+		// If set to false, error responses with a status code indicating a client error will not be logged
+		log4XXResponses: true
 	},
 
 	/**
@@ -196,7 +199,10 @@ module.exports = {
 					}
 				})
 				.catch(err => {
-					this.logger.error("   Request error!", err.name, ":", err.message, "\n", err.stack, "\nData:", err.data);
+					// don't log client side errors only it's configured
+					if (this.settings.log4XXResponses || (err && !_.inRange(err.code, 400, 500))) {
+						this.logger.error("   Request error!", err.name, ":", err.message, "\n", err.stack, "\nData:", err.data);
+					}
 					this.sendError(req, res, err);
 				});
 		},
