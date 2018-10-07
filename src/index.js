@@ -199,8 +199,8 @@ module.exports = {
 					}
 				})
 				.catch(err => {
-					// only log client side errors if configured to do so
-					if (this.settings.log4XXResponses || err && !_.inRange(err.code, 400, 500)) {
+					// don't log client side errors only it's configured
+					if (this.settings.log4XXResponses || (err && !_.inRange(err.code, 400, 500))) {
 						this.logger.error("   Request error!", err.name, ":", err.message, "\n", err.stack, "\nData:", err.data);
 					}
 					this.sendError(req, res, err);
