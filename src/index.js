@@ -70,7 +70,10 @@ module.exports = {
 		logRequestParams: "debug",
 
 		// Log the response data (default to disable)
-		logResponseData: null
+		logResponseData: null,
+
+		// If set to false, error responses with a status code indicating a client error will not be logged
+		log4XXResponses: true
 	},
 
 	/**
@@ -196,7 +199,10 @@ module.exports = {
 					}
 				})
 				.catch(err => {
-					this.logger.error("   Request error!", err.name, ":", err.message, "\n", err.stack, "\nData:", err.data);
+					// only log client side errors if configured to do so
+					if (this.settings.log4XXResponses || err && !_.inRange(err.code, 400, 500)) {
+            this.logger.error("   Request error!", err.name, ":", err.message, "\n", err.stack, "\nData:", err.data);
+					}
 					this.sendError(req, res, err);
 				});
 		},

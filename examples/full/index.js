@@ -281,7 +281,10 @@ broker.createService({
 			res.setHeader("Content-Type", "text/plain");
 			res.writeHead(err.code || 500);
 			res.end("Global error: " + err.message);
-		}
+		},
+
+		// Do not log client side errors (does not log an error respons when the error.code is 400<=X<500)
+		log4XXResponses: false,
 
 	},
 
