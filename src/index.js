@@ -19,7 +19,7 @@ const isReadableStream			= require("isstream").isReadable;
 const pathToRegexp 				= require("path-to-regexp");
 
 const { MoleculerError, MoleculerServerError, ServiceNotFoundError } = require("moleculer").Errors;
-const { BadRequestError, NotFoundError, ForbiddenError, RateLimitExceeded, ERR_UNABLE_DECODE_PARAM, ERR_ORIGIN_NOT_FOUND, ERR_ORIGIN_NOT_ALLOWED } = require("./errors");
+const { BadRequestError, NotFoundError, ForbiddenError, RateLimitExceeded, ERR_UNABLE_DECODE_PARAM, ERR_ORIGIN_NOT_ALLOWED } = require("./errors");
 
 const MemoryStore				= require("./memory-store");
 
@@ -201,7 +201,7 @@ module.exports = {
 				.catch(err => {
 					// only log client side errors if configured to do so
 					if (this.settings.log4XXResponses || err && !_.inRange(err.code, 400, 500)) {
-            this.logger.error("   Request error!", err.name, ":", err.message, "\n", err.stack, "\nData:", err.data);
+						this.logger.error("   Request error!", err.name, ":", err.message, "\n", err.stack, "\nData:", err.data);
 					}
 					this.sendError(req, res, err);
 				});
