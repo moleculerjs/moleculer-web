@@ -1,5 +1,7 @@
 "use strict";
 
+process.env.PORT = 0; // Use random ports
+
 const fs = require("fs");
 const http = require("http");
 const path = require("path");

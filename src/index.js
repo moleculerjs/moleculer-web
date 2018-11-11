@@ -1157,12 +1157,15 @@ module.exports = {
 			return;
 
 		/* istanbul ignore next */
-		this.server.listen(this.settings.port, this.settings.ip, err => {
-			if (err)
-				return this.logger.error("API Gateway listen error!", err);
+		return new this.Promise((resolve, reject) => {
+			this.server.listen(this.settings.port, this.settings.ip, err => {
+				if (err)
+					return reject(err);
 
-			const addr = this.server.address();
-			this.logger.info(`API Gateway listening on ${this.isHTTPS ? "https" : "http"}://${addr.address}:${addr.port}`);
+				const addr = this.server.address();
+				this.logger.info(`API Gateway listening on ${this.isHTTPS ? "https" : "http"}://${addr.address}:${addr.port}`);
+				resolve();
+			});
 		});
 	},
 
@@ -1175,11 +1178,14 @@ module.exports = {
 
 		if (this.server.listening) {
 			/* istanbul ignore next */
-			this.server.close(err => {
-				if (err)
-					return this.logger.error("API Gateway close error!", err);
+			return new this.Promise((resolve, reject) => {
+				this.server.close(err => {
+					if (err)
+						return reject(err);
 
-				this.logger.info("API Gateway stopped!");
+					this.logger.info("API Gateway stopped!");
+					resolve();
+				});
 			});
 		}
 	},
