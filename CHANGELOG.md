@@ -1,4 +1,12 @@
 -----------------------------
+<a name="0.8.3"></a>
+# 0.8.3 (2018-11-11)
+
+## Changes
+- use `Promise` in `started` & `stopped` handlers.
+- disable 4xx errors with `log4XXResponses` setting.
+
+-----------------------------
 <a name="0.8.2"></a>
 # 0.8.2 (2018-10-04)
 
