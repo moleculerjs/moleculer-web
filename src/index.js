@@ -127,6 +127,9 @@ module.exports = {
 
 				this.logRequest(req);
 
+				if (!req.originalUrl)
+					req.originalUrl = req.url;
+
 				// Split URL & query params
 				let parsed = this.parseQueryString(req);
 				let url = parsed.url;
@@ -149,6 +152,7 @@ module.exports = {
 					const route = this.routes[i];
 
 					if (url.startsWith(route.path)) {
+						req.url = req.originalUrl.substring(route.path.length) || "/";
 						return this.routeHandler(ctx, route, req, res);
 					}
 				}
@@ -499,9 +503,9 @@ module.exports = {
 		 * @param {HttpIncomingMessage} req
 		 * @param {HttpResponse} res
 		 * @param {any} data
-		 * @param {Object} action
+		 * @param {Object?} action
 		 */
-		sendResponse(ctx, route, req, res, data, action) {
+		sendResponse(ctx, route, req, res, data, action = {}) {
 
 			if (res.headersSent) {
 				this.logger.warn("Headers have already sent");
