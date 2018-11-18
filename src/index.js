@@ -138,7 +138,7 @@ module.exports = {
 				if (url.length > 1 && url.endsWith("/"))
 					url = url.slice(0, -1);
 
-				req.parsedUrl = url; // TODO check ExpressJS
+				req.parsedUrl = url;
 
 				if (!req.query)
 					req.query = parsed.query;
@@ -152,7 +152,12 @@ module.exports = {
 					const route = this.routes[i];
 
 					if (url.startsWith(route.path)) {
-						req.url = req.originalUrl.substring(route.path.length) || "/";
+						// Update URLs for middlewares
+						req.baseUrl = route.path;
+						req.url = req.originalUrl.substring(route.path.length);
+						if (req.url.length == 0 || req.url[0] !== "/")
+							req.url = "/" + req.url;
+
 						return this.routeHandler(ctx, route, req, res);
 					}
 				}

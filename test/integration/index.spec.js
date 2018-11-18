@@ -978,6 +978,10 @@ describe("Test aliases", () => {
 
 				expect(customMiddlewares[1]).toHaveBeenCalledTimes(1);
 				expect(customMiddlewares[1]).toHaveBeenCalledWith(jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse), jasmine.any(Function));
+
+				expect(customMiddlewares[0].mock.calls[0][0].url).toBe("/middleware?name=Ben");
+				expect(customMiddlewares[0].mock.calls[0][0].originalUrl).toBe("/api/middleware?name=Ben");
+				expect(customMiddlewares[0].mock.calls[0][0].baseUrl).toBe("/api");
 			});
 	});
 
