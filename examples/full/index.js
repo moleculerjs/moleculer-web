@@ -196,6 +196,12 @@ broker.createService({
 					}
 				},
 
+				callOptions: {
+					meta: {
+						a: 5
+					}
+				},
+
 				onAfterCall(ctx, route, req, res, data) {
 					this.logger.info("async onAfterCall in upload route");
 					return new this.Promise(resolve => {

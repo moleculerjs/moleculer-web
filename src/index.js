@@ -1160,12 +1160,12 @@ module.exports = {
 
 							const busboy = new Busboy(_.defaultsDeep({ headers: req.headers }, action.busboyConfig, opts.busboyConfig));
 							busboy.on("file", (fieldname, file, filename, encoding, mimetype) => {
-								promises.push(ctx.call(action.action, file, { meta: {
+								promises.push(ctx.call(action.action, file, _.defaultsDeep(opts.callOptions, { meta: {
 									fieldname: fieldname,
 									filename: filename,
 									encoding: encoding,
 									mimetype: mimetype,
-								}}));
+								}})));
 							});
 
 							busboy.on("finish", () => {
