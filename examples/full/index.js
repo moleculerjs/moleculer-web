@@ -50,7 +50,6 @@ const path 					= require("path");
 const { ServiceBroker } 	= require("moleculer");
 const { MoleculerError } 	= require("moleculer").Errors;
 const { ForbiddenError, UnAuthorizedError, ERR_NO_TOKEN, ERR_INVALID_TOKEN } = require("../../src/errors");
-const multiparty 			= require("multiparty");
 
 // ----
 
@@ -179,7 +178,7 @@ broker.createService({
 				aliases: {
 					"GET /": "file.get",
 
-					"POST /"(req, res) {
+					/*"POST /"(req, res) {
 						const form = new multiparty.Form();
 						form.on("part", part => {
 							if (part.name == "myfile" && part.filename) {
@@ -196,7 +195,9 @@ broker.createService({
 						});
 
 						form.parse(req);
-					}
+					}*/
+
+					"FILE /": "file.save"
 
 				},
 

@@ -17,8 +17,9 @@ const bodyParser 				= require("body-parser");
 const serveStatic 				= require("serve-static");
 const isReadableStream			= require("isstream").isReadable;
 const pathToRegexp 				= require("path-to-regexp");
+const multiparty 				= require("multiparty");
 
-const { MoleculerError, MoleculerServerError, ServiceNotFoundError } = require("moleculer").Errors;
+const { MoleculerError, MoleculerClientError, MoleculerServerError, ServiceNotFoundError } = require("moleculer").Errors;
 const { BadRequestError, NotFoundError, ForbiddenError, RateLimitExceeded, ERR_UNABLE_DECODE_PARAM, ERR_ORIGIN_NOT_ALLOWED } = require("./errors");
 
 const MemoryStore				= require("./memory-store");
@@ -1144,6 +1145,37 @@ module.exports = {
 						route.aliases.push(createAlias(`PUT ${pathName}/:id`, 		`${action}.update`));
 						route.aliases.push(createAlias(`PATCH ${pathName}/:id`, 	`${action}.patch`));
 						route.aliases.push(createAlias(`DELETE ${pathName}/:id`, 	`${action}.remove`));
+
+					} else if (matchPath.startsWith("FILE ")) {
+						const p = matchPath.split(" ");
+						const pathName = p[1];
+
+						// Create File upload route
+						route.aliases.push(createAlias(`POST ${pathName}`, [(req, res, next) => {
+							const form = new multiparty.Form();
+							let hasFile = false;
+							form.on("part", part => {
+								if (part.filename) {
+									req.$ctx.meta.filename = part.filename;
+									req.$ctx.meta.headers = part.headers;
+									req.$params = part;
+									hasFile = true;
+									next();
+								}
+							});
+
+							form.on('close', () => {
+								if (!hasFile)
+									this.sendError(req, res, new MoleculerClientError("No uploaded file"));
+							});
+
+							form.on('error', err => {
+								this.sendError(req, res, err);
+							});
+
+							form.parse(req);
+
+						}, action]));
 
 					} else {
 						route.aliases.push(createAlias(matchPath, action));
