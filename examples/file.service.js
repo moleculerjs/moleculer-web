@@ -47,11 +47,12 @@ module.exports = {
 		save: {
 			handler(ctx) {
 				return new this.Promise((resolve, reject) => {
+					//reject(new Error("Disk out of space"));
 					const filePath = path.join(__dirname, "full", "uploads", ctx.meta.filename);
 					const f = fs.createWriteStream(filePath);
 					f.on("close", () => {
 						this.logger.info(`Uploaded file stored in '${filePath}'`);
-						resolve(filePath);
+						resolve({ filePath, meta: ctx.meta });
 					});
 					f.on("error", err => reject(err));
 

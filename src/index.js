@@ -17,7 +17,7 @@ const bodyParser 				= require("body-parser");
 const serveStatic 				= require("serve-static");
 const isReadableStream			= require("isstream").isReadable;
 const pathToRegexp 				= require("path-to-regexp");
-const multiparty 				= require("multiparty");
+const Busboy 					= require("busboy");
 
 const { MoleculerError, MoleculerClientError, MoleculerServerError, ServiceNotFoundError } = require("moleculer").Errors;
 const { BadRequestError, NotFoundError, ForbiddenError, RateLimitExceeded, ERR_UNABLE_DECODE_PARAM, ERR_ORIGIN_NOT_ALLOWED } = require("./errors");
@@ -1150,32 +1150,48 @@ module.exports = {
 						const p = matchPath.split(" ");
 						const pathName = p[1];
 
+						if (_.isString(action))
+							action = { action };
+
 						// Create File upload route
-						route.aliases.push(createAlias(`POST ${pathName}`, [(req, res, next) => {
-							const form = new multiparty.Form();
-							let hasFile = false;
-							form.on("part", part => {
-								if (part.filename) {
-									req.$ctx.meta.filename = part.filename;
-									req.$ctx.meta.headers = part.headers;
-									req.$params = part;
-									hasFile = true;
-									next();
-								}
+						route.aliases.push(createAlias(`POST ${pathName}`, (req, res) => {
+							const ctx = req.$ctx;
+							const promises = [];
+
+							const busboy = new Busboy(_.defaultsDeep({ headers: req.headers }, action.busboyConfig, opts.busboyConfig));
+							busboy.on("file", (fieldname, file, filename, encoding, mimetype) => {
+								promises.push(ctx.call(action.action, file, { meta: {
+									fieldname: fieldname,
+									filename: filename,
+									encoding: encoding,
+									mimetype: mimetype,
+								}}));
 							});
 
-							form.on('close', () => {
-								if (!hasFile)
-									this.sendError(req, res, new MoleculerClientError("No uploaded file"));
+							busboy.on("finish", () => {
+								if (!promises.length)
+									return this.sendError(req, res, new MoleculerClientError("File missing in the request"));
+								this.Promise.all(promises).then(data => {
+									if (route.onAfterCall)
+										return route.onAfterCall.call(this, ctx, route, req, res, data);
+									return data;
+
+								}).then(data => {
+									this.sendResponse(req.$ctx, req.$route, req, res, data, {});
+
+								}).catch(err => {
+									this.sendError(req, res, err);
+
+								});
 							});
 
-							form.on('error', err => {
+							busboy.on("error", err => {
 								this.sendError(req, res, err);
 							});
 
-							form.parse(req);
+							req.pipe(busboy);
 
-						}, action]));
+						}));
 
 					} else {
 						route.aliases.push(createAlias(matchPath, action));

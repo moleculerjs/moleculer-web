@@ -197,8 +197,31 @@ broker.createService({
 						form.parse(req);
 					}*/
 
-					"FILE /": "file.save"
+					"FILE /": "file.save",
+					"FILE /multi": {
+						busboyConfig: {
+							limits: {
+								files: 3
+							}
+						},
+						action: "file.save"
+					}
 
+				},
+
+				// https://github.com/mscdex/busboy#busboy-methods
+				busboyConfig: {
+					limits: {
+						files: 1
+					}
+				},
+
+				onAfterCall(ctx, route, req, res, data) {
+					this.logger.info("async onAfterCall in upload route");
+					return new this.Promise(resolve => {
+						res.setHeader("X-Response-Type", typeof(data));
+						resolve(data);
+					});
 				},
 
 				mappingPolicy: "restrict"
@@ -213,8 +236,6 @@ broker.createService({
 
 				// Middlewares
 				use: [
-					// To handle file uploads
-					//multer({ limit: { fieldSize: 2 * 1024 * 1024 }}).single("myfile")
 				],
 
 				// Whitelist of actions (array of string mask or regex)
