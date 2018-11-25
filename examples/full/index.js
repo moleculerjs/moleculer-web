@@ -177,28 +177,9 @@ broker.createService({
 
 				aliases: {
 					"GET /": "file.get",
-
-					/*"POST /"(req, res) {
-						const form = new multiparty.Form();
-						form.on("part", part => {
-							if (part.name == "myfile" && part.filename) {
-								return this.broker.call("file.save", part, { meta: { filename: part.filename }})
-									.then(filePath => {
-										this.logger.info("File uploaded successfully!", filePath);
-										this.sendRedirect(res, "upload?file=" + part.filename);
-									})
-									.catch(err => {
-										this.logger.error("File upload error!", err);
-										this.sendError(req, res, err);
-									});
-							}
-						});
-
-						form.parse(req);
-					}*/
-
 					"FILE /": "file.save",
 					"FILE /multi": {
+						// Action level busboy config
 						busboyConfig: {
 							limits: {
 								files: 3
@@ -206,7 +187,6 @@ broker.createService({
 						},
 						action: "file.save"
 					}
-
 				},
 
 				// https://github.com/mscdex/busboy#busboy-methods
