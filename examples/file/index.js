@@ -33,14 +33,20 @@ broker.createService({
 			{
 				path: "",
 
+				// You should disable body parsers
 				bodyParsers: {
 					json: false,
 					urlencoded: false
 				},
 
 				aliases: {
+					// File upload from HTML form
 					"POST /": "multipart:file.save",
+
+					// File upload from AJAX or cURL
 					"PUT /": "stream:file.save",
+
+					// File upload from HTML form and overwrite busboy config
 					"POST /multi": {
 						type: "multipart",
 						// Action level busboy config
