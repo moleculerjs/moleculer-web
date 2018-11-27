@@ -6,10 +6,10 @@
  * Example:
  *
  *  - File upload:
- * 		Open https://localhost:4000/upload.html in the browser and upload a file. The file will be placed to the "examples/full/uploads" folder.
+ * 		Open https://localhost:4000/upload.html in the browser and upload a file. The file will be placed to the "examples/__uploads" folder.
  *
- *
- * curl -X PUT -H "Content-Type: image/png" --data-binary @test.png http://localhost:3000/upload
+ *  - or upload file with cURL
+ * 		curl -X PUT -H "Content-Type: image/png" --data-binary @test.png http://localhost:3000/upload
  */
 
 const { ServiceBroker } = require("moleculer");
