@@ -70,8 +70,8 @@ broker.createService({
 				// Action aliases
 				aliases: {
 					"add": "math.add",
-					"GET health": "$node.health",
-					"POST divide": "math.div",
+					"GET  	health": "$node.health",
+					"POST 	divide": "math.div",
 					"other": [
 						function(req, res, next) { this.logger.info("Middleware 1"); next(); },
 						function(req, res, next) { this.logger.info("Middleware 2"); next(); },

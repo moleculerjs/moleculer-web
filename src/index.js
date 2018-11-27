@@ -1072,7 +1072,7 @@ module.exports = {
 			const createAlias = (matchPath, action) => {
 				let method = "*";
 				if (matchPath.indexOf(" ") !== -1) {
-					const p = matchPath.split(" ");
+					const p = matchPath.split(/\s+/);
 					method = p[0];
 					matchPath = p[1];
 				}
@@ -1135,7 +1135,7 @@ module.exports = {
 				route.aliases = [];
 				_.forIn(opts.aliases, (action, matchPath) => {
 					if (matchPath.startsWith("REST ")) {
-						const p = matchPath.split(" ");
+						const p = matchPath.split(/\s+/);
 						const pathName = p[1];
 
 						// Generate RESTful API. More info http://www.restapitutorial.com/
