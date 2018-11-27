@@ -754,9 +754,9 @@ describe("Test aliases", () => {
 				aliases: {
 					"add": "math.add",
 					"GET hello": "test.hello",
-					"POST /hello": "test.greeter",
-					"GET greeter/:name": "test.greeter",
-					"POST greeting/:name": "test.greeter",
+					"POST   /hello": "test.greeter",
+					"GET 	greeter/:name": "test.greeter",
+					"POST 	greeting/:name": "test.greeter",
 					"opt-test/:name?": "test.echo",
 					"/repeat-test/:args*": "test.echo",
 					"GET /": "test.hello",
