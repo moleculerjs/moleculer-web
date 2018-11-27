@@ -3000,4 +3000,18 @@ describe("Test file uploading", () => {
 			});
 	});
 
+	it("should upload file as stream", () => {
+		const buffer = fs.readFileSync(assetsDir + "logo.png");
+
+		return request(server)
+			.put("/upload")
+			.send(buffer)
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toEqual({ hash: origHashes["logo.png"] });
+			});
+
+	});
+
 });
