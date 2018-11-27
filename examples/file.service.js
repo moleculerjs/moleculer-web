@@ -4,7 +4,7 @@ const { NotFoundError } = require("../src/errors");
 const mkdir = require("mkdirp").sync;
 const mime = require("mime-types");
 
-const uploadDir = path.join(__dirname, "full", "uploads");
+const uploadDir = path.join(__dirname, "__uploads");
 mkdir(uploadDir);
 
 module.exports = {
@@ -34,7 +34,7 @@ module.exports = {
 
 		get: {
 			handler(ctx) {
-				const filePath = path.join(__dirname, "full", "uploads", ctx.params.file);
+				const filePath = path.join(uploadDir, ctx.params.file);
 				if (!fs.existsSync(filePath))
 					return new NotFoundError();
 
@@ -48,7 +48,7 @@ module.exports = {
 			handler(ctx) {
 				return new this.Promise((resolve, reject) => {
 					//reject(new Error("Disk out of space"));
-					const filePath = path.join(__dirname, "full", "uploads", ctx.meta.filename);
+					const filePath = path.join(uploadDir, ctx.meta.filename || this.randomName());
 					const f = fs.createWriteStream(filePath);
 					f.on("close", () => {
 						this.logger.info(`Uploaded file stored in '${filePath}'`);
@@ -59,6 +59,11 @@ module.exports = {
 					ctx.params.pipe(f);
 				});
 			}
+		}
+	},
+	methods: {
+		randomName() {
+			return "unnamed_" + Date.now() + ".png";
 		}
 	}
 };

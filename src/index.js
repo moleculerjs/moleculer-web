@@ -428,13 +428,13 @@ module.exports = {
 							});
 						}).then(() => {
 							if (alias.action)
-								return this.callAction(route, alias.action, req, res, req.$params);
+								return this.callAction(route, alias.action, req, res, alias.type == "stream" ? req : req.$params);
 							else
 								throw new MoleculerServerError("No alias handler", 500, "NO_ALIAS_HANDLER", { alias });
 						});
 
 					} else if (alias.action) {
-						return this.callAction(route, alias.action, req, res, req.$params);
+						return this.callAction(route, alias.action, req, res, alias.type == "stream" ? req : req.$params);
 					}
 				});
 		},
@@ -1080,11 +1080,20 @@ module.exports = {
 					matchPath = matchPath.slice(1);
 
 				let alias;
-				if (_.isString(action))
-					alias = { action };
-				else if (_.isFunction(action))
+				if (_.isString(action)) {
+					// Parse type from action name
+					if (action.indexOf(":") > 0) {
+						const p = action.split(":");
+						alias = {
+							type: p[0],
+							action: p[1]
+						};
+					} else {
+						alias = { action };
+					}
+				} else if (_.isFunction(action)) {
 					alias = { handler: action };
-				else if (Array.isArray(action)) {
+				} else if (Array.isArray(action)) {
 					alias = {};
 					const mws = _.compact(action.map(mw => {
 						if (_.isString(mw))
@@ -1100,6 +1109,7 @@ module.exports = {
 
 				alias.path = matchPath;
 				alias.method = method;
+				alias.type = alias.type || "call";
 
 				let keys = [];
 				alias.re = pathToRegexp(matchPath, keys, {}); // Options: https://github.com/pillarjs/path-to-regexp#usage
@@ -1127,6 +1137,48 @@ module.exports = {
 					return params;
 				};
 
+				if (alias.type == "multipart") {
+					// Handle file upload in multipart form
+					alias.handler = (req, res) => {
+						const ctx = req.$ctx;
+						const promises = [];
+
+						const busboy = new Busboy(_.defaultsDeep({ headers: req.headers }, alias.busboyConfig, opts.busboyConfig));
+						busboy.on("file", (fieldname, file, filename, encoding, mimetype) => {
+							promises.push(ctx.call(alias.action, file, _.defaultsDeep({}, opts.callOptions, { meta: {
+								fieldname: fieldname,
+								filename: filename,
+								encoding: encoding,
+								mimetype: mimetype,
+							}})));
+						});
+
+						busboy.on("finish", () => {
+							if (!promises.length)
+								return this.sendError(req, res, new MoleculerClientError("File missing in the request"));
+							this.Promise.all(promises).then(data => {
+								if (route.onAfterCall)
+									return route.onAfterCall.call(this, ctx, route, req, res, data);
+								return data;
+
+							}).then(data => {
+								this.sendResponse(req.$ctx, req.$route, req, res, data, {});
+
+							}).catch(err => {
+								this.sendError(req, res, err);
+
+							});
+						});
+
+						busboy.on("error", err => {
+							this.sendError(req, res, err);
+						});
+
+						req.pipe(busboy);
+
+					};
+				}
+
 				return alias;
 			};
 
@@ -1145,54 +1197,6 @@ module.exports = {
 						route.aliases.push(createAlias(`PUT ${pathName}/:id`, 		`${action}.update`));
 						route.aliases.push(createAlias(`PATCH ${pathName}/:id`, 	`${action}.patch`));
 						route.aliases.push(createAlias(`DELETE ${pathName}/:id`, 	`${action}.remove`));
-
-					} else if (matchPath.startsWith("FILE ")) {
-						const p = matchPath.split(" ");
-						const pathName = p[1];
-
-						if (_.isString(action))
-							action = { action };
-
-						// Create File upload route
-						route.aliases.push(createAlias(`POST ${pathName}`, (req, res) => {
-							const ctx = req.$ctx;
-							const promises = [];
-
-							const busboy = new Busboy(_.defaultsDeep({ headers: req.headers }, action.busboyConfig, opts.busboyConfig));
-							busboy.on("file", (fieldname, file, filename, encoding, mimetype) => {
-								promises.push(ctx.call(action.action, file, _.defaultsDeep(opts.callOptions, { meta: {
-									fieldname: fieldname,
-									filename: filename,
-									encoding: encoding,
-									mimetype: mimetype,
-								}})));
-							});
-
-							busboy.on("finish", () => {
-								if (!promises.length)
-									return this.sendError(req, res, new MoleculerClientError("File missing in the request"));
-								this.Promise.all(promises).then(data => {
-									if (route.onAfterCall)
-										return route.onAfterCall.call(this, ctx, route, req, res, data);
-									return data;
-
-								}).then(data => {
-									this.sendResponse(req.$ctx, req.$route, req, res, data, {});
-
-								}).catch(err => {
-									this.sendError(req, res, err);
-
-								});
-							});
-
-							busboy.on("error", err => {
-								this.sendError(req, res, err);
-							});
-
-							req.pipe(busboy);
-
-						}));
-
 					} else {
 						route.aliases.push(createAlias(matchPath, action));
 					}
