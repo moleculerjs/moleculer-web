@@ -86,6 +86,12 @@ module.exports = {
 });
 ```
 
+### Dynamic routing
+The `this.addRoute(opts, toBottom = true)` new service method is available to add/replace routes. You can call it from your mixins to define new routes _(e.g. swagger route, graphql route...etc)_.
+The function detect that the route is defined early. In this case it will replace the previous route configuration with the new one.
+
+To remove a route, use the `this.removeRoute("/admin")` method. It removes the route by path.
+
 
 ## Changes
 

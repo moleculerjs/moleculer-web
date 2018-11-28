@@ -102,15 +102,18 @@ module.exports = {
 		}
 
 		// Process routes
-		if (Array.isArray(this.settings.routes)) {
-			this.routes = this.settings.routes.map(route => this.createRoute(route));
-		}
+		this.routes = [];
+		if (Array.isArray(this.settings.routes))
+			this.settings.routes.forEach(route => this.addRoute(route));
 
 		this.logger.info("API Gateway created!");
 	},
 
 	actions: {
-		// REST request handler
+
+		/**
+		 * REST request handler
+		 */
 		rest: {
 			visibility: "private",
 			handler(ctx) {
@@ -167,7 +170,9 @@ module.exports = {
 	},
 
 	methods: {
-		// Create HTTP server
+		/**
+		 * Create HTTP server
+		 */
 		createServer() {
 			if (this.server) return;
 
@@ -240,7 +245,8 @@ module.exports = {
 		},
 
 		/**
-		 * Handle request in the matched route
+		 * Handle request in the matched route.
+		 *
 		 * @param {Context} ctx
 		 * @param {Route} route
 		 * @param {HttpRequest} req
@@ -297,7 +303,7 @@ module.exports = {
 						if (route.aliases && route.aliases.length > 0) {
 							const found = this.resolveAlias(route, urlPath, req.method);
 							if (found) {
-								let alias = found.alias;
+								const alias = found.alias;
 								this.logger.debug(`  Alias: ${req.method} ${urlPath} -> ${alias.action}`);
 
 								if (route.opts.mergeParams === false) {
@@ -330,7 +336,7 @@ module.exports = {
 							action = action.split(".").map(_.camelCase).join(".");
 						}
 
-						return this.aliasHandler(req, res, { action });
+						return this.aliasHandler(req, res, { action, _generated: true }); // To handle #27
 					})
 					.then(resolve)
 					.catch(reject);
@@ -389,8 +395,12 @@ module.exports = {
 				.then(() => {
 					if (alias.action) {
 						const endpoint = this.broker.findNextActionEndpoint(alias.action);
-						if (endpoint instanceof Error)
+						if (endpoint instanceof Error) {
+							// TODO: #27
+							// if (alias._generated && endpoint instanceof ServiceNotFoundError)
+							// 	 throw 503 - Service unavailable
 							throw endpoint;
+						}
 
 						if (endpoint.action.publish === false) {
 							deprecate("The 'publish: false' action property has been deprecated. Use 'visibility: public' instead.");
@@ -440,7 +450,7 @@ module.exports = {
 				.then(() => {
 					if (_.isFunction(alias.handler)) {
 						// Call custom alias handler
-						this.logger.info(`   Call custom function in '${req.$alias.method} ${req.$alias.path}' alias`);
+						this.logger.info(`   Call custom function in '${alias.method} ${route.path + (route.path.endsWith("/") ? "": "/")}${alias.path}' alias`);
 						return new this.Promise((resolve, reject) => {
 							alias.handler.call(this, req, res, err => {
 								if (err)
@@ -492,11 +502,8 @@ module.exports = {
 				// Call the action
 				.then(() => ctx.call(req.$endpoint, params, route.callOptions))
 
-				// Process the response
+				// Post-process the response
 				.then(data => {
-
-					//if (ctx.cachedResult)
-					//	res.setHeader("X-From-Cache", "true");
 
 					// onAfterCall handling
 					if (route.onAfterCall)
@@ -507,7 +514,7 @@ module.exports = {
 
 				// Send back the response
 				.then(data => {
-					this.sendResponse(ctx, route, req, res, data, req.$endpoint.action);
+					this.sendResponse(req, res, data, req.$endpoint.action);
 
 					this.logResponse(req, res, data);
 
@@ -526,14 +533,14 @@ module.exports = {
 		/**
 		 * Convert data & send back to client
 		 *
-		 * @param {Context} ctx
-		 * @param {Object} route
 		 * @param {HttpIncomingMessage} req
 		 * @param {HttpResponse} res
 		 * @param {any} data
 		 * @param {Object?} action
 		 */
-		sendResponse(ctx, route, req, res, data, action = {}) {
+		sendResponse(req, res, data, action) {
+			const ctx = req.$ctx;
+			//const route = req.$route;
 
 			if (res.headersSent) {
 				this.logger.warn("Headers have already sent");
@@ -561,13 +568,14 @@ module.exports = {
 			}
 
 			// Override responseType by action (Deprecated)
-			let responseType = action.responseType;
-			if (responseType) {
+			let responseType;
+			if (action && action.responseType) {
 				deprecate("The 'responseType' action property has been deprecated. Use 'ctx.meta.$responseType' instead");
+				responseType = action.responseType;
 			}
 
 			// Custom headers (Deprecated)
-			if (action.responseHeaders) {
+			if (action && action.responseHeaders) {
 				deprecate("The 'responseHeaders' action property has been deprecated. Use 'ctx.meta.$responseHeaders' instead");
 				Object.keys(action.responseHeaders).forEach(key => {
 					res.setHeader(key, action.responseHeaders[key]);
@@ -612,12 +620,12 @@ module.exports = {
 				res.setHeader("Content-Type", responseType || "application/octet-stream");
 				data.pipe(res);
 			}
-			// Object or Array
+			// Object or Array (stringify)
 			else if (_.isObject(data) || Array.isArray(data)) {
 				res.setHeader("Content-Type", responseType || "application/json; charset=utf-8");
 				res.end(JSON.stringify(data));
 			}
-			// Other
+			// Other (stringify or raw text)
 			else {
 				if (!responseType) {
 					res.setHeader("Content-Type", "application/json; charset=utf-8");
@@ -685,7 +693,7 @@ module.exports = {
 						if (err instanceof MoleculerError)
 							return reject(err);
 						if (err instanceof Error)
-							return reject(new MoleculerError(err.message, err.code || err.status, err.type));
+							return reject(new MoleculerError(err.message, err.code || err.status, err.type)); // TODO err.stack
 
 						return reject(new MoleculerError(err));
 					}
@@ -729,7 +737,7 @@ module.exports = {
 				return req.$next(err);
 
 			if (res.headersSent) {
-				this.logger.warn("Headers have already sent");
+				this.logger.warn("Headers have already sent", req.url, err);
 				return;
 			}
 
@@ -970,16 +978,47 @@ module.exports = {
 			for(let i = 0; i < route.aliases.length; i++) {
 				const alias = route.aliases[i];
 				if (alias.method === "*" || alias.method === method) {
-					const res = alias.match(url);
-					if (res) {
-						return {
-							alias,
-							params: res
-						};
+					const params = alias.match(url);
+					if (params) {
+						return { alias, params };
 					}
 				}
 			}
 			return false;
+		},
+
+		/**
+		 * Add & prepare route from options
+		 * @param {Object} opts
+		 * @param {Boolean} [toBottom=true]
+		 */
+		addRoute(opts, toBottom = true) {
+			const route = this.createRoute(opts);
+			const idx = this.routes.findIndex(r => r.path == route.path);
+			if (idx !== -1) {
+				// Replace the previous
+				this.routes[idx] = route;
+			} else {
+				// Add new route
+				if (toBottom)
+					this.routes.push(route);
+				else
+					this.routes.unshift(route);
+
+				// TODO: reorganize routes order (move "/" route to the bottom)
+			}
+
+			return route;
+		},
+
+		/**
+		 * Remove a route by path
+		 * @param {String} path
+		 */
+		removeRoute(path) {
+			const idx = this.routes.findIndex(r => r.opts.path == path);
+			if (idx !== -1)
+				this.routes.splice(idx, 1);
 		},
 
 		/**
@@ -1090,145 +1129,163 @@ module.exports = {
 			route.path = globalPath + (opts.path || "");
 			route.path = route.path || "/";
 
-			// Helper for aliased routes
-			const createAlias = (matchPath, action) => {
-				let method = "*";
-				if (matchPath.indexOf(" ") !== -1) {
-					const p = matchPath.split(/\s+/);
-					method = p[0];
-					matchPath = p[1];
-				}
-				if (matchPath.startsWith("/"))
-					matchPath = matchPath.slice(1);
+			// Create aliases
+			this.createRouteAliases(route, opts.aliases);
 
-				let alias;
-				if (_.isString(action)) {
-					// Parse type from action name
-					if (action.indexOf(":") > 0) {
-						const p = action.split(":");
-						alias = {
-							type: p[0],
-							action: p[1]
-						};
-					} else {
-						alias = { action };
-					}
-				} else if (_.isFunction(action)) {
-					alias = { handler: action };
-				} else if (Array.isArray(action)) {
-					alias = {};
-					const mws = _.compact(action.map(mw => {
-						if (_.isString(mw))
-							alias.action = mw;
-						else if(_.isFunction(mw))
-							return mw;
-					}));
-					alias.handler = this.compose(...mws);
-
-				} else {
-					alias = action;
-				}
-
-				alias.path = matchPath;
-				alias.method = method;
-				alias.type = alias.type || "call";
-
-				let keys = [];
-				alias.re = pathToRegexp(matchPath, keys, {}); // Options: https://github.com/pillarjs/path-to-regexp#usage
-
-				this.logger.info(`  Alias: ${method} ${route.path + (route.path.endsWith("/") ? "": "/")}${matchPath} -> ${alias.handler != null ? "<Function>" : alias.action}`);
-
-				alias.match = url => {
-					const m = alias.re.exec(url);
-					if (!m) return false;
-
-					const params = {};
-
-					let key, param;
-					for (let i = 0; i < keys.length; i++) {
-						key = keys[i];
-						param = m[i + 1];
-						if (!param) continue;
-
-						params[key.name] = decodeParam(param);
-
-						if (key.repeat)
-							params[key.name] = params[key.name].split(key.delimiter);
-					}
-
-					return params;
-				};
-
-				if (alias.type == "multipart") {
-					// Handle file upload in multipart form
-					alias.handler = (req, res) => {
-						const ctx = req.$ctx;
-						const promises = [];
-
-						const busboy = new Busboy(_.defaultsDeep({ headers: req.headers }, alias.busboyConfig, opts.busboyConfig));
-						busboy.on("file", (fieldname, file, filename, encoding, mimetype) => {
-							promises.push(ctx.call(alias.action, file, _.defaultsDeep({}, opts.callOptions, { meta: {
-								fieldname: fieldname,
-								filename: filename,
-								encoding: encoding,
-								mimetype: mimetype,
-							}})));
-						});
-
-						busboy.on("finish", () => {
-							if (!promises.length)
-								return this.sendError(req, res, new MoleculerClientError("File missing in the request"));
-							this.Promise.all(promises).then(data => {
-								if (route.onAfterCall)
-									return route.onAfterCall.call(this, ctx, route, req, res, data);
-								return data;
-
-							}).then(data => {
-								this.sendResponse(req.$ctx, req.$route, req, res, data, {});
-
-							}).catch(err => {
-								this.sendError(req, res, err);
-
-							});
-						});
-
-						busboy.on("error", err => {
-							this.sendError(req, res, err);
-						});
-
-						req.pipe(busboy);
-
-					};
-				}
-
-				return alias;
-			};
-
-			// Handle aliases
-			if (opts.aliases && Object.keys(opts.aliases).length > 0) {
-				route.aliases = [];
-				_.forIn(opts.aliases, (action, matchPath) => {
-					if (matchPath.startsWith("REST ")) {
-						const p = matchPath.split(/\s+/);
-						const pathName = p[1];
-
-						// Generate RESTful API. More info http://www.restapitutorial.com/
-						route.aliases.push(createAlias(`GET ${pathName}`, 			`${action}.list`));
-						route.aliases.push(createAlias(`GET ${pathName}/:id`, 		`${action}.get`));
-						route.aliases.push(createAlias(`POST ${pathName}`, 			`${action}.create`));
-						route.aliases.push(createAlias(`PUT ${pathName}/:id`, 		`${action}.update`));
-						route.aliases.push(createAlias(`PATCH ${pathName}/:id`, 	`${action}.patch`));
-						route.aliases.push(createAlias(`DELETE ${pathName}/:id`, 	`${action}.remove`));
-					} else {
-						route.aliases.push(createAlias(matchPath, action));
-					}
-				});
-			}
-
+			// Set alias mapping policy
 			route.mappingPolicy = opts.mappingPolicy || MAPPING_POLICY_ALL;
 
 			return route;
 		},
+
+		/**
+		 * Create all aliases for route.
+		 * @param {Object} route
+		 * @param {Object} aliases
+		 */
+		createRouteAliases(route, aliases) {
+			route.aliases = [];
+			_.forIn(aliases, (action, matchPath) => {
+				if (matchPath.startsWith("REST ")) {
+					const p = matchPath.split(/\s+/);
+					const pathName = p[1];
+
+					// Generate RESTful API. More info http://www.restapitutorial.com/
+					route.aliases.push(
+						this.createAlias(route, `GET ${pathName}`, 			`${action}.list`),
+						this.createAlias(route, `GET ${pathName}/:id`, 		`${action}.get`),
+						this.createAlias(route, `POST ${pathName}`, 		`${action}.create`),
+						this.createAlias(route, `PUT ${pathName}/:id`, 		`${action}.update`),
+						this.createAlias(route, `PATCH ${pathName}/:id`, 	`${action}.patch`),
+						this.createAlias(route, `DELETE ${pathName}/:id`, 	`${action}.remove`)
+					);
+				} else {
+					route.aliases.push(this.createAlias(route, matchPath, action));
+				}
+			});
+
+			return route.aliases;
+		},
+
+		/**
+		 * Create alias for route.
+		 *
+		 * @param {Object} route
+		 * @param {String} matchPath
+		 * @param {String|Object} action
+		 */
+		createAlias(route, matchPath, action) {
+			let method = "*";
+			if (matchPath.indexOf(" ") !== -1) {
+				const p = matchPath.split(/\s+/);
+				method = p[0];
+				matchPath = p[1];
+			}
+			if (matchPath.startsWith("/"))
+				matchPath = matchPath.slice(1);
+
+			let alias;
+			if (_.isString(action)) {
+				// Parse type from action name
+				if (action.indexOf(":") > 0) {
+					const p = action.split(":");
+					alias = {
+						type: p[0],
+						action: p[1]
+					};
+				} else {
+					alias = { action };
+				}
+			} else if (_.isFunction(action)) {
+				alias = { handler: action };
+			} else if (Array.isArray(action)) {
+				alias = {};
+				const mws = _.compact(action.map(mw => {
+					if (_.isString(mw))
+						alias.action = mw;
+					else if(_.isFunction(mw))
+						return mw;
+				}));
+				alias.handler = this.compose(...mws);
+
+			} else {
+				alias = action;
+			}
+
+			alias.path = matchPath;
+			alias.method = method;
+			alias.type = alias.type || "call";
+
+			let keys = [];
+			alias.re = pathToRegexp(matchPath, keys, {}); // Options: https://github.com/pillarjs/path-to-regexp#usage
+
+			this.logger.info(`  Alias: ${method} ${route.path + (route.path.endsWith("/") ? "": "/")}${matchPath} -> ${alias.handler != null ? "<Function>" : alias.action}`);
+
+			alias.match = url => {
+				const m = alias.re.exec(url);
+				if (!m) return false;
+
+				const params = {};
+
+				let key, param;
+				for (let i = 0; i < keys.length; i++) {
+					key = keys[i];
+					param = m[i + 1];
+					if (!param) continue;
+
+					params[key.name] = decodeParam(param);
+
+					if (key.repeat)
+						params[key.name] = params[key.name].split(key.delimiter);
+				}
+
+				return params;
+			};
+
+			if (alias.type == "multipart") {
+				// Handle file upload in multipart form
+				alias.handler = (req, res) => {
+					const ctx = req.$ctx;
+					const promises = [];
+
+					const busboy = new Busboy(_.defaultsDeep({ headers: req.headers }, alias.busboyConfig, route.opts.busboyConfig));
+					busboy.on("file", (fieldname, file, filename, encoding, mimetype) => {
+						promises.push(ctx.call(alias.action, file, _.defaultsDeep({}, route.opts.callOptions, { meta: {
+							fieldname: fieldname,
+							filename: filename,
+							encoding: encoding,
+							mimetype: mimetype,
+						}})));
+					});
+
+					busboy.on("finish", () => {
+						if (!promises.length)
+							return this.sendError(req, res, new MoleculerClientError("File missing in the request"));
+						this.Promise.all(promises).then(data => {
+							if (route.onAfterCall)
+								return route.onAfterCall.call(this, ctx, route, req, res, data);
+							return data;
+
+						}).then(data => {
+							this.sendResponse(req, res, data, {});
+
+						}).catch(err => {
+							this.sendError(req, res, err);
+
+						});
+					});
+
+					busboy.on("error", err => {
+						this.sendError(req, res, err);
+					});
+
+					req.pipe(busboy);
+
+				};
+			}
+
+			return alias;
+		}
 
 	},
 

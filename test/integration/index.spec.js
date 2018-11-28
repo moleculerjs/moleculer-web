@@ -3015,3 +3015,84 @@ describe("Test file uploading", () => {
 	});
 
 });
+
+describe("Test dynamic routing", () => {
+	let broker;
+	let service;
+	let server;
+
+	beforeAll(() => {
+		[ broker, service, server] = setup({
+			routes: false
+		});
+		return broker.start();
+	});
+
+	afterAll(() => broker.stop());
+
+	it("should not find '/my/hello'", () => {
+		return request(server)
+			.get("/my/hello")
+			.then(res => {
+				expect(res.statusCode).toBe(404);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toEqual({
+					"code": 404,
+					"message": "Not found",
+					"name": "NotFoundError",
+					"type": "NOT_FOUND"
+				});
+			});
+	});
+
+	it("create route & should find '/my/hello'", () => {
+		service.addRoute({
+			path: "/my",
+			aliases: {
+				"hello": "test.hello"
+			}
+		});
+
+		return request(server)
+			.get("/my/hello")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toBe("Hello Moleculer");
+			});
+	});
+
+	it("change route & should find '/other/hello'", () => {
+		service.addRoute({
+			path: "/other",
+			aliases: {
+				"hello": "test.hello"
+			}
+		});
+
+		return request(server)
+			.get("/other/hello")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toBe("Hello Moleculer");
+			});
+	});
+
+	it("remove route & should not find '/other/hello'", () => {
+		service.removeRoute("/other");
+
+		return request(server)
+			.get("/other/hello")
+			.then(res => {
+				expect(res.statusCode).toBe(404);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toEqual({
+					"code": 404,
+					"message": "Not found",
+					"name": "NotFoundError",
+					"type": "NOT_FOUND"
+				});
+			});
+	});
+});

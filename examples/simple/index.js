@@ -35,7 +35,10 @@ broker.loadService(path.join(__dirname, "..", "test.service"));
 broker.loadService(path.join(__dirname, "..", "math.service"));
 
 // Load API Gateway
-broker.createService(ApiService);
+broker.createService(ApiService, {
+	settings: {
+	}
+});
 
 // Start server
 broker.start().then(() => broker.repl());
