@@ -1,9 +1,10 @@
 -----------------------------
-<a name="0.8.4"></a>
-# 0.8.4 (2018-11-18)
+<a name="0.8.5"></a>
+# 0.8.5 (2018-11-28)
 
 ## Changes
 - fix `req.url`, add `req.originalUrl` and `req.baseUrl` for better middleware support (e.g. support static serving in subpath).
+- update deps
 
 -----------------------------
 <a name="0.8.3"></a>
