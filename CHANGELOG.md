@@ -1,4 +1,69 @@
 -----------------------------
+<a name="0.9.0"></a>
+# 0.9.0 (2018-xx-xx)
+
+## New file upload aliases
+API Gateway has implemented file uploads. You can upload files as a multipart form data (thanks for busboy library) or as a raw request body. In both cases, the file is transferred to an action as a Stream. In multipart form data mode you can upload multiple files, as well.
+
+> Please note, you have to disable other body parsers in order to accept files.
+
+**Example**
+```js
+const ApiGateway = require("moleculer-web");
+
+module.exports = {
+    mixins: [ApiGateway],
+    settings: {
+        path: "/upload",
+
+        routes: [
+            {
+                path: "",
+
+                // You should disable body parsers
+                bodyParsers: {
+                    json: false,
+                    urlencoded: false
+                },
+
+                aliases: {
+                    // File upload from HTML multipart form
+                    "POST /": "multipart:file.save",
+                    
+                    // File upload from AJAX or cURL
+                    "PUT /": "stream:file.save",
+
+                    // File upload from HTML form and overwrite busboy config
+                    "POST /multi": {
+                        type: "multipart",
+                        // Action level busboy config
+                        busboyConfig: {
+                            limits: {
+                                files: 3
+                            }
+                        },
+                        action: "file.save"
+                    }
+                },
+
+                // Route level busboy config.
+                // More info: https://github.com/mscdex/busboy#busboy-methods
+                busboyConfig: {
+                    limits: {
+                        files: 1
+                    }
+                },
+
+                mappingPolicy: "restrict"
+            }
+        ]
+    }
+});
+```
+
+## Changes
+
+-----------------------------
 <a name="0.8.5"></a>
 # 0.8.5 (2018-11-28)
 
