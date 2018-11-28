@@ -50,7 +50,6 @@ const path 					= require("path");
 const { ServiceBroker } 	= require("moleculer");
 const { MoleculerError } 	= require("moleculer").Errors;
 const { ForbiddenError, UnAuthorizedError, ERR_NO_TOKEN, ERR_INVALID_TOKEN } = require("../../src/errors");
-const multiparty 			= require("multiparty");
 
 // ----
 
@@ -178,26 +177,37 @@ broker.createService({
 
 				aliases: {
 					"GET /": "file.get",
-
-					"POST /"(req, res) {
-						const form = new multiparty.Form();
-						form.on("part", part => {
-							if (part.name == "myfile" && part.filename) {
-								return this.broker.call("file.save", part, { meta: { filename: part.filename }})
-									.then(filePath => {
-										this.logger.info("File uploaded successfully!", filePath);
-										this.sendRedirect(res, "upload?file=" + part.filename);
-									})
-									.catch(err => {
-										this.logger.error("File upload error!", err);
-										this.sendError(req, res, err);
-									});
+					"FILE /": "file.save",
+					"FILE /multi": {
+						// Action level busboy config
+						busboyConfig: {
+							limits: {
+								files: 3
 							}
-						});
-
-						form.parse(req);
+						},
+						action: "file.save"
 					}
+				},
 
+				// https://github.com/mscdex/busboy#busboy-methods
+				busboyConfig: {
+					limits: {
+						files: 1
+					}
+				},
+
+				callOptions: {
+					meta: {
+						a: 5
+					}
+				},
+
+				onAfterCall(ctx, route, req, res, data) {
+					this.logger.info("async onAfterCall in upload route");
+					return new this.Promise(resolve => {
+						res.setHeader("X-Response-Type", typeof(data));
+						resolve(data);
+					});
 				},
 
 				mappingPolicy: "restrict"
@@ -212,8 +222,6 @@ broker.createService({
 
 				// Middlewares
 				use: [
-					// To handle file uploads
-					//multer({ limit: { fieldSize: 2 * 1024 * 1024 }}).single("myfile")
 				],
 
 				// Whitelist of actions (array of string mask or regex)

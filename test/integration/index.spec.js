@@ -8,6 +8,7 @@ const path = require("path");
 const request = require("supertest");
 const express = require("express");
 const lolex = require("lolex");
+const crypto = require("crypto");
 const ApiGateway = require("../../index");
 const { ServiceBroker, Context } = require("moleculer");
 const { MoleculerError } = require("moleculer").Errors;
@@ -2871,3 +2872,146 @@ describe("Test middleware mode", () => {
 	});
 });
 
+describe("Test file uploading", () => {
+
+	const broker = new ServiceBroker({ logger: false });
+
+	broker.createService({
+		name: "file",
+		actions: {
+			save(ctx) {
+				return new this.Promise((resolve) => {
+					const hash = crypto.createHash("sha256");
+
+					hash.on("readable", () => {
+						const data = hash.read();
+						if (data)
+							resolve({ hash: data.toString("base64") });
+					});
+
+					ctx.params.pipe(hash);
+				});
+			}
+		}
+	});
+
+	const service = broker.createService(ApiGateway, {
+		settings: {
+			routes: [{
+				path: "/upload",
+
+				bodyParsers: {
+					json: false
+				},
+
+				aliases: {
+					// File upload from HTML form
+					"POST /": "multipart:file.save",
+
+					// File upload from AJAX or cURL
+					"PUT /": "stream:file.save",
+
+					// File upload from HTML form and overwrite busboy config
+					"POST /multi": {
+						type: "multipart",
+						// Action level busboy config
+						busboyConfig: {
+							limits: {
+								files: 3
+							}
+						},
+						action: "file.save"
+					}
+				},
+
+				// https://github.com/mscdex/busboy#busboy-methods
+				busboyConfig: {
+					limits: {
+						files: 1
+					}
+				},
+			}]
+		}
+	});
+	const server = service.server;
+	const assetsDir = __dirname + "/../assets/";
+
+	const origHashes = {};
+	const getHash = filename => {
+		return new Promise((resolve) => {
+			const hash = crypto.createHash("sha256");
+			hash.on("readable", () => {
+				const data = hash.read();
+				if (data)
+					resolve(data.toString("base64"));
+			});
+			fs.createReadStream(assetsDir + filename).pipe(hash);
+		});
+	};
+
+	beforeAll(() => {
+		return broker.start()
+			.then(() => Promise.all([
+				getHash("logo.png").then(hash => origHashes["logo.png"] = hash),
+				getHash("lorem.txt").then(hash => origHashes["lorem.txt"] = hash),
+			]));
+	});
+	afterAll(() => broker.stop());
+
+	it("should upload a file with multipart", () => {
+		return request(server)
+			.post("/upload")
+			.attach("myFile", assetsDir + "logo.png")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toEqual([
+					{ hash: origHashes["logo.png"] }
+				]);
+			});
+	});
+
+	it("should upload multiple file but only accept one file", () => {
+		return request(server)
+			.post("/upload")
+			.attach("myFile", assetsDir + "logo.png")
+			.attach("myText", assetsDir + "lorem.txt")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toEqual([
+					{ hash: origHashes["logo.png"] }
+				]);
+			});
+	});
+
+	it("should upload multiple file with multipart", () => {
+		return request(server)
+			.post("/upload/multi")
+			.attach("myFile", assetsDir + "logo.png")
+			.attach("myText", assetsDir + "lorem.txt")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toEqual([
+					{ hash: origHashes["logo.png"] },
+					{ hash: origHashes["lorem.txt"] }
+				]);
+			});
+	});
+
+	it("should upload file as stream", () => {
+		const buffer = fs.readFileSync(assetsDir + "logo.png");
+
+		return request(server)
+			.put("/upload")
+			.send(buffer)
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toEqual({ hash: origHashes["logo.png"] });
+			});
+
+	});
+
+});
