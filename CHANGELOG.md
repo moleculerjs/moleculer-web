@@ -2,7 +2,9 @@
 <a name="0.9.0"></a>
 # 0.9.0 (2018-xx-xx)
 
-## New file upload aliases
+## New 
+
+### File upload aliases
 API Gateway has implemented file uploads. You can upload files as a multipart form data (thanks for busboy library) or as a raw request body. In both cases, the file is transferred to an action as a Stream. In multipart form data mode you can upload multiple files, as well.
 
 > Please note, you have to disable other body parsers in order to accept files.
@@ -60,6 +62,30 @@ module.exports = {
     }
 });
 ```
+
+### HTTP2 server
+HTTP2 experimental server has been implemented into API Gateway. You can turn on with `http2: true` service setting.
+
+**Example**
+```js
+const ApiGateway = require("moleculer-web");
+
+module.exports = {
+    mixins: [ApiGateway],
+    settings: {
+        port: 8443,
+
+        // HTTPS server with certificate
+        https: {
+            key: fs.readFileSync("key.pem"),
+            cert: fs.readFileSync("cert.pem")
+        },
+
+        http2: true
+    }
+});
+```
+
 
 ## Changes
 
