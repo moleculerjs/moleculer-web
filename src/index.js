@@ -57,6 +57,7 @@ module.exports = {
 
 		// Routes
 		routes: [
+			// TODO: should remove it
 			{
 				// Path prefix to this route
 				path: "/",
@@ -74,7 +75,10 @@ module.exports = {
 		logResponseData: null,
 
 		// If set to false, error responses with a status code indicating a client error will not be logged
-		log4XXResponses: true
+		log4XXResponses: true,
+
+		// Use HTTP2 server
+		http2: false
 	},
 
 	/**
@@ -83,13 +87,7 @@ module.exports = {
 	created() {
 		if (!this.settings.middleware) {
 			// Create HTTP or HTTPS server (if not running as middleware)
-			if (this.settings.https && this.settings.https.key && this.settings.https.cert) {
-				this.server = https.createServer(this.settings.https, this.httpHandler);
-				this.isHTTPS = true;
-			} else {
-				this.server = http.createServer(this.httpHandler);
-				this.isHTTPS = false;
-			}
+			this.createServer();
 
 			/* istanbul ignore next */
 			this.server.on("error", err => {
@@ -169,6 +167,30 @@ module.exports = {
 	},
 
 	methods: {
+		// Create HTTP server
+		createServer() {
+			if (this.server) return;
+
+			if (this.settings.https && this.settings.https.key && this.settings.https.cert) {
+				this.server = this.settings.http2 ? this.tryLoadHTTP2Lib().createSecureServer(this.settings.https, this.httpHandler) : https.createServer(this.settings.https, this.httpHandler);
+				this.isHTTPS = true;
+			} else {
+				this.server = this.settings.http2 ? this.tryLoadHTTP2Lib().createServer(this.httpHandler) : http.createServer(this.httpHandler);
+				this.isHTTPS = false;
+			}
+		},
+
+		/**
+		 * Try to require HTTP2 servers
+		 */
+		tryLoadHTTP2Lib () {
+			try {
+				return require("http2");
+			} catch (err) {
+				this.broker.fatal("HTTP2 server is not available. (>= Node 8.8.1)");
+			}
+		},
+
 		/**
 		 * HTTP request handler. It is called from native NodeJS HTTP server.
 		 *

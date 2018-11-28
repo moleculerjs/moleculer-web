@@ -10,6 +10,7 @@
  *  - alias
  *  - body-parsers
  *  - file upload
+ *  - HTTP2
  *
  * Metrics, statistics, validation features of Moleculer is enabled.
  *
@@ -83,6 +84,8 @@ broker.createService({
 			key: fs.readFileSync(path.join(__dirname, "../ssl/key.pem")),
 			cert: fs.readFileSync(path.join(__dirname, "../ssl/cert.pem"))
 		},
+
+		http2: true,
 
 		// Global CORS settings
 		cors: {
