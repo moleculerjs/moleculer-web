@@ -81,6 +81,7 @@ module.exports = {
             cert: fs.readFileSync("cert.pem")
         },
 
+		// Use HTTP2 server
         http2: true
     }
 });
@@ -94,10 +95,18 @@ To remove a route, use the `this.removeRoute("/admin")` method. It removes the r
 
 
 ## Changes
+- new `optimizeOrder: true` setting in order to optimize route paths (deeper first)
 
 -----------------------------
 <a name="0.8.5"></a>
 # 0.8.5 (2018-11-28)
+
+## Changes
+- allow multiple whitespaces between method & path in aliases.
+
+-----------------------------
+<a name="0.8.4"></a>
+# 0.8.4 (2018-11-18)
 
 ## Changes
 - fix `req.url`, add `req.originalUrl` and `req.baseUrl` for better middleware support (e.g. support static serving in subpath).
