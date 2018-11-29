@@ -3096,3 +3096,52 @@ describe("Test dynamic routing", () => {
 			});
 	});
 });
+
+describe("Test route path optimization", () => {
+	let broker;
+	let service;
+	let server;
+
+	beforeAll(() => {
+		[ broker, service, server] = setup({
+			routes: [
+				{ path: "/", aliases: { "b": "test.hello" } },
+				{ path: "/a", aliases: { "c": "test.hello" } },
+				{ path: "/a/b", aliases: { "c": "test.hello" } },
+			]
+		});
+		return broker.start();
+	});
+
+	afterAll(() => broker.stop());
+
+	it("should find '/a/b/c'", () => {
+		return request(server)
+			.get("/a/b/c")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toBe("Hello Moleculer");
+			});
+	});
+
+	it("should find '/a/c'", () => {
+		return request(server)
+			.get("/a/c")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toBe("Hello Moleculer");
+			});
+	});
+
+	it("should find '/b'", () => {
+		return request(server)
+			.get("/b")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toBe("Hello Moleculer");
+			});
+	});
+});

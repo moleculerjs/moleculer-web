@@ -57,7 +57,7 @@ module.exports = {
 
 		// Routes
 		routes: [
-			// TODO: should remove it
+			// TODO: should remove it and add only in `created` if it's empty
 			{
 				// Path prefix to this route
 				path: "/",
@@ -78,7 +78,10 @@ module.exports = {
 		log4XXResponses: true,
 
 		// Use HTTP2 server
-		http2: false
+		http2: false,
+
+		// Optimize route order
+		optimizeOrder: true
 	},
 
 	/**
@@ -1006,6 +1009,8 @@ module.exports = {
 					this.routes.unshift(route);
 
 				// TODO: reorganize routes order (move "/" route to the bottom)
+				if (this.settings.optimizeOrder)
+					this.optimizeRouteOrder();
 			}
 
 			return route;
@@ -1019,6 +1024,15 @@ module.exports = {
 			const idx = this.routes.findIndex(r => r.opts.path == path);
 			if (idx !== -1)
 				this.routes.splice(idx, 1);
+		},
+
+		/**
+		 * Optimize route order by route path depth
+		 */
+		optimizeRouteOrder() {
+			const addSlashes = s => `${s.startsWith("/")?"":"/"}${s}${s.endsWith("/")?"":"/"}`;
+			this.routes.sort((a,b) => addSlashes(b.path).split("/").length - addSlashes(a.path).split("/").length);
+			this.logger.info("Optimized path order: ", this.routes.map(r => r.path));
 		},
 
 		/**
