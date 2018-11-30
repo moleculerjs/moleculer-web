@@ -20,59 +20,38 @@ const pathToRegexp 				= require("path-to-regexp");
 const Busboy 					= require("busboy");
 
 const { MoleculerError, MoleculerClientError, MoleculerServerError, ServiceNotFoundError } = require("moleculer").Errors;
-const { BadRequestError, NotFoundError, ForbiddenError, RateLimitExceeded, ERR_UNABLE_DECODE_PARAM, ERR_ORIGIN_NOT_ALLOWED } = require("./errors");
+const { NotFoundError, ForbiddenError, RateLimitExceeded, ERR_ORIGIN_NOT_ALLOWED } = require("./errors");
 
 const MemoryStore				= require("./memory-store");
+
+const { removeTrailingSlashes, addSlashes, normalizePath, decodeParam } = require("./utils");
 
 const MAPPING_POLICY_ALL		= "all";
 const MAPPING_POLICY_RESTRICT	= "restrict";
 
-function decodeParam(param) {
-	try {
-		return decodeURIComponent(param);
-	} catch (_) {
-		/* istanbul ignore next */
-		throw BadRequestError(ERR_UNABLE_DECODE_PARAM, { param });
-	}
-}
-
-// Remove slashes "/" from the left & right sides
-function removeTrailingSlashes(s) {
-	if (s.startsWith("/"))
-		s = s.slice(1);
-	if (s.endsWith("/"))
-		s = s.slice(0, -1);
-	return s;
-}
-
-// Add slashes "/" to the left & right sides
-function addSlashes(s) {
-	return (s.startsWith("/") ? "" : "/") + s + (s.endsWith("/") ? "" : "/");
-}
-
-// Normalize URL path (remove multiple slashes //)
-function normalizePath(s) {
-	return s.replace(/\/{2,}/g, "/");
-}
 
 /**
- * Official API Gateway service for Moleculer
+ * Official API Gateway service for Moleculer microservices framework.
+ *
+ * @service
  */
 module.exports = {
 
-	// Service name
+	// Default service name
 	name: "api",
 
 	// Default settings
 	settings: {
-		// Middleware mode for ExpressJS
-		middleware: false,
 
 		// Exposed port
 		port: process.env.PORT || 3000,
 
 		// Exposed IP
 		ip: process.env.IP || "0.0.0.0",
+
+		// Used server instance. If null, it will create a new HTTP(s)(2) server
+		// If false, it will start without server in middleware mode
+		server: true,
 
 		// Routes
 		routes: [
@@ -93,10 +72,10 @@ module.exports = {
 		// Log the response data (default to disable)
 		logResponseData: null,
 
-		// If set to false, error responses with a status code indicating a client error will not be logged
-		log4XXResponses: true,
+		// If set to true, it will log 4xx client errors, as well
+		log4XXResponses: false,
 
-		// Use HTTP2 server
+		// Use HTTP2 server (experimental)
 		http2: false,
 
 		// Optimize route order
@@ -107,14 +86,22 @@ module.exports = {
 	 * Service created lifecycle event handler
 	 */
 	created() {
-		if (!this.settings.middleware) {
-			// Create HTTP or HTTPS server (if not running as middleware)
-			this.createServer();
+		if (this.settings.server !== false) {
+
+			if (_.isObject(this.settings.server)) {
+				// Use an existing server instance
+				this.server = this.settings.server;
+			} else {
+				// Create a new HTTP/HTTPS/HTTP2 server instance
+				this.createServer();
+			}
 
 			/* istanbul ignore next */
 			this.server.on("error", err => {
 				this.logger.error("Server error", err);
 			});
+
+			this.logger.info("API Gateway server created.");
 		}
 
 		// Create static server middleware
@@ -127,8 +114,6 @@ module.exports = {
 		this.routes = [];
 		if (Array.isArray(this.settings.routes))
 			this.settings.routes.forEach(route => this.addRoute(route));
-
-		this.logger.info("API Gateway created!");
 	},
 
 	actions: {
@@ -1451,8 +1436,8 @@ module.exports = {
 	 * Service started lifecycle event handler
 	 */
 	started() {
-		if (this.settings.middleware)
-			return;
+		if (this.settings.server === false)
+			return this.Promise.resolve();
 
 		/* istanbul ignore next */
 		return new this.Promise((resolve, reject) => {
@@ -1471,10 +1456,7 @@ module.exports = {
 	 * Service stopped lifecycle event handler
 	 */
 	stopped() {
-		if (this.settings.middleware)
-			return;
-
-		if (this.server.listening) {
+		if (this.settings.server !== false && this.server.listening) {
 			/* istanbul ignore next */
 			return new this.Promise((resolve, reject) => {
 				this.server.close(err => {
@@ -1486,6 +1468,8 @@ module.exports = {
 				});
 			});
 		}
+
+		return this.Promise.resolve();
 	},
 
 	bodyParser,

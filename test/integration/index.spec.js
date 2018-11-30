@@ -2830,7 +2830,7 @@ describe("Test middleware mode", () => {
 
 		service = broker.createService(ApiGateway, {
 			settings: {
-				middleware: true,
+				server: false,
 				path: "/api"
 			}
 		});

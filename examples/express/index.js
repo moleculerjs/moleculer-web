@@ -2,12 +2,12 @@
 
 /**
  * This example shows how to use Moleculer-Web as an ExpressJS middleware
- * 
+ *
  *  Example:
- * 	
+ *
  *  - Call test.hello action
  * 		http://localhost:3333/api/test/hello
- * 
+ *
  *  - Call test.hi with alias
  * 		http://localhost:3333/api/hi?name=John
  */
@@ -28,9 +28,9 @@ broker.loadService(path.join(__dirname, "..", "test.service"));
 // Load API Gateway
 const svc = broker.createService({
 	mixins: ApiGatewayService,
-	
+
 	settings: {
-		middleware: true,
+		server: false,
 		routes: [{
 			whitelist: [
 				"test.hello",
