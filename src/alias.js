@@ -65,7 +65,7 @@ class Alias {
 
 		if (this.type == "multipart") {
 			// Handle file upload in multipart form
-			this.handler = this.multipartHandler();
+			this.handler = this.multipartHandler;
 		}
 
 		this.fullPath = addSlashes(this.route.path) + this.path;
