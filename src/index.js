@@ -16,19 +16,17 @@ const _ 						= require("lodash");
 const bodyParser 				= require("body-parser");
 const serveStatic 				= require("serve-static");
 const isReadableStream			= require("isstream").isReadable;
-const pathToRegexp 				= require("path-to-regexp");
-const Busboy 					= require("busboy");
 
-const { MoleculerError, MoleculerClientError, MoleculerServerError, ServiceNotFoundError } = require("moleculer").Errors;
+const { MoleculerError, MoleculerServerError, ServiceNotFoundError } = require("moleculer").Errors;
 const { NotFoundError, ForbiddenError, RateLimitExceeded, ERR_ORIGIN_NOT_ALLOWED } = require("./errors");
 
+const Alias						= require("./alias");
 const MemoryStore				= require("./memory-store");
 
-const { removeTrailingSlashes, addSlashes, normalizePath, decodeParam } = require("./utils");
+const { removeTrailingSlashes, addSlashes, normalizePath, composeThen } = require("./utils");
 
 const MAPPING_POLICY_ALL		= "all";
 const MAPPING_POLICY_RESTRICT	= "restrict";
-
 
 /**
  * Official API Gateway service for Moleculer microservices framework.
@@ -270,7 +268,7 @@ module.exports = {
 			return new this.Promise((resolve, reject) => {
 				res.once("finish", () => resolve(true));
 
-				return this.composeThen(req, res, ...route.middlewares)
+				return composeThen(req, res, ...route.middlewares)
 					.then(() => {
 						let params = {};
 
@@ -314,7 +312,7 @@ module.exports = {
 							const found = this.resolveAlias(route, urlPath, req.method);
 							if (found) {
 								const alias = found.alias;
-								this.logger.debug(`  Alias: ${req.method} ${urlPath} -> ${alias.action}`);
+								this.logger.debug("  Alias:", alias.toString());
 
 								if (route.opts.mergeParams === false) {
 									params.params = found.params;
@@ -460,7 +458,7 @@ module.exports = {
 				.then(() => {
 					if (_.isFunction(alias.handler)) {
 						// Call custom alias handler
-						this.logger.info(`   Call custom function in '${alias.method} ${route.path + (route.path.endsWith("/") ? "": "/")}${alias.path}' alias`);
+						this.logger.info(`   Call custom function in '${alias.toString()}' alias`);
 						return new this.Promise((resolve, reject) => {
 							alias.handler.call(this, req, res, err => {
 								if (err)
@@ -472,7 +470,7 @@ module.exports = {
 							if (alias.action)
 								return this.callAction(route, alias.action, req, res, alias.type == "stream" ? req : req.$params);
 							else
-								throw new MoleculerServerError("No alias handler", 500, "NO_ALIAS_HANDLER", { alias });
+								throw new MoleculerServerError("No alias handler", 500, "NO_ALIAS_HANDLER", { path: req.originalUrl });
 						});
 
 					} else if (alias.action) {
@@ -663,66 +661,6 @@ module.exports = {
 		 */
 		express() {
 			return (req, res, next) => this.httpHandler(req, res, next);
-		},
-
-		/**
-		 * Compose middlewares
-		 *
-		 * @param {...Function} mws
-		 */
-		compose(...mws) {
-			return (req, res, done) => {
-				const next = (i, err) => {
-					if (i >= mws.length) {
-						if (_.isFunction(done))
-							return done.call(this, err);
-
-						/* istanbul ignore next */
-						return;
-					}
-
-					if (err) {
-						// Call only error middlewares (err, req, res, next)
-						if (mws[i].length == 4)
-							mws[i].call(this, err, req, res, err => next(i + 1, err));
-						else
-							next(i + 1, err);
-					} else {
-						if (mws[i].length < 4)
-							mws[i].call(this, req, res, err => next(i + 1, err));
-						else
-							next(i + 1);
-					}
-				};
-
-				return next(0);
-			};
-		},
-
-		/**
-		 * Compose middlewares and return Promise
-		 * @param {...Function} mws
-		 * @returns {Promise}
-		 */
-		composeThen(req, res, ...mws) {
-			return new this.Promise((resolve, reject) => {
-				this.compose(...mws)(req, res, err => {
-					if (err) {
-						/* istanbul ignore next */
-						if (err instanceof MoleculerError)
-							return reject(err);
-
-						/* istanbul ignore next */
-						if (err instanceof Error)
-							return reject(new MoleculerError(err.message, err.code || err.status, err.type)); // TODO err.stack
-
-						/* istanbul ignore next */
-						return reject(new MoleculerError(err));
-					}
-
-					resolve();
-				});
-			});
 		},
 
 		/**
@@ -1007,7 +945,7 @@ module.exports = {
 		resolveAlias(route, url, method = "GET") {
 			for(let i = 0; i < route.aliases.length; i++) {
 				const alias = route.aliases[i];
-				if (alias.method === "*" || alias.method === method) {
+				if (alias.isMethod(method)) {
 					const params = alias.match(url);
 					if (params) {
 						return { alias, params };
@@ -1298,123 +1236,8 @@ module.exports = {
 		 * @param {String|Object} action
 		 */
 		createAlias(route, path, action) {
-			let alias = {};
-
-			// Parse path
-			if (_.isString(path)) {
-				if (path.indexOf(" ") !== -1) {
-					const p = path.split(/\s+/);
-					alias.method = p[0];
-					alias.path = p[1];
-				} else {
-					alias.method = "*";
-					alias.path = path;
-				}
-
-			} else if (_.isObject(path)) {
-				alias = _.cloneDeep(path);
-			}
-
-			if (_.isString(action)) {
-				// Parse type from action name
-				if (action.indexOf(":") > 0) {
-					const p = action.split(":");
-					alias.type = p[0];
-					alias.action = p[1];
-				} else {
-					alias.action = action;
-				}
-			} else if (_.isFunction(action)) {
-				alias.handler = action;
-			} else if (Array.isArray(action)) {
-				const mws = _.compact(action.map(mw => {
-					if (_.isString(mw))
-						alias.action = mw;
-					else if(_.isFunction(mw))
-						return mw;
-				}));
-				alias.handler = this.compose(...mws);
-
-			} else if (action != null) {
-				alias = Object.assign(alias, action);
-			}
-
-			alias.type = alias.type || "call";
-
-			if (alias.path.startsWith("/"))
-				alias.path = alias.path.slice(1);
-
-			let keys = [];
-			alias.re = pathToRegexp(alias.path, keys, {}); // Options: https://github.com/pillarjs/path-to-regexp#usage
-
-			this.logger.info(`  Alias: ${alias.method} ${route.path + (route.path.endsWith("/") ? "": "/")}${alias.path} -> ${alias.handler != null ? "<Function>" : alias.action}`);
-
-			alias.match = url => {
-				const m = alias.re.exec(url);
-				if (!m) return false;
-
-				const params = {};
-
-				let key, param;
-				for (let i = 0; i < keys.length; i++) {
-					key = keys[i];
-					param = m[i + 1];
-					if (!param) continue;
-
-					params[key.name] = decodeParam(param);
-
-					if (key.repeat)
-						params[key.name] = params[key.name].split(key.delimiter);
-				}
-
-				return params;
-			};
-
-			if (alias.type == "multipart") {
-				// Handle file upload in multipart form
-				alias.handler = (req, res) => {
-					const ctx = req.$ctx;
-					const promises = [];
-
-					const busboy = new Busboy(_.defaultsDeep({ headers: req.headers }, alias.busboyConfig, route.opts.busboyConfig));
-					busboy.on("file", (fieldname, file, filename, encoding, mimetype) => {
-						promises.push(ctx.call(alias.action, file, _.defaultsDeep({}, route.opts.callOptions, { meta: {
-							fieldname: fieldname,
-							filename: filename,
-							encoding: encoding,
-							mimetype: mimetype,
-						}})));
-					});
-
-					busboy.on("finish", () => {
-						/* istanbul ignore next */
-						if (!promises.length)
-							return this.sendError(req, res, new MoleculerClientError("File missing in the request"));
-
-						this.Promise.all(promises).then(data => {
-							if (route.onAfterCall)
-								return route.onAfterCall.call(this, ctx, route, req, res, data);
-							return data;
-
-						}).then(data => {
-							this.sendResponse(req, res, data, {});
-
-						}).catch(err => {
-							/* istanbul ignore next */
-							this.sendError(req, res, err);
-						});
-					});
-
-					busboy.on("error", err => {
-						/* istanbul ignore next */
-						this.sendError(req, res, err);
-					});
-
-					req.pipe(busboy);
-
-				};
-			}
-
+			const alias = new Alias(this, route, path, action);
+			this.logger.info("  " + alias.toString());
 			return alias;
 		},
 

@@ -175,7 +175,7 @@ describe("WebGateway", () => {
 				const next = jest.fn();
 				const context = MockContext();
 				let error = new Error("Something went wrong while invoking the rest action");
-				error.code = 419;
+				error.code = 503;
 				context.actions.rest.mockReturnValueOnce(Promise.reject(error));
 
 				return handler.bind(context)(req, res, next).then(() => {
