@@ -2,6 +2,7 @@
 
 const pathToRegexp 				= require("path-to-regexp");
 const Busboy 					= require("busboy");
+const chalk 					= require("chalk");
 
 const _ 						= require("lodash");
 
@@ -64,49 +65,10 @@ class Alias {
 
 		if (this.type == "multipart") {
 			// Handle file upload in multipart form
-			this.handler = (req, res) => {
-				const ctx = req.$ctx;
-				const promises = [];
-
-				const busboy = new Busboy(_.defaultsDeep({ headers: req.headers }, this.busboyConfig, route.opts.busboyConfig));
-				busboy.on("file", (fieldname, file, filename, encoding, mimetype) => {
-					promises.push(ctx.call(this.action, file, _.defaultsDeep({}, route.opts.callOptions, { meta: {
-						fieldname: fieldname,
-						filename: filename,
-						encoding: encoding,
-						mimetype: mimetype,
-					}})));
-				});
-
-				busboy.on("finish", () => {
-					/* istanbul ignore next */
-					if (!promises.length)
-						return this.service.sendError(req, res, new MoleculerClientError("File missing in the request"));
-
-					Promise.all(promises).then(data => {
-						if (route.onAfterCall)
-							return route.onAfterCall.call(this, ctx, route, req, res, data);
-						return data;
-
-					}).then(data => {
-						this.service.sendResponse(req, res, data, {});
-
-					}).catch(err => {
-						/* istanbul ignore next */
-						this.service.sendError(req, res, err);
-					});
-				});
-
-				busboy.on("error", err => {
-					/* istanbul ignore next */
-					this.service.sendError(req, res, err);
-				});
-
-				req.pipe(busboy);
-
-			};
+			this.handler = this.multipartHandler();
 		}
 
+		this.fullPath = addSlashes(this.route.path) + this.path;
 	}
 
 	match(url) {
@@ -135,11 +97,52 @@ class Alias {
 	}
 
 	printPath() {
-		return `${this.method} ${addSlashes(this.route.path)}${this.path}`;
+		return `${this.method} ${this.fullPath}`;
 	}
 
 	toString() {
-		return `Alias: ${this.method} ${this.route.path + (this.route.path.endsWith("/") ? "": "/")}${this.path} -> ${this.handler != null ? "<Function>" : this.action}`;
+		return chalk.grey("Alias: ") + chalk.magenta(_.padStart(this.method, 6)) + " " + chalk.cyan(this.fullPath) + chalk.grey(" => ") + (this.handler != null ? "<Function>" : this.action);
+	}
+
+	multipartHandler(req, res) {
+		const ctx = req.$ctx;
+		const promises = [];
+
+		const busboy = new Busboy(_.defaultsDeep({ headers: req.headers }, this.busboyConfig, this.route.opts.busboyConfig));
+		busboy.on("file", (fieldname, file, filename, encoding, mimetype) => {
+			promises.push(ctx.call(this.action, file, _.defaultsDeep({}, this.route.opts.callOptions, { meta: {
+				fieldname: fieldname,
+				filename: filename,
+				encoding: encoding,
+				mimetype: mimetype,
+			}})));
+		});
+
+		busboy.on("finish", () => {
+			/* istanbul ignore next */
+			if (!promises.length)
+				return this.service.sendError(req, res, new MoleculerClientError("File missing in the request"));
+
+			Promise.all(promises).then(data => {
+				if (this.route.onAfterCall)
+					return this.route.onAfterCall.call(this, ctx, this.route, req, res, data);
+				return data;
+
+			}).then(data => {
+				this.service.sendResponse(req, res, data, {});
+
+			}).catch(err => {
+				/* istanbul ignore next */
+				this.service.sendError(req, res, err);
+			});
+		});
+
+		busboy.on("error", err => {
+			/* istanbul ignore next */
+			this.service.sendError(req, res, err);
+		});
+
+		req.pipe(busboy);
 	}
 }
 
