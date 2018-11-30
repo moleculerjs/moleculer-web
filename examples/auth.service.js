@@ -24,7 +24,9 @@ const users = [
 module.exports = {
 	name: "auth",
 
-	settings: {},
+	settings: {
+		rest: true
+	},
 
 	actions: {
 		/**
@@ -37,15 +39,18 @@ module.exports = {
 		 * @param {any} ctx
 		 * @returns
 		 */
-		login(ctx) {
-			let user = users.find(u => u.username == ctx.params.username && u.password == ctx.params.password);
+		login: {
+			rest: "/login",
+			handler(ctx) {
+				let user = users.find(u => u.username == ctx.params.username && u.password == ctx.params.password);
 
-			if (user) {
-				return this.generateToken(user).then(token => {
-					return { token };
-				});
-			} else
-				return Promise.reject(new MoleculerError("Invalid credentials", 400));
+				if (user) {
+					return this.generateToken(user).then(token => {
+						return { token };
+					});
+				} else
+					return Promise.reject(new MoleculerError("Invalid credentials", 400));
+			}
 		},
 
 		/**

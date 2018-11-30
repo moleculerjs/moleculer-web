@@ -7,8 +7,13 @@ const { MoleculerError } = require("moleculer").Errors;
 
 module.exports = {
 	name: "test",
+	settings: {
+		rest: ""
+	},
+
 	actions: {
 		hello: {
+			rest: true,
 			handler(ctx) {
 				ctx.meta.$responseType = "text/plain";
 				return "Hello Moleculer";
@@ -19,6 +24,7 @@ module.exports = {
 			params: {
 				name: "string"
 			},
+			rest: true,
 			handler(ctx) {
 				return `Hello ${ctx.params.name}`;
 			}
@@ -65,7 +71,8 @@ module.exports = {
 		},
 
 		dangerZone: {
-			publish: false,
+			visibility: "public",
+			rest: true,
 			handler(ctx) {
 				return "You cannot call this action via API Gateway!";
 			}

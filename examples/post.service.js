@@ -20,10 +20,16 @@ function generateFakeData(count) {
 
 module.exports = {
 	name: "posts",
+	//version: 2,
+
+	settings: {
+		rest: "posts/"
+	},
 
 	actions: {
 		list: {
 			cache: true,
+			rest: "GET /",
 			handler(ctx) {
 				// Clone the local list
 				return this.rows;
@@ -35,6 +41,7 @@ module.exports = {
 			cache: {
 				keys: ["id"]
 			},
+			rest: "GET /:id",
 			handler(ctx) {
 				const post = this.findByID(ctx.params.id);
 				if (post)
@@ -45,6 +52,7 @@ module.exports = {
 		},
 
 		create: {
+			rest: "POST /",
 			handler(ctx) {
 				this.rows.push(ctx.params);
 
@@ -55,6 +63,7 @@ module.exports = {
 		},
 
 		update: {
+			rest: "PUT /:id",
 			handler(ctx) {
 				const post = this.findByID(ctx.params.id);
 				if (post) {
@@ -73,6 +82,7 @@ module.exports = {
 		},
 
 		remove: {
+			rest: "DELETE /:id",
 			handler(ctx) {
 				this.rows = this.rows.filter(row => row.id != ctx.params.id);
 				this.clearCache();

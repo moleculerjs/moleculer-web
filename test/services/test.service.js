@@ -9,12 +9,21 @@ const { MoleculerServerError } = require("moleculer").Errors;
 
 module.exports = {
 	name: "test",
+
+	settings: {
+		rest: "/"
+	},
+
 	actions: {
-		hello(ctx) {
-			return "Hello Moleculer";
+		hello: {
+			rest: "GET /hi",
+			handler(ctx) {
+				return "Hello Moleculer";
+			}
 		},
 
 		greeter: {
+			rest: "/greeter",
 			params: {
 				name: "string"
 			},

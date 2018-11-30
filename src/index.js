@@ -36,6 +36,25 @@ function decodeParam(param) {
 	}
 }
 
+// Remove slashes "/" from the left & right sides
+function removeTrailingSlashes(s) {
+	if (s.startsWith("/"))
+		s = s.slice(1);
+	if (s.endsWith("/"))
+		s = s.slice(0, -1);
+	return s;
+}
+
+// Add slashes "/" to the left & right sides
+function addSlashes(s) {
+	return (s.startsWith("/") ? "" : "/") + s + (s.endsWith("/") ? "" : "/");
+}
+
+// Normalize URL path (remove multiple slashes //)
+function normalizePath(s) {
+	return s.replace(/\/{2,}/g, "/");
+}
+
 /**
  * Official API Gateway service for Moleculer
  */
@@ -1008,7 +1027,7 @@ module.exports = {
 				else
 					this.routes.unshift(route);
 
-				// TODO: reorganize routes order (move "/" route to the bottom)
+				// Reordering routes
 				if (this.settings.optimizeOrder)
 					this.optimizeRouteOrder();
 			}
@@ -1030,7 +1049,6 @@ module.exports = {
 		 * Optimize route order by route path depth
 		 */
 		optimizeRouteOrder() {
-			const addSlashes = s => `${s.startsWith("/")?"":"/"}${s}${s.endsWith("/")?"":"/"}`;
 			this.routes.sort((a,b) => addSlashes(b.path).split("/").length - addSlashes(a.path).split("/").length);
 			this.logger.info("Optimized path order: ", this.routes.map(r => r.path));
 		},
@@ -1178,42 +1196,130 @@ module.exports = {
 				}
 			});
 
+			if (route.opts.autoAliases) {
+				this.regenerateAutoAliases(route);
+			}
+
+
 			return route.aliases;
+		},
+
+		/**
+		 * Regenerate aliases automatically if service registry has been changed.
+		 *
+		 * @param {Route} route
+		 */
+		regenerateAutoAliases(route) {
+			this.logger.info(`♻ Generate aliases for '${route.path}' route...`);
+
+			route.aliases.length = 0;
+
+			const processedServices = new Set();
+
+			const services = this.broker.registry.getServiceList({ withActions: true });
+			services.forEach(service => {
+				const serviceName = service.version ? `v${service.version}.${service.name}` : service.name;
+				const basePath = addSlashes(_.isString(service.settings.rest) ? service.settings.rest : serviceName.replace(/\./g, "/"));
+
+				// Skip multiple instances of services
+				if (processedServices.has(serviceName)) return;
+
+				_.forIn(service.actions, action => {
+					if (action.rest) {
+						let alias = null;
+
+						// Check visibility
+						if (action.visibility != null && action.visibility != "published") return;
+
+						// Check whitelist
+						if (route.hasWhitelist && !this.checkWhitelist(route, action.name)) return;
+
+						if (_.isString(action.rest)) {
+							if (action.rest.indexOf(" ") !== -1) {
+								// Handle route: "POST /import"
+								const p = action.rest.split(/\s+/);
+								alias = {
+									method: p[0],
+									path: basePath + p[1]
+								};
+							} else {
+								// Handle route: "/import". In this case apply to all methods as "* /import"
+								alias = {
+									method: "*",
+									path: basePath + action.rest
+								};
+							}
+						} else if (action.rest === true) {
+							// "route: true" is converted to "* {baseName}/{action.rawName}"
+							alias = {
+								method: "*",
+								path: basePath + action.rawName
+							};
+						} else if (_.isObject(action.rest)) {
+							// Handle route: { method: "POST", route: "/other" }
+							alias = Object.assign({}, action.rest, {
+								method: action.rest.method || "*",
+								path: basePath + action.rest.path ? action.rest.path : action.rawName
+							});
+						}
+
+						if (alias) {
+							alias.path = removeTrailingSlashes(normalizePath(alias.path));
+							route.aliases.push(this.createAlias(route, alias, action.name));
+						}
+					}
+
+					processedServices.add(serviceName);
+				});
+
+			});
+
+			if (route.aliases.length == 0) {
+				this.logger.info("  No aliases for this route.");
+			}
+			this.logger.info("");
 		},
 
 		/**
 		 * Create alias for route.
 		 *
 		 * @param {Object} route
-		 * @param {String} matchPath
+		 * @param {String|Object} matchPath
 		 * @param {String|Object} action
 		 */
-		createAlias(route, matchPath, action) {
-			let method = "*";
-			if (matchPath.indexOf(" ") !== -1) {
-				const p = matchPath.split(/\s+/);
-				method = p[0];
-				matchPath = p[1];
-			}
-			if (matchPath.startsWith("/"))
-				matchPath = matchPath.slice(1);
+		createAlias(route, path, action) {
+			let alias = {};
 
-			let alias;
+			// Parse path
+			if (_.isString(path)) {
+				if (path.indexOf(" ") !== -1) {
+					const p = path.split(/\s+/);
+					alias.method = p[0];
+					alias.path = p[1];
+				} else {
+					alias.method = "*";
+					alias.path = path;
+				}
+
+				if (path.startsWith("/"))
+					alias.path = path.slice(1);
+
+			} else if (_.isObject(path)) {
+				alias = _.cloneDeep(path);
+			}
+
 			if (_.isString(action)) {
 				// Parse type from action name
 				if (action.indexOf(":") > 0) {
 					const p = action.split(":");
-					alias = {
-						type: p[0],
-						action: p[1]
-					};
+					alias.type = p[0];
+					alias.action = p[1];
 				} else {
-					alias = { action };
+					alias.action = action;
 				}
 			} else if (_.isFunction(action)) {
-				alias = { handler: action };
+				alias.handler = action;
 			} else if (Array.isArray(action)) {
-				alias = {};
 				const mws = _.compact(action.map(mw => {
 					if (_.isString(mw))
 						alias.action = mw;
@@ -1222,18 +1328,16 @@ module.exports = {
 				}));
 				alias.handler = this.compose(...mws);
 
-			} else {
-				alias = action;
+			} else if (action != null) {
+				alias = Object.assign(alias, action);
 			}
 
-			alias.path = matchPath;
-			alias.method = method;
 			alias.type = alias.type || "call";
 
 			let keys = [];
-			alias.re = pathToRegexp(matchPath, keys, {}); // Options: https://github.com/pillarjs/path-to-regexp#usage
+			alias.re = pathToRegexp(alias.path, keys, {}); // Options: https://github.com/pillarjs/path-to-regexp#usage
 
-			this.logger.info(`  Alias: ${method} ${route.path + (route.path.endsWith("/") ? "": "/")}${matchPath} -> ${alias.handler != null ? "<Function>" : alias.action}`);
+			this.logger.info(`  Alias: ${alias.method} ${route.path + (route.path.endsWith("/") ? "": "/")}${alias.path} -> ${alias.handler != null ? "<Function>" : alias.action}`);
 
 			alias.match = url => {
 				const m = alias.re.exec(url);
@@ -1299,8 +1403,19 @@ module.exports = {
 			}
 
 			return alias;
-		}
+		},
 
+		// Regenerate all auto aliases routes
+		regenerateAllAutoAliases: _.debounce(function() {
+			this.routes.forEach(route => route.opts.autoAliases && this.regenerateAutoAliases(route));
+		}, 500)
+	},
+
+
+	events: {
+		"$services.changed"() {
+			this.regenerateAllAutoAliases();
+		}
 	},
 
 	/**

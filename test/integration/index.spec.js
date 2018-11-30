@@ -3145,3 +3145,164 @@ describe("Test route path optimization", () => {
 			});
 	});
 });
+
+describe("Test auto aliasing", () => {
+	let broker;
+	let service;
+	let server;
+
+	function regenerate() {
+		service.routes.forEach(route => route.opts.autoAliases && service.regenerateAutoAliases(route));
+	}
+
+	beforeAll(() => {
+		[ broker, service, server] = setup({
+			routes: [
+				{
+					path: "/api",
+					whitelist: [
+						"posts.*",
+						"test.hello"
+					],
+
+					autoAliases: true,
+
+					aliases: {
+						"GET /postList": "posts.list"
+					}
+				}
+			]
+		}/*, { logger: true }*/);
+
+		broker.loadService("./test/services/posts.service");
+		broker.loadService("./test/services/test.service");
+
+		return broker.start().then(() => regenerate());
+	});
+
+	afterAll(() => broker.stop());
+
+	it("should call 'GET /api/hi'", () => {
+		return request(server)
+			.get("/api/hi")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toBe("Hello Moleculer");
+			});
+	});
+
+	it("should call 'GET /api/posts'", () => {
+		return request(server)
+			.get("/api/posts")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body.length).toBe(5);
+			});
+	});
+
+	it("should call 'GET /api/posts/:id'", () => {
+		const postService = broker.getLocalService("posts");
+		return request(server)
+			.get("/api/posts/" + postService.rows[3].id)
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toEqual(postService.rows[3]);
+			});
+	});
+
+	it("should call 'POST /api/posts'", () => {
+		const postService = broker.getLocalService("posts");
+		return request(server)
+			.post("/api/posts/")
+			.send({
+				id: 123,
+				title: "Test post"
+			})
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toEqual({
+					id: 123,
+					title: "Test post"
+				});
+				expect(postService.rows.length).toBe(6);
+			});
+	});
+
+	it("should call 'PUT /api/posts'", () => {
+		return request(server)
+			.put("/api/posts/123")
+			.send({
+				title: "Test post (modified)"
+			})
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toEqual({
+					id: 123,
+					title: "Test post (modified)"
+				});
+			});
+	});
+
+	it("should call 'DELETE /api/posts'", () => {
+		const postService = broker.getLocalService("posts");
+		return request(server)
+			.delete("/api/posts/123")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(postService.rows.length).toBe(5);
+			});
+	});
+
+	it("unload `posts` service & regenerate aliases", () => {
+		const postService = broker.getLocalService("posts");
+		return broker.destroyService(postService)
+			.then(() => regenerate());
+	});
+
+	it("should call 'GET /api/posts'", () => {
+		return request(server)
+			.get("/api/posts")
+			.then(res => {
+				expect(res.statusCode).toBe(404);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toEqual({
+					"name": "ServiceNotFoundError",
+					"message": "Service 'posts' is not found.",
+					"code": 404,
+					"type": "SERVICE_NOT_FOUND",
+					"data": {"action": "posts"}
+				});
+			});
+	});
+
+	it("should call 'GET /api/hi'", () => {
+		return request(server)
+			.get("/api/hi")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toBe("Hello Moleculer");
+			});
+	});
+
+	it("reload `posts` service & regenerate aliases", () => {
+		broker.loadService("./test/services/posts.service");
+		return broker.Promise.delay(100)
+			.then(() => regenerate());
+	});
+
+	it("should call 'GET /api/posts'", () => {
+		return request(server)
+			.get("/api/posts")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body.length).toBe(5);
+			});
+	});
+});

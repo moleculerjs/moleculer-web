@@ -11,6 +11,7 @@ function generateFakeData(count) {
 		let item = fake.entity.post();
 		item.id = i + 1;
 		item.author = fake.random.number(1, 10);
+		item.created = item.created.toISOString();
 
 		rows.push(item);
 	}
@@ -24,6 +25,7 @@ module.exports = {
 	actions: {
 		list: {
 			cache: true,
+			rest: "GET /",
 			handler(ctx) {
 				return this.rows;
 			}
@@ -34,6 +36,7 @@ module.exports = {
 			cache: {
 				keys: ["id"]
 			},
+			rest: "GET /:id",
 			handler(ctx) {
 				const post = this.findByID(ctx.params.id);
 				if (post)
@@ -44,6 +47,7 @@ module.exports = {
 		},
 
 		create: {
+			rest: "POST /",
 			handler(ctx) {
 				this.rows.push(ctx.params);
 
@@ -54,6 +58,7 @@ module.exports = {
 		},
 
 		update: {
+			rest: "PUT /:id",
 			handler(ctx) {
 				const post = this.findByID(ctx.params.id);
 				if (post) {
@@ -72,12 +77,14 @@ module.exports = {
 		},
 
 		patch: {
+			rest: "PATCH /:id",
 			handler(ctx) {
 				return this.actions.update(ctx.params, { parentCtx: ctx });
 			}
 		},
 
 		remove: {
+			rest: "DELETE /:id",
 			handler(ctx) {
 				this.rows = this.rows.filter(row => row.id != ctx.params.id);
 				this.clearCache();
