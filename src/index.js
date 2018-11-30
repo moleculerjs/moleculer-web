@@ -196,6 +196,7 @@ module.exports = {
 		 * Create HTTP server
 		 */
 		createServer() {
+			/* istanbul ignore next */
 			if (this.server) return;
 
 			if (this.settings.https && this.settings.https.key && this.settings.https.cert) {
@@ -211,9 +212,11 @@ module.exports = {
 		 * Try to require HTTP2 servers
 		 */
 		tryLoadHTTP2Lib () {
+			/* istanbul ignore next */
 			try {
 				return require("http2");
 			} catch (err) {
+				/* istanbul ignore next */
 				this.broker.fatal("HTTP2 server is not available. (>= Node 8.8.1)");
 			}
 		},
@@ -545,6 +548,7 @@ module.exports = {
 
 				// Error handling
 				.catch(err => {
+					/* istanbul ignore next */
 					if (!err)
 						return;
 
@@ -564,11 +568,13 @@ module.exports = {
 			const ctx = req.$ctx;
 			//const route = req.$route;
 
+			/* istanbul ignore next */
 			if (res.headersSent) {
 				this.logger.warn("Headers have already sent");
 				return;
 			}
 
+			/* istanbul ignore next */
 			if (!res.statusCode)
 				res.statusCode = 200;
 
@@ -583,6 +589,7 @@ module.exports = {
 			// Redirect
 			if (res.statusCode >= 300 && res.statusCode < 400) {
 				const location = ctx.meta.$location;
+				/* istanbul ignore next */
 				if (!location)
 					this.logger.warn(`The 'ctx.meta.$location' is missing for status code ${res.statusCode}!`);
 				else
@@ -591,12 +598,14 @@ module.exports = {
 
 			// Override responseType by action (Deprecated)
 			let responseType;
+			/* istanbul ignore next */
 			if (action && action.responseType) {
 				deprecate("The 'responseType' action property has been deprecated. Use 'ctx.meta.$responseType' instead");
 				responseType = action.responseType;
 			}
 
 			// Custom headers (Deprecated)
+			/* istanbul ignore next */
 			if (action && action.responseHeaders) {
 				deprecate("The 'responseHeaders' action property has been deprecated. Use 'ctx.meta.$responseHeaders' instead");
 				Object.keys(action.responseHeaders).forEach(key => {
@@ -682,6 +691,8 @@ module.exports = {
 					if (i >= mws.length) {
 						if (_.isFunction(done))
 							return done.call(this, err);
+
+						/* istanbul ignore next */
 						return;
 					}
 
@@ -712,11 +723,15 @@ module.exports = {
 			return new this.Promise((resolve, reject) => {
 				this.compose(...mws)(req, res, err => {
 					if (err) {
+						/* istanbul ignore next */
 						if (err instanceof MoleculerError)
 							return reject(err);
+
+						/* istanbul ignore next */
 						if (err instanceof Error)
 							return reject(new MoleculerError(err.message, err.code || err.status, err.type)); // TODO err.stack
 
+						/* istanbul ignore next */
 						return reject(new MoleculerError(err));
 					}
 
@@ -758,11 +773,13 @@ module.exports = {
 			if (req.$next)
 				return req.$next(err);
 
+			/* istanbul ignore next */
 			if (res.headersSent) {
 				this.logger.warn("Headers have already sent", req.url, err);
 				return;
 			}
 
+			/* istanbul ignore next */
 			if (!err || !(err instanceof Error)) {
 				res.writeHead(500);
 				res.end("Internal Server Error");
@@ -771,6 +788,7 @@ module.exports = {
 				return;
 			}
 
+			/* istanbul ignore next */
 			if (!(err instanceof MoleculerError)) {
 				const e = err;
 				err = new MoleculerError(e.message, e.code || e.status, e.type, e.data);
@@ -846,6 +864,8 @@ module.exports = {
 				return chalk.cyan.bold(code);
 			if (code >= 200 && code < 300)
 				return chalk.green.bold(code);
+
+			/* istanbul ignore next */
 			return code;
 		},
 
@@ -868,6 +888,7 @@ module.exports = {
 			}
 			this.logger.info(`<= ${this.coloringStatusCode(res.statusCode)} ${req.method} ${chalk.bold(req.url)} ${time}`);
 
+			/* istanbul ignore next */
 			if (this.settings.logResponseData && this.settings.logResponseData in this.logger) {
 				this.logger[this.settings.logResponseData]("  Data:", data);
 			}
@@ -913,6 +934,8 @@ module.exports = {
 		 * @param {Boolean} isPreFlight
 		 */
 		writeCorsHeaders(route, req, res, isPreFlight) {
+
+			/* istanbul ignore next */
 			if (!route.cors) return;
 
 			const origin = req.headers["origin"];
@@ -1275,6 +1298,7 @@ module.exports = {
 
 			});
 
+			/* istanbul ignore next */
 			if (route.aliases.length == 0) {
 				this.logger.info("  No aliases for this route.");
 			}
@@ -1378,8 +1402,10 @@ module.exports = {
 					});
 
 					busboy.on("finish", () => {
+						/* istanbul ignore next */
 						if (!promises.length)
 							return this.sendError(req, res, new MoleculerClientError("File missing in the request"));
+
 						this.Promise.all(promises).then(data => {
 							if (route.onAfterCall)
 								return route.onAfterCall.call(this, ctx, route, req, res, data);
@@ -1389,12 +1415,13 @@ module.exports = {
 							this.sendResponse(req, res, data, {});
 
 						}).catch(err => {
+							/* istanbul ignore next */
 							this.sendError(req, res, err);
-
 						});
 					});
 
 					busboy.on("error", err => {
+						/* istanbul ignore next */
 						this.sendError(req, res, err);
 					});
 
@@ -1408,6 +1435,7 @@ module.exports = {
 
 		// Regenerate all auto aliases routes
 		regenerateAllAutoAliases: _.debounce(function() {
+			/* istanbul ignore next */
 			this.routes.forEach(route => route.opts.autoAliases && this.regenerateAutoAliases(route));
 		}, 500)
 	},

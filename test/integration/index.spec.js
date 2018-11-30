@@ -772,7 +772,7 @@ describe("Test aliases", () => {
 					},
 				}
 			}]
-		}, { logger: true });
+		});
 
 		broker.loadService("./test/services/math.service");
 		return broker.start();
