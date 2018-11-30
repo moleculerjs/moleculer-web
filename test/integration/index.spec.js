@@ -772,7 +772,7 @@ describe("Test aliases", () => {
 					},
 				}
 			}]
-		});
+		}, { logger: true });
 
 		broker.loadService("./test/services/math.service");
 		return broker.start();
@@ -3159,7 +3159,7 @@ describe("Test auto aliasing", () => {
 		[ broker, service, server] = setup({
 			routes: [
 				{
-					path: "/api",
+					path: "api",
 					whitelist: [
 						"posts.*",
 						"test.hello"

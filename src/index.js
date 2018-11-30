@@ -1158,8 +1158,8 @@ module.exports = {
 
 			// Create URL prefix
 			const globalPath = this.settings.path && this.settings.path != "/" ? this.settings.path : "";
-			route.path = globalPath + (opts.path || "");
-			route.path = route.path || "/";
+			route.path = addSlashes(globalPath) + (opts.path || "");
+			route.path = normalizePath(route.path);
 
 			// Create aliases
 			this.createRouteAliases(route, opts.aliases);
@@ -1212,7 +1212,7 @@ module.exports = {
 		regenerateAutoAliases(route) {
 			this.logger.info(`♻ Generate aliases for '${route.path}' route...`);
 
-			route.aliases.length = 0;
+			route.aliases = route.aliases.filter(alias => !alias._generated);
 
 			const processedServices = new Set();
 
@@ -1265,6 +1265,7 @@ module.exports = {
 
 						if (alias) {
 							alias.path = removeTrailingSlashes(normalizePath(alias.path));
+							alias._generated = true;
 							route.aliases.push(this.createAlias(route, alias, action.name));
 						}
 					}
@@ -1301,9 +1302,6 @@ module.exports = {
 					alias.path = path;
 				}
 
-				if (path.startsWith("/"))
-					alias.path = path.slice(1);
-
 			} else if (_.isObject(path)) {
 				alias = _.cloneDeep(path);
 			}
@@ -1333,6 +1331,9 @@ module.exports = {
 			}
 
 			alias.type = alias.type || "call";
+
+			if (alias.path.startsWith("/"))
+				alias.path = alias.path.slice(1);
 
 			let keys = [];
 			alias.re = pathToRegexp(alias.path, keys, {}); // Options: https://github.com/pillarjs/path-to-regexp#usage
