@@ -9,7 +9,7 @@
     "bench": "cross-env NODE_ENV=production nodemon benchmarks/index.js",
     "perf": "node --inspect --expose-gc benchmarks/index.js",
     "ci": "jest --watch",
-    "test": "jest --coverage --detectOpenHandles --forceExit",
+    "test": "jest --coverage --forceExit",
     "lint": "eslint --ext=.js src",
     "deps": "npm-check -u",
     "postdeps": "npm test",
