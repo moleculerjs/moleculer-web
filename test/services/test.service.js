@@ -199,6 +199,20 @@ module.exports = {
 			return stream;
 		},
 
+		freshness(ctx){
+			ctx.meta.$responseHeaders = {
+				"Last-Modified": "Mon, 06 Aug 2018 14:23:28 GMT"
+			};
+			return 'fresh'
+		},
+
+		etag(ctx){
+			ctx.meta.$responseHeaders = {
+				"ETag": "my custom etag"
+			}
+			return {}
+		},
+		
 		error() {
 			throw new MoleculerServerError("I'm dangerous", 500);
 		}
