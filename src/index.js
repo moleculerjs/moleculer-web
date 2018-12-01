@@ -573,11 +573,11 @@ module.exports = {
 			}
 
 			// Redirect
-			if (res.statusCode >= 300 && res.statusCode < 400) {
+			if (res.statusCode >= 300 && res.statusCode < 400 && res.statusCode !== 304) {
 				const location = ctx.meta.$location;
 				/* istanbul ignore next */
 				if (!location)
-					if(res.statusCode !== 304) this.logger.warn(`The 'ctx.meta.$location' is missing for status code ${res.statusCode}!`);
+					this.logger.warn(`The 'ctx.meta.$location' is missing for status code ${res.statusCode}!`);
 				else
 					res.setHeader("Location", location);
 			}
@@ -615,6 +615,8 @@ module.exports = {
 						res.setHeader(key, ctx.meta.$responseHeaders[key]);
 				});
 			}
+			if (data == null)
+				return res.end();
 
 			let chunk;
 			// Buffer
