@@ -5,7 +5,34 @@
 ## Breaking changes
 
 ### Use `server` property instead of `middleware`
-TODO
+We have removed the `middleware` service setting because it was not straightforward. Therefore, we have created a new `server` setting.
+If `server: true` (which is the default value), API Gateway will create a HTTP(s) server. If `server: false`, it won't create a HTTP server, so you can use API Gateway as an Express middleware.
+
+#### Migration guide
+
+**Before**
+```js
+const ApiGateway = require("moleculer-web");
+
+module.exports = {
+    mixins: [ApiGateway],
+    settings: {
+        middleware: true
+    }
+}
+```
+
+**After**
+```js
+const ApiGateway = require("moleculer-web");
+
+module.exports = {
+    mixins: [ApiGateway],
+    settings: {
+        server: false
+    }
+}
+```
 
 ## New 
 
@@ -86,7 +113,7 @@ module.exports = {
             cert: fs.readFileSync("cert.pem")
         },
 
-		// Use HTTP2 server
+        // Use HTTP2 server
         http2: true
     }
 });
@@ -99,8 +126,47 @@ The function detects that the route is defined early. In this case, it will repl
 To remove a route, use the `this.removeRoute("/admin")` method. It removes the route by path.
 
 ### ETag supporting
-Thank to tiaod for ETag implementation. 
-TODO
+Thank to tiaod for ETag implementation. PR: [#92](https://github.com/moleculerjs/moleculer-web/pull/92)
+
+**Example**
+```js
+const ApiGateway = require("moleculer-web");
+
+module.exports = {
+    mixins: [ApiGateway],
+    settings: {
+        routes: [
+            {
+                path: "/",
+
+                // Enable ETag for this route
+                etag: true
+            }
+        ]
+    }
+}
+```
+
+Please note, it doesn't work with stream responses. In this case, you should generate the etag by yourself.
+
+**Example**
+```js
+module.exports = {
+    name: "export",
+    actions: {
+        // Download response as a file in the browser
+        downloadCSV(ctx) {
+            ctx.meta.$responseType = "text/csv";
+            ctx.meta.$responseHeaders = {
+                "Content-Disposition": `attachment; filename="data-${ctx.params.id}.csv"`,
+                "ETag": '<your etag here>'
+            };
+            return csvFileStream;
+        }
+    }
+}
+```
+
 
 ## Changes
 - new `optimizeOrder: true` setting in order to optimize route paths (deeper first). Defaults: `true`.
