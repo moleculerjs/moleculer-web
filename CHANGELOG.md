@@ -96,7 +96,7 @@ module.exports = {
 ```
 
 ### HTTP2 server
-HTTP2 experimental server has been implemented into API Gateway. You can turn on with `http2: true` service setting.
+HTTP2 experimental server has been implemented into API Gateway. You can turn it on with `http2: true` service setting.
 
 **Example**
 ```js
@@ -258,12 +258,17 @@ module.exports = {
 
 **The generated aliases**
 ```
+   GET /api/hi          => test.hello
    GET /api/posts       => posts.list
    GET /api/posts/:id   => posts.get
   POST /api/posts       => posts.create
    PUT /api/posts/:id   => posts.update
 DELETE /api/posts/:id   => posts.remove
 ```
+
+> If `rest: true` in service settings, API Gateway will use the service name as base path.
+
+> If `rest: true` in action definition, API Gateway will use actioni name in path.
 
 ## Changes
 - new `optimizeOrder: true` setting in order to optimize route paths (deeper first). Defaults: `true`.
