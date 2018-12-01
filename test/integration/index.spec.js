@@ -3307,123 +3307,218 @@ describe("Test auto aliasing", () => {
 	});
 });
 
-describe("Test http cache control", () => {
-	let broker;
-	let service;
-	let server;
+describe("Test ETag cache control", () => {
 
-	beforeAll(() => {
-		[ broker, service, server] = setup({
-			routes: [{
-				path: "/",
-				etag: true
-			}]
+	describe("with enabled default ETag", () => {
+		let broker;
+		let service;
+		let server;
+
+		beforeAll(() => {
+			[ broker, service, server] = setup({
+				etag: false,
+				routes: [{
+					path: "/",
+					etag: true
+				}]
+			});
+			broker.loadService("./test/services/test.service");
+			return broker.start();
 		});
-		broker.loadService("./test/services/test.service");
-		return broker.start();
+
+		afterAll(() => broker.stop());
+		it("should add Etag to response", ()=>{
+			return request(server)
+				.get("/test/greeter")
+				.query({ name: "tiaod" })
+				.then(res=>{
+					expect(res.statusCode).toBe(200);
+					expect(res.headers["etag"]).toBe("W/\"d-q+AO2Lbr8LT+rw9AWUCOel9HJU4\"");
+				});
+		});
+
+		it("should response status 304 when etag matched", ()=>{
+			return request(server)
+				.get("/test/greeter")
+				.query({ name: "tiaod" })
+				.set("If-None-Match", "\"d-q+AO2Lbr8LT+rw9AWUCOel9HJU4\"")
+				.then(res=>{
+					expect(res.statusCode).toBe(304);
+					expect(res.headers["etag"]).toBe("W/\"d-q+AO2Lbr8LT+rw9AWUCOel9HJU4\"");
+				});
+		});
+
+		it("should return status 200 when response is not fresh", ()=>{
+			return request(server)
+				.get("/test/freshness")
+				.set("If-Modified-Since", "Thu, 31 Mar 2016 07:07:52 GMT")
+				.then(res=>{
+					expect(res.statusCode).toBe(200);
+					expect(res.headers["last-modified"]).toBe("Mon, 06 Aug 2018 14:23:28 GMT");
+				});
+		});
+
+		it("should return status 304 when response is fresh", ()=>{
+			return request(server)
+				.get("/test/freshness")
+				.set("If-Modified-Since", "Mon, 06 Aug 2018 14:28:00 GMT")
+				.then(res=>{
+					expect(res.statusCode).toBe(304);
+					expect(res.headers["last-modified"]).toBe("Mon, 06 Aug 2018 14:23:28 GMT");
+				});
+		});
+
+		it("should not generate etag when streaming response", ()=>{
+			return request(server)
+				.get("/test/stream")
+				.then(res => {
+					expect(res.statusCode).toBe(200);
+					expect(res.headers["etag"]).toBe(undefined);
+				});
+		});
+
+		it("should use the etag in ctx.meta.$responseHeaders['ETag']", ()=>{
+			return request(server)
+				.get("/test/etag")
+				.then(res => {
+					expect(res.statusCode).toBe(200);
+					expect(res.headers["etag"]).toBe("my custom etag");
+				});
+		});
+
+		it("should skip body for HEAD", ()=>{
+			return request(server)
+				.head("/test/greeter")
+				.query({ name: "tiaod" })
+				.then(res => {
+					expect(res.body).toEqual({});
+				});
+		});
+
+		it("should strip irrelevant headers when sending 304 response", ()=>{
+			return request(server)
+				.head("/test/greeter")
+				.query({ name: "tiaod" })
+				.set("If-None-Match", "W/\"d-q+AO2Lbr8LT+rw9AWUCOel9HJU4\"")
+				.then(res => {
+					expect(res.headers["content-type"]).toBe(undefined);
+					expect(res.headers["content-length"]).toBe(undefined);
+					expect(res.headers["transfer-encoding"]).toBe(undefined);
+				});
+		});
 	});
 
-	afterAll(() => broker.stop());
-	it("should add Etag to response", ()=>{
-		return request(server)
-			.get("/test/greeter")
-			.query({ name: "tiaod" })
-			.then(res=>{
-				expect(res.statusCode).toBe(200);
-				expect(res.headers["etag"]).toBe("\"d-q+AO2Lbr8LT+rw9AWUCOel9HJU4\"");
+	describe("with enabled weak ETag", () => {
+		let broker;
+		let service;
+		let server;
+
+		beforeAll(() => {
+			[ broker, service, server] = setup({
+				etag: "weak",
+				routes: [{
+					path: "/",
+				}]
 			});
+			broker.loadService("./test/services/test.service");
+			return broker.start();
+		});
+
+		afterAll(() => broker.stop());
+		it("should add Etag to response", ()=>{
+			return request(server)
+				.get("/test/greeter")
+				.query({ name: "tiaod" })
+				.then(res=>{
+					expect(res.statusCode).toBe(200);
+					expect(res.headers["etag"]).toBe("W/\"d-q+AO2Lbr8LT+rw9AWUCOel9HJU4\"");
+				});
+		});
 	});
 
-	it("should response status 304 when etag matched", ()=>{
-		return request(server)
-			.get("/test/greeter")
-			.query({ name: "tiaod" })
-			.set("If-None-Match", "\"d-q+AO2Lbr8LT+rw9AWUCOel9HJU4\"")
-			.then(res=>{
-				expect(res.statusCode).toBe(304);
-				expect(res.headers["etag"]).toBe("\"d-q+AO2Lbr8LT+rw9AWUCOel9HJU4\"");
+	describe("with enabled strong ETag", () => {
+		let broker;
+		let service;
+		let server;
+
+		beforeAll(() => {
+			[ broker, service, server] = setup({
+				etag: "strong",
+				routes: [{
+					path: "/",
+				}]
 			});
+			broker.loadService("./test/services/test.service");
+			return broker.start();
+		});
+
+		afterAll(() => broker.stop());
+		it("should add Etag to response", ()=>{
+			return request(server)
+				.get("/test/greeter")
+				.query({ name: "tiaod" })
+				.then(res=>{
+					expect(res.statusCode).toBe(200);
+					expect(res.headers["etag"]).toBe("\"d-q+AO2Lbr8LT+rw9AWUCOel9HJU4\"");
+				});
+		});
 	});
 
-	it("should return status 200 when response is not fresh", ()=>{
-		return request(server)
-			.get("/test/freshness")
-			.set("If-Modified-Since", "Thu, 31 Mar 2016 07:07:52 GMT")
-			.then(res=>{
-				expect(res.statusCode).toBe(200);
-				expect(res.headers["last-modified"]).toBe("Mon, 06 Aug 2018 14:23:28 GMT");
+	describe("with custom ETag generator", () => {
+		let broker;
+		let service;
+		let server;
+
+		let custETag = jest.fn(() => "123abc");
+
+		beforeAll(() => {
+			[ broker, service, server] = setup({
+				etag: true,
+				routes: [{
+					path: "/",
+					etag: custETag
+				}]
 			});
+			broker.loadService("./test/services/test.service");
+			return broker.start();
+		});
+
+		afterAll(() => broker.stop());
+
+		it("should add Etag to response", ()=>{
+			return request(server)
+				.get("/test/greeter")
+				.query({ name: "tiaod" })
+				.then(res=>{
+					expect(res.statusCode).toBe(200);
+					expect(res.headers["etag"]).toBe("123abc");
+
+					expect(custETag).toHaveBeenCalledTimes(1);
+					expect(custETag).toHaveBeenCalledWith("\"Hello tiaod\"");
+				});
+		});
 	});
 
-	it("should return status 304 when response is fresh", ()=>{
-		return request(server)
-			.get("/test/freshness")
-			.set("If-Modified-Since", "Mon, 06 Aug 2018 14:28:00 GMT")
-			.then(res=>{
-				expect(res.statusCode).toBe(304);
-				expect(res.headers["last-modified"]).toBe("Mon, 06 Aug 2018 14:23:28 GMT");
-			});
-	});
+	describe("with disabled ETag", ()=>{
+		let broker;
+		let service;
+		let server;
 
-	it("should not generate etag when streaming response", ()=>{
-		return request(server)
-			.get("/test/stream")
-			.then(res => {
-				expect(res.statusCode).toBe(200);
-				expect(res.headers["etag"]).toBe(undefined);
-			});
-	});
+		beforeAll(() => {
+			[ broker, service, server] = setup();
+			broker.loadService("./test/services/test.service");
+			return broker.start();
+		});
 
-	it("should use the etag in ctx.meta.$responseHeaders['ETag']", ()=>{
-		return request(server)
-			.get("/test/etag")
-			.then(res => {
-				expect(res.statusCode).toBe(200);
-				expect(res.headers["etag"]).toBe("my custom etag");
-			});
-	});
-
-	it("should skip body for HEAD", ()=>{
-		return request(server)
-			.head("/test/greeter")
-			.query({ name: "tiaod" })
-			.then(res => {
-				expect(res.body).toEqual({});
-			});
-	});
-
-	it("should strip irrelevant headers when sending 304 response", ()=>{
-		return request(server)
-			.head("/test/greeter")
-			.query({ name: "tiaod" })
-			.set("If-None-Match", "\"d-q+AO2Lbr8LT+rw9AWUCOel9HJU4\"")
-			.then(res => {
-				expect(res.headers["content-type"]).toBe(undefined);
-				expect(res.headers["content-length"]).toBe(undefined);
-				expect(res.headers["transfer-encoding"]).toBe(undefined);
-			});
-	});
-});
-
-describe("Test disable auto generate ETag", ()=>{
-	let broker;
-	let service;
-	let server;
-
-	beforeAll(() => {
-		[ broker, service, server] = setup();
-		broker.loadService("./test/services/test.service");
-		return broker.start();
-	});
-
-	afterAll(() => broker.stop());
-	it("should not add ETag to response when settings.etag===false", ()=>{
-		return request(server)
-			.get("/test/greeter")
-			.query({ name: "tiaod" })
-			.then(res => {
-				expect(res.statusCode).toBe(200);
-				expect(res.headers["etag"]).toBe(undefined);
-			});
+		afterAll(() => broker.stop());
+		it("should not add ETag to response", ()=>{
+			return request(server)
+				.get("/test/greeter")
+				.query({ name: "tiaod" })
+				.then(res => {
+					expect(res.statusCode).toBe(200);
+					expect(res.headers["etag"]).toBe(undefined);
+				});
+		});
 	});
 });
