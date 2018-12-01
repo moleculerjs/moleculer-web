@@ -101,17 +101,17 @@ function composeThen(req, res, ...mws) {
 }
 
 function generateETag (body) {
-  let buf = !Buffer.isBuffer(body)
-    ? Buffer.from(body)
-    : body
-  return etag(buf, {weak:true})
+	let buf = !Buffer.isBuffer(body)
+		? Buffer.from(body)
+		: body;
+	return etag(buf, {weak:true});
 }
 
 function isFresh(req, res) {
 	if ((res.statusCode >= 200 && res.statusCode < 300) || 304 === res.statusCode) {
 		return fresh(req.headers, {
-			'etag': res.getHeader('ETag'),
-			'last-modified': res.getHeader('Last-Modified')
+			"etag": res.getHeader("ETag"),
+			"last-modified": res.getHeader("Last-Modified")
 		});
 	}
 	return false;

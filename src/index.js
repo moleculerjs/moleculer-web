@@ -635,12 +635,12 @@ module.exports = {
 			// Stream
 			else if (isReadableStream(data)) {
 				res.setHeader("Content-Type", responseType || "application/octet-stream");
-				chunk = data
+				chunk = data;
 			}
 			// Object or Array (stringify)
 			else if (_.isObject(data) || Array.isArray(data)) {
 				res.setHeader("Content-Type", responseType || "application/json; charset=utf-8");
-				chunk = JSON.stringify(data)
+				chunk = JSON.stringify(data);
 			}
 			// Other (stringify or raw text)
 			else {
@@ -656,29 +656,29 @@ module.exports = {
 				}
 			}
 			// Auto generate and add ETag
-			if(this.settings.etag && chunk && !res.getHeader('ETag') && !isReadableStream(chunk)) {
-				res.setHeader('ETag', generateETag(chunk));
+			if(this.settings.etag && chunk && !res.getHeader("ETag") && !isReadableStream(chunk)) {
+				res.setHeader("ETag", generateETag(chunk));
 			}
 			// freshness
 			if (isFresh(req, res)) res.statusCode = 304;
 			if (204 === this.statusCode || 304 === this.statusCode) {
-		    this.removeHeader('Content-Type');
-		    this.removeHeader('Content-Length');
-		    this.removeHeader('Transfer-Encoding');
-		    chunk = '';
-		  }
+				this.removeHeader("Content-Type");
+				this.removeHeader("Content-Length");
+				this.removeHeader("Transfer-Encoding");
+				chunk = "";
+			}
 
-			if (req.method === 'HEAD') {
-		    // skip body for HEAD
-		    res.end();
-		  } else {
-		    // respond
+			if (req.method === "HEAD") {
+				// skip body for HEAD
+				res.end();
+			} else {
+				// respond
 				if(isReadableStream(data)) { //Stream response
 					data.pipe(res);
 				}else{
 					res.end(chunk);
 				}
-		  }
+			}
 		},
 
 		/**
