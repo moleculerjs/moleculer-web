@@ -661,10 +661,10 @@ module.exports = {
 			}
 			// freshness
 			if (isFresh(req, res)) res.statusCode = 304;
-			if (204 === this.statusCode || 304 === this.statusCode) {
-				this.removeHeader("Content-Type");
-				this.removeHeader("Content-Length");
-				this.removeHeader("Transfer-Encoding");
+			if (204 === res.statusCode || 304 === res.statusCode) {
+				res.removeHeader("Content-Type");
+				res.removeHeader("Content-Length");
+				res.removeHeader("Transfer-Encoding");
 				chunk = "";
 			}
 

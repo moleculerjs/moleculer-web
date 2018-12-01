@@ -3378,6 +3378,27 @@ describe("Test http cache control", () => {
 				expect(res.headers["etag"]).toBe("my custom etag");
 			});
 	});
+
+	it("should skip body for HEAD", ()=>{
+		return request(server)
+			.head("/test/greeter")
+			.query({ name: "tiaod" })
+			.then(res => {
+				expect(res.body).toEqual({});
+			});
+	});
+
+	it("should strip irrelevant headers when sending 304 response", ()=>{
+		return request(server)
+			.head("/test/greeter")
+			.query({ name: "tiaod" })
+			.set('If-None-Match', "W/\"d-q+AO2Lbr8LT+rw9AWUCOel9HJU4\"")
+			.then(res => {
+				expect(res.headers["content-type"]).toBe(undefined);
+				expect(res.headers["content-length"]).toBe(undefined);
+				expect(res.headers["transfer-encoding"]).toBe(undefined);
+			});
+	})
 });
 
 describe("Test disable auto generate ETag", ()=>{
