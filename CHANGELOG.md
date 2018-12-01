@@ -135,14 +135,30 @@ const ApiGateway = require("moleculer-web");
 module.exports = {
     mixins: [ApiGateway],
     settings: {
+        // Service-level option
+        etag: false,
+
         routes: [
             {
                 path: "/",
 
-                // Enable ETag for this route
+                // Route-level option.
                 etag: true
             }
         ]
+    }
+}
+```
+
+The `etag` option value can be `false`, `true`, `weak`, `strong`, or a custom Function.
+
+**Custom ETag generator function**
+```js
+module.exports = {
+    mixins: [ApiGateway],
+    settings: {
+        // Service-level option
+        etag: (body) => generateHash(body)
     }
 }
 ```
@@ -167,6 +183,8 @@ module.exports = {
 }
 ```
 
+### Auto-aliasing feature
+TODO
 
 ## Changes
 - new `optimizeOrder: true` setting in order to optimize route paths (deeper first). Defaults: `true`.
