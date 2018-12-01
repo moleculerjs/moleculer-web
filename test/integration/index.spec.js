@@ -987,7 +987,6 @@ describe("Test aliases", () => {
 	});
 
 	it("GET /api/wrong-middleware", () => {
-		debugger;
 		customMiddlewares[0].mockClear();
 		customMiddlewares[1].mockClear();
 
