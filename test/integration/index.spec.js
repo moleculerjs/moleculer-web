@@ -987,6 +987,7 @@ describe("Test aliases", () => {
 	});
 
 	it("GET /api/wrong-middleware", () => {
+		debugger;
 		customMiddlewares[0].mockClear();
 		customMiddlewares[1].mockClear();
 
@@ -1000,7 +1001,7 @@ describe("Test aliases", () => {
 					"code": 500,
 					"type": "NO_ALIAS_HANDLER",
 					"data": {
-						"alias": jasmine.any(Object)
+						"path": "/api/wrong-middleware"
 					}
 				});
 
@@ -2830,7 +2831,7 @@ describe("Test middleware mode", () => {
 
 		service = broker.createService(ApiGateway, {
 			settings: {
-				middleware: true,
+				server: false,
 				path: "/api"
 			}
 		});
@@ -3159,7 +3160,7 @@ describe("Test auto aliasing", () => {
 		[ broker, service, server] = setup({
 			routes: [
 				{
-					path: "/api",
+					path: "api",
 					whitelist: [
 						"posts.*",
 						"test.hello"

@@ -16,47 +16,19 @@ const _ 						= require("lodash");
 const bodyParser 				= require("body-parser");
 const serveStatic 				= require("serve-static");
 const isReadableStream			= require("isstream").isReadable;
-const pathToRegexp 				= require("path-to-regexp");
-const Busboy 					= require("busboy");
 
-const fresh 				= require("fresh")
-const etag 				= require("etag")
+const fresh 				= require("fresh");
+const etag 				= require("etag");
+const { MoleculerError, MoleculerServerError, ServiceNotFoundError } = require("moleculer").Errors;
+const { NotFoundError, ForbiddenError, RateLimitExceeded, ERR_ORIGIN_NOT_ALLOWED } = require("./errors");
 
-const { MoleculerError, MoleculerClientError, MoleculerServerError, ServiceNotFoundError } = require("moleculer").Errors;
-const { BadRequestError, NotFoundError, ForbiddenError, RateLimitExceeded, ERR_UNABLE_DECODE_PARAM, ERR_ORIGIN_NOT_ALLOWED } = require("./errors");
-
+const Alias						= require("./alias");
 const MemoryStore				= require("./memory-store");
+
+const { removeTrailingSlashes, addSlashes, normalizePath, composeThen } = require("./utils");
 
 const MAPPING_POLICY_ALL		= "all";
 const MAPPING_POLICY_RESTRICT	= "restrict";
-
-function decodeParam(param) {
-	try {
-		return decodeURIComponent(param);
-	} catch (_) {
-		/* istanbul ignore next */
-		throw BadRequestError(ERR_UNABLE_DECODE_PARAM, { param });
-	}
-}
-
-// Remove slashes "/" from the left & right sides
-function removeTrailingSlashes(s) {
-	if (s.startsWith("/"))
-		s = s.slice(1);
-	if (s.endsWith("/"))
-		s = s.slice(0, -1);
-	return s;
-}
-
-// Add slashes "/" to the left & right sides
-function addSlashes(s) {
-	return (s.startsWith("/") ? "" : "/") + s + (s.endsWith("/") ? "" : "/");
-}
-
-// Normalize URL path (remove multiple slashes //)
-function normalizePath(s) {
-	return s.replace(/\/{2,}/g, "/");
-}
 
 function generateETag (body) {
   let buf = !Buffer.isBuffer(body)
@@ -74,25 +46,28 @@ function isFresh(req, res) {
 	}
 	return false;
 }
-
 /**
- * Official API Gateway service for Moleculer
+ * Official API Gateway service for Moleculer microservices framework.
+ *
+ * @service
  */
 module.exports = {
 
-	// Service name
+	// Default service name
 	name: "api",
 
 	// Default settings
 	settings: {
-		// Middleware mode for ExpressJS
-		middleware: false,
 
 		// Exposed port
 		port: process.env.PORT || 3000,
 
 		// Exposed IP
 		ip: process.env.IP || "0.0.0.0",
+
+		// Used server instance. If null, it will create a new HTTP(s)(2) server
+		// If false, it will start without server in middleware mode
+		server: true,
 
 		// Routes
 		routes: [
@@ -113,10 +88,10 @@ module.exports = {
 		// Log the response data (default to disable)
 		logResponseData: null,
 
-		// If set to false, error responses with a status code indicating a client error will not be logged
-		log4XXResponses: true,
+		// If set to true, it will log 4xx client errors, as well
+		log4XXResponses: false,
 
-		// Use HTTP2 server
+		// Use HTTP2 server (experimental)
 		http2: false,
 
 		// Optimize route order
@@ -130,14 +105,22 @@ module.exports = {
 	 * Service created lifecycle event handler
 	 */
 	created() {
-		if (!this.settings.middleware) {
-			// Create HTTP or HTTPS server (if not running as middleware)
-			this.createServer();
+		if (this.settings.server !== false) {
+
+			if (_.isObject(this.settings.server)) {
+				// Use an existing server instance
+				this.server = this.settings.server;
+			} else {
+				// Create a new HTTP/HTTPS/HTTP2 server instance
+				this.createServer();
+			}
 
 			/* istanbul ignore next */
 			this.server.on("error", err => {
 				this.logger.error("Server error", err);
 			});
+
+			this.logger.info("API Gateway server created.");
 		}
 
 		// Create static server middleware
@@ -150,8 +133,6 @@ module.exports = {
 		this.routes = [];
 		if (Array.isArray(this.settings.routes))
 			this.settings.routes.forEach(route => this.addRoute(route));
-
-		this.logger.info("API Gateway created!");
 	},
 
 	actions: {
@@ -219,6 +200,7 @@ module.exports = {
 		 * Create HTTP server
 		 */
 		createServer() {
+			/* istanbul ignore next */
 			if (this.server) return;
 
 			if (this.settings.https && this.settings.https.key && this.settings.https.cert) {
@@ -234,9 +216,11 @@ module.exports = {
 		 * Try to require HTTP2 servers
 		 */
 		tryLoadHTTP2Lib () {
+			/* istanbul ignore next */
 			try {
 				return require("http2");
 			} catch (err) {
+				/* istanbul ignore next */
 				this.broker.fatal("HTTP2 server is not available. (>= Node 8.8.1)");
 			}
 		},
@@ -305,7 +289,7 @@ module.exports = {
 			return new this.Promise((resolve, reject) => {
 				res.once("finish", () => resolve(true));
 
-				return this.composeThen(req, res, ...route.middlewares)
+				return composeThen(req, res, ...route.middlewares)
 					.then(() => {
 						let params = {};
 
@@ -349,7 +333,7 @@ module.exports = {
 							const found = this.resolveAlias(route, urlPath, req.method);
 							if (found) {
 								const alias = found.alias;
-								this.logger.debug(`  Alias: ${req.method} ${urlPath} -> ${alias.action}`);
+								this.logger.debug("  Alias:", alias.toString());
 
 								if (route.opts.mergeParams === false) {
 									params.params = found.params;
@@ -495,7 +479,7 @@ module.exports = {
 				.then(() => {
 					if (_.isFunction(alias.handler)) {
 						// Call custom alias handler
-						this.logger.info(`   Call custom function in '${alias.method} ${route.path + (route.path.endsWith("/") ? "": "/")}${alias.path}' alias`);
+						this.logger.info(`   Call custom function in '${alias.toString()}' alias`);
 						return new this.Promise((resolve, reject) => {
 							alias.handler.call(this, req, res, err => {
 								if (err)
@@ -507,7 +491,7 @@ module.exports = {
 							if (alias.action)
 								return this.callAction(route, alias.action, req, res, alias.type == "stream" ? req : req.$params);
 							else
-								throw new MoleculerServerError("No alias handler", 500, "NO_ALIAS_HANDLER", { alias });
+								throw new MoleculerServerError("No alias handler", 500, "NO_ALIAS_HANDLER", { path: req.originalUrl });
 						});
 
 					} else if (alias.action) {
@@ -568,6 +552,7 @@ module.exports = {
 
 				// Error handling
 				.catch(err => {
+					/* istanbul ignore next */
 					if (!err)
 						return;
 
@@ -587,11 +572,13 @@ module.exports = {
 			const ctx = req.$ctx;
 			//const route = req.$route;
 
+			/* istanbul ignore next */
 			if (res.headersSent) {
 				this.logger.warn("Headers have already sent");
 				return;
 			}
 
+			/* istanbul ignore next */
 			if (!res.statusCode)
 				res.statusCode = 200;
 
@@ -606,6 +593,7 @@ module.exports = {
 			// Redirect
 			if (res.statusCode >= 300 && res.statusCode < 400) {
 				const location = ctx.meta.$location;
+				/* istanbul ignore next */
 				if (!location)
 					if(res.statusCode !== 304) this.logger.warn(`The 'ctx.meta.$location' is missing for status code ${res.statusCode}!`);
 				else
@@ -614,12 +602,14 @@ module.exports = {
 
 			// Override responseType by action (Deprecated)
 			let responseType;
+			/* istanbul ignore next */
 			if (action && action.responseType) {
 				deprecate("The 'responseType' action property has been deprecated. Use 'ctx.meta.$responseType' instead");
 				responseType = action.responseType;
 			}
 
 			// Custom headers (Deprecated)
+			/* istanbul ignore next */
 			if (action && action.responseHeaders) {
 				deprecate("The 'responseHeaders' action property has been deprecated. Use 'ctx.meta.$responseHeaders' instead");
 				Object.keys(action.responseHeaders).forEach(key => {
@@ -717,60 +707,6 @@ module.exports = {
 		},
 
 		/**
-		 * Compose middlewares
-		 *
-		 * @param {...Function} mws
-		 */
-		compose(...mws) {
-			return (req, res, done) => {
-				const next = (i, err) => {
-					if (i >= mws.length) {
-						if (_.isFunction(done))
-							return done.call(this, err);
-						return;
-					}
-
-					if (err) {
-						// Call only error middlewares (err, req, res, next)
-						if (mws[i].length == 4)
-							mws[i].call(this, err, req, res, err => next(i + 1, err));
-						else
-							next(i + 1, err);
-					} else {
-						if (mws[i].length < 4)
-							mws[i].call(this, req, res, err => next(i + 1, err));
-						else
-							next(i + 1);
-					}
-				};
-
-				return next(0);
-			};
-		},
-
-		/**
-		 * Compose middlewares and return Promise
-		 * @param {...Function} mws
-		 * @returns {Promise}
-		 */
-		composeThen(req, res, ...mws) {
-			return new this.Promise((resolve, reject) => {
-				this.compose(...mws)(req, res, err => {
-					if (err) {
-						if (err instanceof MoleculerError)
-							return reject(err);
-						if (err instanceof Error)
-							return reject(new MoleculerError(err.message, err.code || err.status, err.type)); // TODO err.stack
-
-						return reject(new MoleculerError(err));
-					}
-
-					resolve();
-				});
-			});
-		},
-
-		/**
 		 * Send 404 response
 		 *
 		 * @param {HttpResponse} res
@@ -803,11 +739,13 @@ module.exports = {
 			if (req.$next)
 				return req.$next(err);
 
+			/* istanbul ignore next */
 			if (res.headersSent) {
 				this.logger.warn("Headers have already sent", req.url, err);
 				return;
 			}
 
+			/* istanbul ignore next */
 			if (!err || !(err instanceof Error)) {
 				res.writeHead(500);
 				res.end("Internal Server Error");
@@ -816,6 +754,7 @@ module.exports = {
 				return;
 			}
 
+			/* istanbul ignore next */
 			if (!(err instanceof MoleculerError)) {
 				const e = err;
 				err = new MoleculerError(e.message, e.code || e.status, e.type, e.data);
@@ -891,6 +830,8 @@ module.exports = {
 				return chalk.cyan.bold(code);
 			if (code >= 200 && code < 300)
 				return chalk.green.bold(code);
+
+			/* istanbul ignore next */
 			return code;
 		},
 
@@ -913,6 +854,7 @@ module.exports = {
 			}
 			this.logger.info(`<= ${this.coloringStatusCode(res.statusCode)} ${req.method} ${chalk.bold(req.url)} ${time}`);
 
+			/* istanbul ignore next */
 			if (this.settings.logResponseData && this.settings.logResponseData in this.logger) {
 				this.logger[this.settings.logResponseData]("  Data:", data);
 			}
@@ -958,6 +900,8 @@ module.exports = {
 		 * @param {Boolean} isPreFlight
 		 */
 		writeCorsHeaders(route, req, res, isPreFlight) {
+
+			/* istanbul ignore next */
 			if (!route.cors) return;
 
 			const origin = req.headers["origin"];
@@ -1044,7 +988,7 @@ module.exports = {
 		resolveAlias(route, url, method = "GET") {
 			for(let i = 0; i < route.aliases.length; i++) {
 				const alias = route.aliases[i];
-				if (alias.method === "*" || alias.method === method) {
+				if (alias.isMethod(method)) {
 					const params = alias.match(url);
 					if (params) {
 						return { alias, params };
@@ -1203,8 +1147,8 @@ module.exports = {
 
 			// Create URL prefix
 			const globalPath = this.settings.path && this.settings.path != "/" ? this.settings.path : "";
-			route.path = globalPath + (opts.path || "");
-			route.path = route.path || "/";
+			route.path = addSlashes(globalPath) + (opts.path || "");
+			route.path = normalizePath(route.path);
 
 			// Create aliases
 			this.createRouteAliases(route, opts.aliases);
@@ -1257,7 +1201,7 @@ module.exports = {
 		regenerateAutoAliases(route) {
 			this.logger.info(`♻ Generate aliases for '${route.path}' route...`);
 
-			route.aliases.length = 0;
+			route.aliases = route.aliases.filter(alias => !alias._generated);
 
 			const processedServices = new Set();
 
@@ -1310,6 +1254,7 @@ module.exports = {
 
 						if (alias) {
 							alias.path = removeTrailingSlashes(normalizePath(alias.path));
+							alias._generated = true;
 							route.aliases.push(this.createAlias(route, alias, action.name));
 						}
 					}
@@ -1319,6 +1264,7 @@ module.exports = {
 
 			});
 
+			/* istanbul ignore next */
 			if (route.aliases.length == 0) {
 				this.logger.info("  No aliases for this route.");
 			}
@@ -1333,125 +1279,14 @@ module.exports = {
 		 * @param {String|Object} action
 		 */
 		createAlias(route, path, action) {
-			let alias = {};
-
-			// Parse path
-			if (_.isString(path)) {
-				if (path.indexOf(" ") !== -1) {
-					const p = path.split(/\s+/);
-					alias.method = p[0];
-					alias.path = p[1];
-				} else {
-					alias.method = "*";
-					alias.path = path;
-				}
-
-				if (path.startsWith("/"))
-					alias.path = path.slice(1);
-
-			} else if (_.isObject(path)) {
-				alias = _.cloneDeep(path);
-			}
-
-			if (_.isString(action)) {
-				// Parse type from action name
-				if (action.indexOf(":") > 0) {
-					const p = action.split(":");
-					alias.type = p[0];
-					alias.action = p[1];
-				} else {
-					alias.action = action;
-				}
-			} else if (_.isFunction(action)) {
-				alias.handler = action;
-			} else if (Array.isArray(action)) {
-				const mws = _.compact(action.map(mw => {
-					if (_.isString(mw))
-						alias.action = mw;
-					else if(_.isFunction(mw))
-						return mw;
-				}));
-				alias.handler = this.compose(...mws);
-
-			} else if (action != null) {
-				alias = Object.assign(alias, action);
-			}
-
-			alias.type = alias.type || "call";
-
-			let keys = [];
-			alias.re = pathToRegexp(alias.path, keys, {}); // Options: https://github.com/pillarjs/path-to-regexp#usage
-
-			this.logger.info(`  Alias: ${alias.method} ${route.path + (route.path.endsWith("/") ? "": "/")}${alias.path} -> ${alias.handler != null ? "<Function>" : alias.action}`);
-
-			alias.match = url => {
-				const m = alias.re.exec(url);
-				if (!m) return false;
-
-				const params = {};
-
-				let key, param;
-				for (let i = 0; i < keys.length; i++) {
-					key = keys[i];
-					param = m[i + 1];
-					if (!param) continue;
-
-					params[key.name] = decodeParam(param);
-
-					if (key.repeat)
-						params[key.name] = params[key.name].split(key.delimiter);
-				}
-
-				return params;
-			};
-
-			if (alias.type == "multipart") {
-				// Handle file upload in multipart form
-				alias.handler = (req, res) => {
-					const ctx = req.$ctx;
-					const promises = [];
-
-					const busboy = new Busboy(_.defaultsDeep({ headers: req.headers }, alias.busboyConfig, route.opts.busboyConfig));
-					busboy.on("file", (fieldname, file, filename, encoding, mimetype) => {
-						promises.push(ctx.call(alias.action, file, _.defaultsDeep({}, route.opts.callOptions, { meta: {
-							fieldname: fieldname,
-							filename: filename,
-							encoding: encoding,
-							mimetype: mimetype,
-						}})));
-					});
-
-					busboy.on("finish", () => {
-						if (!promises.length)
-							return this.sendError(req, res, new MoleculerClientError("File missing in the request"));
-						this.Promise.all(promises).then(data => {
-							if (route.onAfterCall)
-								return route.onAfterCall.call(this, ctx, route, req, res, data);
-							return data;
-
-						}).then(data => {
-							this.sendResponse(req, res, data, {});
-
-						}).catch(err => {
-							this.sendError(req, res, err);
-
-						});
-					});
-
-					busboy.on("error", err => {
-						this.sendError(req, res, err);
-					});
-
-					req.pipe(busboy);
-
-				};
-			}
-
+			const alias = new Alias(this, route, path, action);
+			this.logger.info("  " + alias.toString());
 			return alias;
 		},
 
 		// Regenerate all auto aliases routes
 		regenerateAllAutoAliases: _.debounce(function() {
+			/* istanbul ignore next */
 			this.routes.forEach(route => route.opts.autoAliases && this.regenerateAutoAliases(route));
 		}, 500)
 	},
@@ -1467,8 +1302,8 @@ module.exports = {
 	 * Service started lifecycle event handler
 	 */
 	started() {
-		if (this.settings.middleware)
-			return;
+		if (this.settings.server === false)
+			return this.Promise.resolve();
 
 		/* istanbul ignore next */
 		return new this.Promise((resolve, reject) => {
@@ -1487,10 +1322,7 @@ module.exports = {
 	 * Service stopped lifecycle event handler
 	 */
 	stopped() {
-		if (this.settings.middleware)
-			return;
-
-		if (this.server.listening) {
+		if (this.settings.server !== false && this.server.listening) {
 			/* istanbul ignore next */
 			return new this.Promise((resolve, reject) => {
 				this.server.close(err => {
@@ -1502,6 +1334,8 @@ module.exports = {
 				});
 			});
 		}
+
+		return this.Promise.resolve();
 	},
 
 	bodyParser,

@@ -33,12 +33,16 @@ broker.createService(ApiService, {
 	settings: {
 		routes: [
 			{
-				path: "/api",
+				path: "api",
 
 				whitelist: [
 					"posts.*",
 					"test.*"
 				],
+
+				aliases: {
+					"GET /hi": "test.hello"
+				},
 
 				autoAliases: true
 			},
