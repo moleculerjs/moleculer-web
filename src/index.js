@@ -656,7 +656,7 @@ module.exports = {
 
 			// Auto generate & add ETag
 			if(route.etag && chunk && !res.getHeader("ETag") && !isReadableStream(chunk)) {
-				res.setHeader("ETag", generateETag(chunk));
+				res.setHeader("ETag", generateETag.call(this, chunk, route.etag));
 			}
 
 			// Freshness
@@ -1027,7 +1027,7 @@ module.exports = {
 		 */
 		optimizeRouteOrder() {
 			this.routes.sort((a,b) => addSlashes(b.path).split("/").length - addSlashes(a.path).split("/").length);
-			this.logger.info("Optimized path order: ", this.routes.map(r => r.path));
+			this.logger.debug("Optimized path order: ", this.routes.map(r => r.path));
 		},
 
 		/**
@@ -1071,7 +1071,7 @@ module.exports = {
 			}
 
 			// ETag
-			route.etag = !!opts.etag;
+			route.etag = opts.etag != null ? opts.etag : this.settings.etag;
 
 			// Middlewares
 			let mw = [];
@@ -1146,6 +1146,8 @@ module.exports = {
 
 			// Set alias mapping policy
 			route.mappingPolicy = opts.mappingPolicy || MAPPING_POLICY_ALL;
+
+			this.logger.info("");
 
 			return route;
 		},
@@ -1254,12 +1256,6 @@ module.exports = {
 				});
 
 			});
-
-			/* istanbul ignore next */
-			if (route.aliases.length == 0) {
-				this.logger.info("  No aliases for this route.");
-			}
-			this.logger.info("");
 		},
 
 		/**

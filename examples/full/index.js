@@ -85,7 +85,7 @@ broker.createService({
 			cert: fs.readFileSync(path.join(__dirname, "../ssl/cert.pem"))
 		},
 
-		http2: true,
+		//http2: true,
 
 		// Global CORS settings
 		cors: {
@@ -103,6 +103,8 @@ broker.createService({
 			limit: 10,
 			headers: true
 		},
+
+		etag: true,
 
 		// Exposed path prefix
 		path: "/api",
@@ -226,6 +228,8 @@ broker.createService({
 				// Middlewares
 				use: [
 				],
+
+				etag: true,
 
 				// Whitelist of actions (array of string mask or regex)
 				whitelist: [

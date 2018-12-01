@@ -1,8 +1,8 @@
 "use strict";
 
-const Promise = require("bluebird");
-const _ = require("lodash");
-const fresh 				= require("fresh");
+const Promise 			= require("bluebird");
+const _ 				= require("lodash");
+const fresh 			= require("fresh");
 const etag 				= require("etag");
 
 const { BadRequestError, ERR_UNABLE_DECODE_PARAM } = require("./errors");
@@ -101,18 +101,22 @@ function composeThen(req, res, ...mws) {
 }
 
 /**
- * Generate ETag from content
+ * Generate ETag from content.
  *
  * @param {any} body
- * @param {Object?} opts
+ * @param {Boolean|String|Function?} opt
  *
  * @returns {String}
  */
-function generateETag(body, opts) {
+function generateETag(body, opt) {
+	if (_.isFunction(opt))
+		return opt.call(this, body);
+
 	let buf = !Buffer.isBuffer(body)
 		? Buffer.from(body)
 		: body;
-	return etag(buf, opts);
+
+	return etag(buf, (opt === true || opt === "weak") ? { weak: true } : null);
 }
 
 /**
