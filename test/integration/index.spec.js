@@ -867,7 +867,7 @@ describe("Test aliases", () => {
 					"message": "Service 'greeter.Norbert' is not found.",
 					"code": 404,
 					"type": "SERVICE_NOT_FOUND",
-					"data": {"action": "greeter.Norbert", nodeID: undefined}
+					"data": { "action": "greeter.Norbert", nodeID: undefined }
 				});
 			});
 	});
@@ -987,7 +987,6 @@ describe("Test aliases", () => {
 	});
 
 	it("GET /api/wrong-middleware", () => {
-		debugger;
 		customMiddlewares[0].mockClear();
 		customMiddlewares[1].mockClear();
 
@@ -1854,7 +1853,7 @@ describe("Test CORS", () => {
 					"message": "Forbidden",
 					"code": 403,
 					"type": "ORIGIN_NOT_ALLOWED",
-					"name": "ForbiddenError"});
+					"name": "ForbiddenError" });
 			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
 	});
 
@@ -2664,7 +2663,7 @@ describe("Test authorization", () => {
 					"message": "Unauthorized",
 					"code": 401,
 					"type": "NO_TOKEN",
-					"name": "UnAuthorizedError"});
+					"name": "UnAuthorizedError" });
 				expect(authorize).toHaveBeenCalledTimes(1);
 				expect(authorize).toHaveBeenCalledWith(jasmine.any(Context), jasmine.any(Object), jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse));
 			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
@@ -3276,7 +3275,7 @@ describe("Test auto aliasing", () => {
 					"message": "Service 'posts' is not found.",
 					"code": 404,
 					"type": "SERVICE_NOT_FOUND",
-					"data": {"action": "posts"}
+					"data": { "action": "posts" }
 				});
 			});
 	});
@@ -3314,7 +3313,12 @@ describe("Test http cache control", () => {
 	let server;
 
 	beforeAll(() => {
-		[ broker, service, server] = setup();
+		[ broker, service, server] = setup({
+			routes: [{
+				path: "/",
+				etag: true
+			}]
+		});
 		broker.loadService("./test/services/test.service");
 		return broker.start();
 	});
@@ -3326,7 +3330,7 @@ describe("Test http cache control", () => {
 			.query({ name: "tiaod" })
 			.then(res=>{
 				expect(res.statusCode).toBe(200);
-				expect(res.headers["etag"]).toBe("W/\"d-q+AO2Lbr8LT+rw9AWUCOel9HJU4\"");
+				expect(res.headers["etag"]).toBe("\"d-q+AO2Lbr8LT+rw9AWUCOel9HJU4\"");
 			});
 	});
 
@@ -3334,10 +3338,10 @@ describe("Test http cache control", () => {
 		return request(server)
 			.get("/test/greeter")
 			.query({ name: "tiaod" })
-			.set('If-None-Match', "W/\"d-q+AO2Lbr8LT+rw9AWUCOel9HJU4\"")
+			.set("If-None-Match", "\"d-q+AO2Lbr8LT+rw9AWUCOel9HJU4\"")
 			.then(res=>{
 				expect(res.statusCode).toBe(304);
-				expect(res.headers["etag"]).toBe("W/\"d-q+AO2Lbr8LT+rw9AWUCOel9HJU4\"");
+				expect(res.headers["etag"]).toBe("\"d-q+AO2Lbr8LT+rw9AWUCOel9HJU4\"");
 			});
 	});
 
@@ -3392,13 +3396,13 @@ describe("Test http cache control", () => {
 		return request(server)
 			.head("/test/greeter")
 			.query({ name: "tiaod" })
-			.set('If-None-Match', "W/\"d-q+AO2Lbr8LT+rw9AWUCOel9HJU4\"")
+			.set("If-None-Match", "\"d-q+AO2Lbr8LT+rw9AWUCOel9HJU4\"")
 			.then(res => {
 				expect(res.headers["content-type"]).toBe(undefined);
 				expect(res.headers["content-length"]).toBe(undefined);
 				expect(res.headers["transfer-encoding"]).toBe(undefined);
 			});
-	})
+	});
 });
 
 describe("Test disable auto generate ETag", ()=>{
@@ -3407,9 +3411,7 @@ describe("Test disable auto generate ETag", ()=>{
 	let server;
 
 	beforeAll(() => {
-		[ broker, service, server] = setup({
-			etag: false
-		});
+		[ broker, service, server] = setup();
 		broker.loadService("./test/services/test.service");
 		return broker.start();
 	});
@@ -3419,7 +3421,7 @@ describe("Test disable auto generate ETag", ()=>{
 		return request(server)
 			.get("/test/greeter")
 			.query({ name: "tiaod" })
-			.then(res=>{
+			.then(res => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["etag"]).toBe(undefined);
 			});

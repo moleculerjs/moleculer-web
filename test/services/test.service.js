@@ -203,16 +203,16 @@ module.exports = {
 			ctx.meta.$responseHeaders = {
 				"Last-Modified": "Mon, 06 Aug 2018 14:23:28 GMT"
 			};
-			return 'fresh'
+			return "fresh";
 		},
 
 		etag(ctx){
 			ctx.meta.$responseHeaders = {
 				"ETag": "my custom etag"
-			}
-			return {}
+			};
+			return {};
 		},
-		
+
 		error() {
 			throw new MoleculerServerError("I'm dangerous", 500);
 		}

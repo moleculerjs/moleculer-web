@@ -115,7 +115,7 @@ class Alias {
 				filename: filename,
 				encoding: encoding,
 				mimetype: mimetype,
-			}})));
+			} })));
 		});
 
 		busboy.on("finish", () => {

@@ -40,7 +40,7 @@ describe("Test Errors", () => {
 		expect(err.type).toBe("ERR_NO_TOKEN");
 		expect(err.name).toBe("UnAuthorizedError");
 		expect(err.message).toBe("Unauthorized");
-		expect(err.data).toEqual({ a: 5});
+		expect(err.data).toEqual({ a: 5 });
 	});
 
 	it("test ForbiddenError", () => {
@@ -52,7 +52,7 @@ describe("Test Errors", () => {
 		expect(err.type).toBe("ERR_NO_LOGGED_IN");
 		expect(err.name).toBe("ForbiddenError");
 		expect(err.message).toBe("Forbidden");
-		expect(err.data).toEqual({ a: 5});
+		expect(err.data).toEqual({ a: 5 });
 	});
 
 	it("test BadRequestError", () => {
@@ -64,7 +64,7 @@ describe("Test Errors", () => {
 		expect(err.type).toBe("ERR_NO_REQUEST_BODY");
 		expect(err.name).toBe("BadRequestError");
 		expect(err.message).toBe("Bad request");
-		expect(err.data).toEqual({ a: 5});
+		expect(err.data).toEqual({ a: 5 });
 	});
 
 	it("test RateLimitExceeded", () => {
@@ -77,6 +77,6 @@ describe("Test Errors", () => {
 		expect(err.type).toBe("ERR_RATE_LIMIT");
 		expect(err.name).toBe("RateLimitExceeded");
 		expect(err.message).toBe("Rate limit exceeded");
-		expect(err.data).toEqual({ a: 5});
+		expect(err.data).toEqual({ a: 5 });
 	});
 });

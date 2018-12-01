@@ -23,7 +23,7 @@ const { NotFoundError, ForbiddenError, RateLimitExceeded, ERR_ORIGIN_NOT_ALLOWED
 const Alias						= require("./alias");
 const MemoryStore				= require("./memory-store");
 
-const { removeTrailingSlashes, addSlashes, normalizePath, composeThen, generateETag, isFresh} = require("./utils");
+const { removeTrailingSlashes, addSlashes, normalizePath, composeThen, generateETag, isFresh } = require("./utils");
 
 const MAPPING_POLICY_ALL		= "all";
 const MAPPING_POLICY_RESTRICT	= "restrict";
@@ -79,8 +79,6 @@ module.exports = {
 		// Optimize route order
 		optimizeOrder: true,
 
-		// Auto generate ETag
-		etag: true
 	},
 
 	/**
@@ -197,7 +195,7 @@ module.exports = {
 		/**
 		 * Try to require HTTP2 servers
 		 */
-		tryLoadHTTP2Lib () {
+		tryLoadHTTP2Lib() {
 			/* istanbul ignore next */
 			try {
 				return require("http2");
@@ -552,7 +550,7 @@ module.exports = {
 		 */
 		sendResponse(req, res, data, action) {
 			const ctx = req.$ctx;
-			//const route = req.$route;
+			const route = req.$route;
 
 			/* istanbul ignore next */
 			if (res.headersSent) {
@@ -655,16 +653,21 @@ module.exports = {
 						chunk = data.toString();
 				}
 			}
-			// Auto generate and add ETag
-			if(this.settings.etag && chunk && !res.getHeader("ETag") && !isReadableStream(chunk)) {
+
+			// Auto generate & add ETag
+			if(route.etag && chunk && !res.getHeader("ETag") && !isReadableStream(chunk)) {
 				res.setHeader("ETag", generateETag(chunk));
 			}
-			// freshness
-			if (isFresh(req, res)) res.statusCode = 304;
-			if (204 === res.statusCode || 304 === res.statusCode) {
+
+			// Freshness
+			if (isFresh(req, res))
+				res.statusCode = 304;
+
+			if (res.statusCode === 204 || res.statusCode === 304) {
 				res.removeHeader("Content-Type");
 				res.removeHeader("Content-Length");
 				res.removeHeader("Transfer-Encoding");
+
 				chunk = "";
 			}
 
@@ -673,9 +676,9 @@ module.exports = {
 				res.end();
 			} else {
 				// respond
-				if(isReadableStream(data)) { //Stream response
+				if (isReadableStream(data)) { //Stream response
 					data.pipe(res);
-				}else{
+				} else {
 					res.end(chunk);
 				}
 			}
@@ -787,7 +790,7 @@ module.exports = {
 				query = queryString.parse(req.url.substring(questionIdx + 1));
 				url = req.url.substring(0, questionIdx);
 			}
-			return {query, url};
+			return { query, url };
 		},
 
 		/**
@@ -859,6 +862,7 @@ module.exports = {
 
 				if (settings.indexOf("*") !== -1) {
 					// Based on: https://github.com/hapijs/hapi
+					// eslint-disable-next-line
 					const wildcard = new RegExp(`^${_.escapeRegExp(settings).replace(/\\\*/g, ".*").replace(/\\\?/g, ".")}$`);
 					return origin.match(wildcard);
 				}
@@ -1065,6 +1069,9 @@ module.exports = {
 						route.middlewares.push(bodyParser[key](opts));
 				});
 			}
+
+			// ETag
+			route.etag = !!opts.etag;
 
 			// Middlewares
 			let mw = [];

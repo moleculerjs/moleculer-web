@@ -18,7 +18,7 @@ const MockContext = () => Object.assign({
 	send404: jest.fn(),
 });
 
-const MockRequest = () => Object.assign(jest.fn(), {headers: {}});
+const MockRequest = () => Object.assign(jest.fn(), { headers: {} });
 
 describe("WebGateway", () => {
 	describe("methods", () => {
@@ -90,7 +90,7 @@ describe("WebGateway", () => {
 				context.actions.rest.mockReturnValueOnce(Promise.resolve());
 
 				return handler.bind(context)(req, res, next).then(() => {
-					expect(context.actions.rest.mock.calls[0]).toEqual([{req, res}, {requestID: "foobar"}]);
+					expect(context.actions.rest.mock.calls[0]).toEqual([{ req, res }, { requestID: "foobar" }]);
 				});
 			});
 
@@ -105,7 +105,7 @@ describe("WebGateway", () => {
 				context.actions.rest.mockReturnValueOnce(Promise.resolve());
 
 				return handler.bind(context)(req, res, next).then(() => {
-					expect(context.actions.rest.mock.calls[0]).toEqual([{req, res}, {requestID: "barfoo"}]);
+					expect(context.actions.rest.mock.calls[0]).toEqual([{ req, res }, { requestID: "barfoo" }]);
 				});
 			});
 
@@ -115,7 +115,7 @@ describe("WebGateway", () => {
 				const res = jest.fn();
 				const next = jest.fn();
 				const context = MockContext();
-				context.actions.rest.mockReturnValueOnce(Promise.resolve({foo: "bar"}));
+				context.actions.rest.mockReturnValueOnce(Promise.resolve({ foo: "bar" }));
 
 				return handler.bind(context)(req, res, next).then(result => {
 					expect(context.send404.mock.calls.length).toEqual(0);

@@ -100,13 +100,29 @@ function composeThen(req, res, ...mws) {
 	});
 }
 
-function generateETag (body) {
+/**
+ * Generate ETag from content
+ *
+ * @param {any} body
+ * @param {Object?} opts
+ *
+ * @returns {String}
+ */
+function generateETag(body, opts) {
 	let buf = !Buffer.isBuffer(body)
 		? Buffer.from(body)
 		: body;
-	return etag(buf, {weak:true});
+	return etag(buf, opts);
 }
 
+/**
+ * Check the data freshness.
+ *
+ * @param {*} req
+ * @param {*} res
+ *
+ * @returns {Boolean}
+ */
 function isFresh(req, res) {
 	if ((res.statusCode >= 200 && res.statusCode < 300) || 304 === res.statusCode) {
 		return fresh(req.headers, {
@@ -121,9 +137,12 @@ module.exports = {
 	removeTrailingSlashes,
 	addSlashes,
 	normalizePath,
+
 	decodeParam,
+
 	compose,
 	composeThen,
+
 	generateETag,
 	isFresh
 };
