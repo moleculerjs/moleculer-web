@@ -19,6 +19,9 @@ const isReadableStream			= require("isstream").isReadable;
 const pathToRegexp 				= require("path-to-regexp");
 const Busboy 					= require("busboy");
 
+const fresh 				= require("fresh")
+const etag 				= require("etag")
+
 const { MoleculerError, MoleculerClientError, MoleculerServerError, ServiceNotFoundError } = require("moleculer").Errors;
 const { BadRequestError, NotFoundError, ForbiddenError, RateLimitExceeded, ERR_UNABLE_DECODE_PARAM, ERR_ORIGIN_NOT_ALLOWED } = require("./errors");
 
@@ -53,6 +56,23 @@ function addSlashes(s) {
 // Normalize URL path (remove multiple slashes //)
 function normalizePath(s) {
 	return s.replace(/\/{2,}/g, "/");
+}
+
+function generateETag (body) {
+  let buf = !Buffer.isBuffer(body)
+    ? Buffer.from(body)
+    : body
+  return etag(buf, {weak:true})
+}
+
+function isFresh(req, res) {
+	if ((res.statusCode >= 200 && res.statusCode < 300) || 304 === res.statusCode) {
+		return fresh(req.headers, {
+			'etag': res.getHeader('ETag'),
+			'last-modified': res.getHeader('Last-Modified')
+		});
+	}
+	return false;
 }
 
 /**
@@ -100,7 +120,10 @@ module.exports = {
 		http2: false,
 
 		// Optimize route order
-		optimizeOrder: true
+		optimizeOrder: true,
+
+		// Auto generate ETag
+		etag: true
 	},
 
 	/**
@@ -584,7 +607,7 @@ module.exports = {
 			if (res.statusCode >= 300 && res.statusCode < 400) {
 				const location = ctx.meta.$location;
 				if (!location)
-					this.logger.warn(`The 'ctx.meta.$location' is missing for status code ${res.statusCode}!`);
+					if(res.statusCode !== 304) this.logger.warn(`The 'ctx.meta.$location' is missing for status code ${res.statusCode}!`);
 				else
 					res.setHeader("Location", location);
 			}
@@ -621,45 +644,67 @@ module.exports = {
 				});
 			}
 
-			if (data == null)
-				return res.end();
-
+			let chunk;
 			// Buffer
 			if (Buffer.isBuffer(data)) {
 				res.setHeader("Content-Type", responseType || "application/octet-stream");
 				res.setHeader("Content-Length", data.length);
-				res.end(data);
+				chunk = data;
 			}
 			// Buffer from Object
 			else if (_.isObject(data) && data.type == "Buffer") {
 				const buf = Buffer.from(data);
 				res.setHeader("Content-Type", responseType || "application/octet-stream");
 				res.setHeader("Content-Length", buf.length);
-				res.end(buf);
+				chunk = buf;
 			}
 			// Stream
 			else if (isReadableStream(data)) {
 				res.setHeader("Content-Type", responseType || "application/octet-stream");
-				data.pipe(res);
+				chunk = data
 			}
 			// Object or Array (stringify)
 			else if (_.isObject(data) || Array.isArray(data)) {
 				res.setHeader("Content-Type", responseType || "application/json; charset=utf-8");
-				res.end(JSON.stringify(data));
+				chunk = JSON.stringify(data)
 			}
 			// Other (stringify or raw text)
 			else {
 				if (!responseType) {
 					res.setHeader("Content-Type", "application/json; charset=utf-8");
-					res.end(JSON.stringify(data));
+					chunk = JSON.stringify(data);
 				} else {
 					res.setHeader("Content-Type", responseType);
 					if (_.isString(data))
-						res.end(data);
+						chunk = data;
 					else
-						res.end(data.toString());
+						chunk = data.toString();
 				}
 			}
+			// Auto generate and add ETag
+			if(this.settings.etag && chunk && !res.getHeader('ETag') && !isReadableStream(chunk)) {
+				res.setHeader('ETag', generateETag(chunk));
+			}
+			// freshness
+			if (isFresh(req, res)) res.statusCode = 304;
+			if (204 === this.statusCode || 304 === this.statusCode) {
+		    this.removeHeader('Content-Type');
+		    this.removeHeader('Content-Length');
+		    this.removeHeader('Transfer-Encoding');
+		    chunk = '';
+		  }
+
+			if (req.method === 'HEAD') {
+		    // skip body for HEAD
+		    res.end();
+		  } else {
+		    // respond
+				if(isReadableStream(data)) { //Stream response
+					data.pipe(res);
+				}else{
+					res.end(chunk);
+				}
+		  }
 		},
 
 		/**

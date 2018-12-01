@@ -61,6 +61,8 @@
     "busboy": "0.2.14",
     "chalk": "2.4.1",
     "es6-error": "4.1.1",
+    "etag": "^1.8.1",
+    "fresh": "^0.5.2",
     "isstream": "0.1.2",
     "lodash": "4.17.11",
     "path-to-regexp": "2.4.0",
