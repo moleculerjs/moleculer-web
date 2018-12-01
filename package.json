@@ -11,6 +11,7 @@
     "ci": "jest --watch",
     "test": "jest --coverage --forceExit",
     "lint": "eslint --ext=.js src",
+    "lint:fix": "eslint --ext=.js --fix src",
     "deps": "npm-check -u",
     "postdeps": "npm test",
     "coverall": "cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js"
@@ -34,6 +35,9 @@
     "coveralls": "3.0.2",
     "cross-env": "5.2.0",
     "eslint": "5.9.0",
+    "eslint-plugin-node": "8.0.0",
+    "eslint-plugin-promise": "4.0.1",
+    "eslint-plugin-security": "1.4.0",
     "express": "4.16.4",
     "fakerator": "0.3.0",
     "jest": "23.6.0",

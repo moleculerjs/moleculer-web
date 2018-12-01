@@ -2,6 +2,11 @@
 <a name="0.9.0"></a>
 # 0.9.0 (2018-xx-xx)
 
+## Breaking changes
+
+### Use `server` property instead of `middleware`
+TODO
+
 ## New 
 
 ### File upload aliases
@@ -93,6 +98,9 @@ The function detects that the route is defined early. In this case, it will repl
 
 To remove a route, use the `this.removeRoute("/admin")` method. It removes the route by path.
 
+### ETag supporting
+Thank to tiaod for ETag implementation. 
+TODO
 
 ## Changes
 - new `optimizeOrder: true` setting in order to optimize route paths (deeper first). Defaults: `true`.

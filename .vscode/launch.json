@@ -15,7 +15,7 @@
 				"PORT": "3000"
 			},
 			"args": [
-				"auto-aliases"
+				"simple"
 			]
 		},
 		{
