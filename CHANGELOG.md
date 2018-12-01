@@ -184,7 +184,86 @@ module.exports = {
 ```
 
 ### Auto-aliasing feature
-TODO
+The auto-aliasing means you don't have to add all service aliases to the routes, the Gateway can generate it from service schema. If a new service is entered or leaved, Gateway regenerate aliases.
+
+To configure which services are used in route use the whitelist.
+
+**Example**
+```js
+// api.service.js
+module.exports = {
+    mixins: [ApiGateway],
+
+    settings: {
+        routes: [
+            {
+                path: "/api",
+
+                whitelist: [
+                    "posts.*",
+                    "test.*"
+                ],
+
+                aliases: {
+                    "GET /hi": "test.hello"
+                },
+
+                autoAliases: true
+            }
+        ]
+    }
+};
+```
+
+```js
+// posts.service.js
+module.exports = {
+    name: "posts",
+
+    settings: {
+        // Base path
+        rest: "posts/"
+    },
+
+    actions: {
+        list: {
+            // Expose as "/posts/"
+            rest: "GET /",
+            handler(ctx) {}
+        },
+
+        get: {
+            // Expose as "/posts/:id"
+            rest: "GET /:id",
+            handler(ctx) {}
+        },
+
+        create: {
+            rest: "POST /",
+            handler(ctx) {}
+        },
+
+        update: {
+            rest: "PUT /:id",
+            handler(ctx) {}
+        },
+
+        remove: {
+            rest: "DELETE /:id",
+            handler(ctx) {}
+        }
+    }
+};
+```
+
+**The generated aliases**
+```
+   GET /api/posts       => posts.list
+   GET /api/posts/:id   => posts.get
+  POST /api/posts       => posts.create
+   PUT /api/posts/:id   => posts.update
+DELETE /api/posts/:id   => posts.remove
+```
 
 ## Changes
 - new `optimizeOrder: true` setting in order to optimize route paths (deeper first). Defaults: `true`.
