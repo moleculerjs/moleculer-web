@@ -17,35 +17,17 @@ const bodyParser 				= require("body-parser");
 const serveStatic 				= require("serve-static");
 const isReadableStream			= require("isstream").isReadable;
 
-const fresh 				= require("fresh");
-const etag 				= require("etag");
 const { MoleculerError, MoleculerServerError, ServiceNotFoundError } = require("moleculer").Errors;
 const { NotFoundError, ForbiddenError, RateLimitExceeded, ERR_ORIGIN_NOT_ALLOWED } = require("./errors");
 
 const Alias						= require("./alias");
 const MemoryStore				= require("./memory-store");
 
-const { removeTrailingSlashes, addSlashes, normalizePath, composeThen } = require("./utils");
+const { removeTrailingSlashes, addSlashes, normalizePath, composeThen, generateETag, isFresh} = require("./utils");
 
 const MAPPING_POLICY_ALL		= "all";
 const MAPPING_POLICY_RESTRICT	= "restrict";
 
-function generateETag (body) {
-  let buf = !Buffer.isBuffer(body)
-    ? Buffer.from(body)
-    : body
-  return etag(buf, {weak:true})
-}
-
-function isFresh(req, res) {
-	if ((res.statusCode >= 200 && res.statusCode < 300) || 304 === res.statusCode) {
-		return fresh(req.headers, {
-			'etag': res.getHeader('ETag'),
-			'last-modified': res.getHeader('Last-Modified')
-		});
-	}
-	return false;
-}
 /**
  * Official API Gateway service for Moleculer microservices framework.
  *
