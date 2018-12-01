@@ -23,7 +23,7 @@ const { NotFoundError, ForbiddenError, RateLimitExceeded, ERR_ORIGIN_NOT_ALLOWED
 const Alias						= require("./alias");
 const MemoryStore				= require("./memory-store");
 
-const { removeTrailingSlashes, addSlashes, normalizePath, composeThen } = require("./utils");
+const { removeTrailingSlashes, addSlashes, normalizePath, composeThen, generateETag, isFresh} = require("./utils");
 
 const MAPPING_POLICY_ALL		= "all";
 const MAPPING_POLICY_RESTRICT	= "restrict";
@@ -77,7 +77,10 @@ module.exports = {
 		http2: false,
 
 		// Optimize route order
-		optimizeOrder: true
+		optimizeOrder: true,
+
+		// Auto generate ETag
+		etag: true
 	},
 
 	/**
@@ -570,7 +573,7 @@ module.exports = {
 			}
 
 			// Redirect
-			if (res.statusCode >= 300 && res.statusCode < 400) {
+			if (res.statusCode >= 300 && res.statusCode < 400 && res.statusCode !== 304) {
 				const location = ctx.meta.$location;
 				/* istanbul ignore next */
 				if (!location)
@@ -612,44 +615,68 @@ module.exports = {
 						res.setHeader(key, ctx.meta.$responseHeaders[key]);
 				});
 			}
-
 			if (data == null)
 				return res.end();
 
+			let chunk;
 			// Buffer
 			if (Buffer.isBuffer(data)) {
 				res.setHeader("Content-Type", responseType || "application/octet-stream");
 				res.setHeader("Content-Length", data.length);
-				res.end(data);
+				chunk = data;
 			}
 			// Buffer from Object
 			else if (_.isObject(data) && data.type == "Buffer") {
 				const buf = Buffer.from(data);
 				res.setHeader("Content-Type", responseType || "application/octet-stream");
 				res.setHeader("Content-Length", buf.length);
-				res.end(buf);
+				chunk = buf;
 			}
 			// Stream
 			else if (isReadableStream(data)) {
 				res.setHeader("Content-Type", responseType || "application/octet-stream");
-				data.pipe(res);
+				chunk = data;
 			}
 			// Object or Array (stringify)
 			else if (_.isObject(data) || Array.isArray(data)) {
 				res.setHeader("Content-Type", responseType || "application/json; charset=utf-8");
-				res.end(JSON.stringify(data));
+				chunk = JSON.stringify(data);
 			}
 			// Other (stringify or raw text)
 			else {
 				if (!responseType) {
 					res.setHeader("Content-Type", "application/json; charset=utf-8");
-					res.end(JSON.stringify(data));
+					chunk = JSON.stringify(data);
 				} else {
 					res.setHeader("Content-Type", responseType);
 					if (_.isString(data))
-						res.end(data);
+						chunk = data;
 					else
-						res.end(data.toString());
+						chunk = data.toString();
+				}
+			}
+			// Auto generate and add ETag
+			if(this.settings.etag && chunk && !res.getHeader("ETag") && !isReadableStream(chunk)) {
+				res.setHeader("ETag", generateETag(chunk));
+			}
+			// freshness
+			if (isFresh(req, res)) res.statusCode = 304;
+			if (204 === res.statusCode || 304 === res.statusCode) {
+				res.removeHeader("Content-Type");
+				res.removeHeader("Content-Length");
+				res.removeHeader("Transfer-Encoding");
+				chunk = "";
+			}
+
+			if (req.method === "HEAD") {
+				// skip body for HEAD
+				res.end();
+			} else {
+				// respond
+				if(isReadableStream(data)) { //Stream response
+					data.pipe(res);
+				}else{
+					res.end(chunk);
 				}
 			}
 		},

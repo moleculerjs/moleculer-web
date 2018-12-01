@@ -2,6 +2,8 @@
 
 const Promise = require("bluebird");
 const _ = require("lodash");
+const fresh 				= require("fresh");
+const etag 				= require("etag");
 
 const { BadRequestError, ERR_UNABLE_DECODE_PARAM } = require("./errors");
 const { MoleculerError } = require("moleculer").Errors;
@@ -98,11 +100,30 @@ function composeThen(req, res, ...mws) {
 	});
 }
 
+function generateETag (body) {
+	let buf = !Buffer.isBuffer(body)
+		? Buffer.from(body)
+		: body;
+	return etag(buf, {weak:true});
+}
+
+function isFresh(req, res) {
+	if ((res.statusCode >= 200 && res.statusCode < 300) || 304 === res.statusCode) {
+		return fresh(req.headers, {
+			"etag": res.getHeader("ETag"),
+			"last-modified": res.getHeader("Last-Modified")
+		});
+	}
+	return false;
+}
+
 module.exports = {
 	removeTrailingSlashes,
 	addSlashes,
 	normalizePath,
 	decodeParam,
 	compose,
-	composeThen
+	composeThen,
+	generateETag,
+	isFresh
 };
