@@ -3,13 +3,21 @@
 const pathToRegexp 				= require("path-to-regexp");
 const Busboy 					= require("busboy");
 const chalk 					= require("chalk");
-
 const _ 						= require("lodash");
 
 const { MoleculerClientError } = require("moleculer").Errors;
 const { removeTrailingSlashes, addSlashes, decodeParam, compose } = require("./utils");
 
 class Alias {
+
+	/**
+	 * Constructor of Alias
+	 *
+	 * @param {Service} service
+	 * @param {Object} route
+	 * @param {Object} opts
+	 * @param {any} action
+	 */
 	constructor(service, route, opts, action) {
 		this.service = service;
 		this.route = route;
@@ -71,6 +79,10 @@ class Alias {
 		this.fullPath = addSlashes(this.route.path) + this.path;
 	}
 
+	/**
+	 *
+	 * @param {*} url
+	 */
 	match(url) {
 		const m = this.re.exec(url);
 		if (!m) return false;
@@ -92,18 +104,33 @@ class Alias {
 		return params;
 	}
 
+	/**
+	 *
+	 * @param {*} method
+	 */
 	isMethod(method) {
 		return this.method === "*" || this.method === method;
 	}
 
+	/**
+	 *
+	 */
 	printPath() {
 		return `${this.method} ${this.fullPath}`;
 	}
 
+	/**
+	 *
+	 */
 	toString() {
 		return chalk.magenta(_.padStart(this.method, 6)) + " " + chalk.cyan(this.fullPath) + chalk.grey(" => ") + (this.handler != null ? "<Function>" : this.action);
 	}
 
+	/**
+	 *
+	 * @param {*} req
+	 * @param {*} res
+	 */
 	multipartHandler(req, res) {
 		const ctx = req.$ctx;
 		const promises = [];

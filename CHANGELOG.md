@@ -219,6 +219,7 @@ module.exports = {
 // posts.service.js
 module.exports = {
     name: "posts",
+	version: 2,
 
     settings: {
         // Base path
@@ -227,13 +228,13 @@ module.exports = {
 
     actions: {
         list: {
-            // Expose as "/posts/"
+            // Expose as "/v2/posts/"
             rest: "GET /",
             handler(ctx) {}
         },
 
         get: {
-            // Expose as "/posts/:id"
+            // Expose as "/v2/posts/:id"
             rest: "GET /:id",
             handler(ctx) {}
         },
@@ -258,17 +259,17 @@ module.exports = {
 
 **The generated aliases**
 ```
-   GET /api/hi          => test.hello
-   GET /api/posts       => posts.list
-   GET /api/posts/:id   => posts.get
-  POST /api/posts       => posts.create
-   PUT /api/posts/:id   => posts.update
-DELETE /api/posts/:id   => posts.remove
+   GET /api/hi          	=> test.hello
+   GET /api/v2/posts       => v2.posts.list
+   GET /api/v2/posts/:id   => v2.posts.get
+  POST /api/v2/posts       => v2.posts.create
+   PUT /api/v2/posts/:id   => v2.posts.update
+DELETE /api/v2/posts/:id   => v2.posts.remove
 ```
 
-> If `rest: true` in service settings, API Gateway will use the service name as base path.
+> If `rest: true` in service settings, API Gateway will use the service name (with version) as base path.
 
-> If `rest: true` in action definition, API Gateway will use actioni name in path.
+> If `rest: true` in action definition, API Gateway will use action name in path.
 
 ## Changes
 - new `optimizeOrder: true` setting in order to optimize route paths (deeper first). Defaults: `true`.
