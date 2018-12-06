@@ -34,6 +34,9 @@ module.exports = {
 }
 ```
 
+### Other low-level breaking changes
+- `sendResponse` signature is changed: `this.sendResponse(req, res, data)`
+
 ## New 
 
 ### File upload aliases
