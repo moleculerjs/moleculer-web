@@ -305,7 +305,8 @@ module.exports = {
 						if (urlPath.startsWith("/"))
 							urlPath = urlPath.slice(1);
 
-						urlPath = urlPath.replace(/~/, "$");
+						// Resolve $node service
+						urlPath = urlPath.replace(/^~/, "$");
 						let action = urlPath;
 
 						// Resolve aliases

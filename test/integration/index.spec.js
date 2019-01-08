@@ -856,6 +856,25 @@ describe("Test aliases", () => {
 			});
 	});
 
+	it("GET /api/greeter/~Tilde~", () => {
+		return request(server)
+			.get("/api/greeter/~Tilde~")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toBe("Hello ~Tilde~");
+			});
+	});
+
+	it("GET /api/~node/health", () => {
+		return request(server)
+			.get("/api/~node/health")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+			});
+	});
+
 	it("POST /api/greeter/Norbert", () => {
 		return request(server)
 			.post("/api/greeter/Norbert")
