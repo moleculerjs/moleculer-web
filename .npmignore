@@ -1,7 +1,8 @@
-.vscode
-benchmarks
-coverage
-dev
-docs
-examples
-typings
+.vscode/
+benchmarks/
+coverage/
+dev/
+docs/
+examples/
+typings/
+test/
