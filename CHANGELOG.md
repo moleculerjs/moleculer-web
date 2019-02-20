@@ -276,6 +276,7 @@ DELETE /api/v2/posts/:id   => v2.posts.remove
 
 ## Changes
 - new `optimizeOrder: true` setting in order to optimize route paths (deeper first). Defaults: `true`.
+- tilde (`~`) replace issue fixed. [#98](https://github.com/moleculerjs/moleculer-web/pull/98)
 
 -----------------------------
 <a name="0.8.5"></a>

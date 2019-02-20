@@ -62,17 +62,17 @@
     "moleculer": ">= 0.13.0"
   },
   "dependencies": {
-    "body-parser": "1.18.3",
-    "busboy": "0.2.14",
-    "chalk": "2.4.1",
-    "es6-error": "4.1.1",
-    "etag": "1.8.1",
-    "fresh": "0.5.2",
-    "isstream": "0.1.2",
-    "lodash": "4.17.11",
-    "path-to-regexp": "2.4.0",
-    "qs": "6.6.0",
-    "serve-static": "1.13.2"
+    "body-parser": "^1.18.3",
+    "busboy": "^0.2.14",
+    "chalk": "^2.4.1",
+    "es6-error": "^4.1.1",
+    "etag": "^1.8.1",
+    "fresh": "^0.5.2",
+    "isstream": "^0.1.2",
+    "lodash": "^4.17.11",
+    "path-to-regexp": "^2.4.0",
+    "qs": "^6.6.0",
+    "serve-static": "^1.13.2"
   },
   "engines": {
     "node": ">= 6.x.x"
