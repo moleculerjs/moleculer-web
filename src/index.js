@@ -752,7 +752,7 @@ module.exports = {
 			// Return with the error as JSON object
 			res.setHeader("Content-type", "application/json; charset=utf-8");
 
-			const code = _.isNumber(err.code) && _.inRange(err.code, 400, 500) ? err.code : 500;
+			const code = _.isNumber(err.code) && _.inRange(err.code, 400, 599) ? err.code : 500;
 			res.writeHead(code);
 			const errObj = _.pick(err, ["name", "message", "code", "type", "data"]);
 			res.end(JSON.stringify(errObj, null, 2));
