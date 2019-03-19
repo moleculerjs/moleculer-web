@@ -123,7 +123,7 @@ class Alias {
 	 *
 	 */
 	toString() {
-		return chalk.magenta(_.padStart(this.method, 6)) + " " + chalk.cyan(this.fullPath) + chalk.grey(" => ") + (this.handler != null ? "<Function>" : this.action);
+		return chalk.magenta(_.padStart(this.method, 6)) + " " + chalk.cyan(this.fullPath) + chalk.grey(" => ") + (this.handler != null && this.type !== "multipart" ? "<Function>" : this.action);
 	}
 
 	/**
