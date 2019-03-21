@@ -1164,16 +1164,31 @@ module.exports = {
 				if (matchPath.startsWith("REST ")) {
 					const p = matchPath.split(/\s+/);
 					const pathName = p[1];
+                    const aliases = {
+						list: `GET ${pathName}`,
+						get: `GET ${pathName}/:id`,
+						create: `POST ${pathName}`,
+						update: `PUT ${pathName}/:id`,
+						patch: `PATCH ${pathName}/:id`,
+						remove: `DELETE ${pathName}/:id`,
+					};
+					let actions = ['list', 'get', 'create', 'update', 'patch', 'remove'];
+
+					if (typeof action !== 'string' && (action.only || action.except)) {
+						if (action.only) {
+							actions = actions.filter(item => action.only.includes(item));
+						}
+
+						if (action.except) {
+							actions = actions.filter(item => !action.except.includes(item))
+						}
+
+						action = action.action;
+					}
 
 					// Generate RESTful API. More info http://www.restapitutorial.com/
-					route.aliases.push(
-						this.createAlias(route, `GET ${pathName}`, 			`${action}.list`),
-						this.createAlias(route, `GET ${pathName}/:id`, 		`${action}.get`),
-						this.createAlias(route, `POST ${pathName}`, 		`${action}.create`),
-						this.createAlias(route, `PUT ${pathName}/:id`, 		`${action}.update`),
-						this.createAlias(route, `PATCH ${pathName}/:id`, 	`${action}.patch`),
-						this.createAlias(route, `DELETE ${pathName}/:id`, 	`${action}.remove`)
-					);
+					actions.forEach(item => route.aliases
+						.push(createAlias(aliases[item],`${action}.${item}`)));
 				} else {
 					route.aliases.push(this.createAlias(route, matchPath, action));
 				}
