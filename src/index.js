@@ -1188,7 +1188,7 @@ module.exports = {
 
 					// Generate RESTful API. More info http://www.restapitutorial.com/
 					actions.forEach(item => route.aliases
-						.push(this.createAlias(aliases[item],`${action}.${item}`)));
+						.push(this.createAlias(route, aliases[item],`${action}.${item}`)));
 				} else {
 					route.aliases.push(this.createAlias(route, matchPath, action));
 				}
