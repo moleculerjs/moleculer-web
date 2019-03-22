@@ -1566,7 +1566,7 @@ describe("Test REST shorthand aliases and only, execpt filter", () => {
 				aliases: {
 					"REST posts": {
 						action: "posts",
-						only: ["list", "get"]
+						only: ["list", "get"],
 						except: ["list"]
 					}
 				}
