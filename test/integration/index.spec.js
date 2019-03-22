@@ -1390,6 +1390,250 @@ describe("Test REST shorthand aliases", () => {
 
 });
 
+describe("Test REST shorthand aliases and only filter", () => {
+	let broker;
+	let service;
+	let server;
+
+	beforeAll(() => {
+		[ broker, service, server] = setup({
+			routes: [{
+				path: "/api",
+				aliases: {
+					"REST posts": {
+						action: "posts",
+						only: ["list", "get"]
+					}
+				}
+			}]
+		});
+
+		broker.loadService("./test/services/posts.service");
+		return broker.start();
+	});
+	afterAll(() => broker.stop());
+
+	it("GET /api/posts", () => {
+		return request(server)
+			.get("/api/posts")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body.length).toBe(5);
+			});
+	});
+
+	it("GET /api/posts/2", () => {
+		return request(server)
+			.get("/api/posts/2")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toBeInstanceOf(Object);
+				expect(res.body.title).toBeDefined();
+				expect(res.body.id).toBe(2);
+			});
+	});
+
+	it("POST /api/posts", () => {
+		return request(server)
+			.post("/api/posts")
+			.send({ id: 8, title: "Test", content: "Content" })
+			.then(res => {
+				expect(res.statusCode).toBe(404);
+			});
+	});
+
+	it("PUT /api/posts/8", () => {
+		return request(server)
+			.put("/api/posts/8")
+			.send({ title: "Modified" })
+			.then(res => {
+				expect(res.statusCode).toBe(404);
+			});
+	});
+
+	it("PATCH /api/posts/8", () => {
+		return request(server)
+			.patch("/api/posts/8")
+			.send({ title: "Modified" })
+			.then(res => {
+				expect(res.statusCode).toBe(404);
+			});
+	});
+
+	it("DELETE /api/posts/8", () => {
+		return request(server)
+			.delete("/api/posts/8")
+			.then(res => {
+				expect(res.statusCode).toBe(404);
+			});
+	});
+});
+
+describe("Test REST shorthand aliases and execpt filter", () => {
+	let broker;
+	let service;
+	let server;
+
+	beforeAll(() => {
+		[ broker, service, server] = setup({
+			routes: [{
+				path: "/api",
+				aliases: {
+					"REST posts": {
+						action: "posts",
+						except: ["list", "get", "update", "remove"]
+					}
+				}
+			}]
+		});
+
+		broker.loadService("./test/services/posts.service");
+		return broker.start();
+	});
+	afterAll(() => broker.stop());
+
+	it("GET /api/posts", () => {
+		return request(server)
+			.get("/api/posts")
+			.then(res => {
+				expect(res.statusCode).toBe(404);
+			});
+	});
+
+	it("GET /api/posts/2", () => {
+		return request(server)
+			.get("/api/posts/2")
+			.then(res => {
+				expect(res.statusCode).toBe(404);
+			});
+	});
+
+	it("POST /api/posts", () => {
+		return request(server)
+			.post("/api/posts")
+			.send({ id: 10, title: "Test", content: "Content" })
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body.id).toBe(10);
+				expect(res.body.title).toBe("Test");
+				expect(res.body.content).toBe("Content");
+			});
+	});
+
+	it("PUT /api/posts/10", () => {
+		return request(server)
+			.put("/api/posts/10")
+			.send({ title: "Modified" })
+			.then(res => {
+				expect(res.statusCode).toBe(404);
+			});
+	});
+
+	it("PATCH /api/posts/10", () => {
+		return request(server)
+			.patch("/api/posts/10")
+			.send({ title: "Modified" })
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body.id).toBe(10);
+				expect(res.body.title).toBe("Modified");
+				expect(res.body.content).toBe("Content");
+			});
+	});
+
+	it("DELETE /api/posts/10", () => {
+		return request(server)
+			.delete("/api/posts/10")
+			.then(res => {
+				expect(res.statusCode).toBe(404);
+			});
+	});
+});
+
+describe("Test REST shorthand aliases and only, execpt filter", () => {
+	let broker;
+	let service;
+	let server;
+
+	beforeAll(() => {
+		[ broker, service, server] = setup({
+			routes: [{
+				path: "/api",
+				aliases: {
+					"REST posts": {
+						action: "posts",
+						only: ["list", "get"],
+						except: ["list"]
+					}
+				}
+			}]
+		});
+
+		broker.loadService("./test/services/posts.service");
+		return broker.start();
+	});
+	afterAll(() => broker.stop());
+
+	it("GET /api/posts", () => {
+		return request(server)
+			.get("/api/posts")
+			.then(res => {
+				expect(res.statusCode).toBe(404);
+			});
+	});
+
+	it("GET /api/posts/2", () => {
+		return request(server)
+			.get("/api/posts/2")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toBeInstanceOf(Object);
+				expect(res.body.title).toBeDefined();
+				expect(res.body.id).toBe(2);
+			});
+	});
+
+	it("POST /api/posts", () => {
+		return request(server)
+			.post("/api/posts")
+			.send({ id: 12, title: "Test", content: "Content" })
+			.then(res => {
+				expect(res.statusCode).toBe(404);
+			});
+	});
+
+	it("PUT /api/posts/2", () => {
+		return request(server)
+			.put("/api/posts/2")
+			.send({ title: "Modified" })
+			.then(res => {
+				expect(res.statusCode).toBe(404);
+			});
+	});
+
+	it("PATCH /api/posts/2", () => {
+		return request(server)
+			.patch("/api/posts/2")
+			.send({ title: "Modified" })
+			.then(res => {
+				expect(res.statusCode).toBe(404);
+			});
+	});
+
+	it("DELETE /api/posts/2", () => {
+		return request(server)
+			.delete("/api/posts/2")
+			.then(res => {
+				expect(res.statusCode).toBe(404);
+			});
+	});
+});
+
 describe("Test alias & whitelist", () => {
 	let broker;
 	let service;
