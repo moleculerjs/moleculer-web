@@ -6,6 +6,7 @@ declare module "moleculer-web" {
     class ForbiddenError extends Errors.MoleculerError { constructor(type: string, data: any) }
     class BadRequestError extends Errors.MoleculerError { constructor(type: string, data: any) }
     class RateLimitExceeded extends Errors.MoleculerClientError { constructor(type: string, data: any) }
+    class NotFoundError extends Errors.MoleculerClientError { constructor(type: string, data: any) }
 
     interface ApiGatewayErrors {
         InvalidRequestBodyError: typeof InvalidRequestBodyError;
@@ -14,10 +15,12 @@ declare module "moleculer-web" {
         ForbiddenError: typeof ForbiddenError;
         BadRequestError: typeof BadRequestError;
         RateLimitExceeded: typeof RateLimitExceeded;
+        NotFoundError: typeof NotFoundError;
 
         ERR_NO_TOKEN: "ERR_NO_TOKEN";
         ERR_INVALID_TOKEN: "ERR_INVALID_TOKEN";
         ERR_UNABLE_DECODE_PARAM: "ERR_UNABLE_DECODE_PARAM";
+        ERR_ORIGIN_NOT_FOUND: "ORIGIN_NOT_FOUND";
     }
 
     const ApiGatewayService: ServiceSchema & { Errors: ApiGatewayErrors };
