@@ -9,7 +9,7 @@
     "bench": "cross-env NODE_ENV=production nodemon benchmarks/index.js",
     "perf": "node --inspect --expose-gc benchmarks/index.js",
     "ci": "jest --watch",
-    "test": "jest --coverage",
+    "test": "jest --coverage --detectOpenHandles",
     "lint": "eslint --ext=.js src",
     "lint:fix": "eslint --ext=.js --fix src",
     "deps": "npm-check -u",
@@ -30,6 +30,7 @@
   "author": "MoleculerJS",
   "license": "MIT",
   "devDependencies": {
+    "@types/jest": "^24.0.11",
     "benchmarkify": "2.1.1",
     "compression": "1.7.3",
     "coveralls": "3.0.2",

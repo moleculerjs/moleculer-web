@@ -20,7 +20,7 @@ const MockContext = () => Object.assign({
 
 const MockRequest = () => Object.assign(jest.fn(), { headers: {} });
 
-describe("WebGateway", () => {
+describe.skip("WebGateway", () => {
 	describe("methods", () => {
 		describe("httpHandler", () => {
 			it("is a function", () => {
