@@ -3828,16 +3828,14 @@ describe("Test new alias handling", () => {
 			routes: [
 				{
 					path: "",
-					mappingPolicy: "restrict",
 					aliases: {
-						"GET users": "users.create",
+						"GET users": "users.create1",
 					},
 				},
 				{
 					path: "/user",
-					mappingPolicy: "restrict",
 					aliases: {
-						"GET users": "users.create",
+						"GET users": "users.create2",
 					},
 				},
 				{
@@ -3854,8 +3852,11 @@ describe("Test new alias handling", () => {
 		broker.createService({
 			name: "users",
 			actions: {
-				create() {
-					return "OK";
+				create1() {
+					return "OK1";
+				},
+				create2() {
+					return "OK2";
 				}
 			}
 		});
@@ -3871,7 +3872,7 @@ describe("Test new alias handling", () => {
 			.then(res => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
-				expect(res.body).toEqual("OK");
+				expect(res.body).toEqual("OK2");
 			});
 	});
 
@@ -3881,7 +3882,7 @@ describe("Test new alias handling", () => {
 			.then(res => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
-				expect(res.body).toEqual("OK");
+				expect(res.body).toEqual("OK1");
 			});
 	});
 
