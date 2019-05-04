@@ -150,23 +150,22 @@ class Alias {
 			} })));
 		});
 
-		busboy.on("finish", () => {
+		busboy.on("finish", async () => {
 			/* istanbul ignore next */
 			if (!promises.length)
 				return this.service.sendError(req, res, new MoleculerClientError("File missing in the request"));
 
-			Promise.all(promises).then(data => {
+			try {
+				let data = await Promise.all(promises);
 				if (this.route.onAfterCall)
-					return this.route.onAfterCall.call(this, ctx, this.route, req, res, data);
-				return data;
+					data = await this.route.onAfterCall.call(this, ctx, this.route, req, res, data);
 
-			}).then(data => {
 				this.service.sendResponse(req, res, data, {});
 
-			}).catch(err => {
+			} catch(err) {
 				/* istanbul ignore next */
 				this.service.sendError(req, res, err);
-			});
+			}
 		});
 
 		/* istanbul ignore next */
