@@ -98,6 +98,8 @@ module.exports = {
                     limits: {
                         files: 1
                     }
+					// Can be defined limit event handlers
+					// `onPartsLimit`, `onFilesLimit` or `onFieldsLimit`
                 },
 
                 mappingPolicy: "restrict"
