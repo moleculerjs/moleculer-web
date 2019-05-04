@@ -109,6 +109,9 @@ module.exports = {
 			this.serve = serveStatic(this.settings.assets.folder, opts);
 		}
 
+		// Alias store
+		this.aliases = [];
+
 		// Process routes
 		this.routes = [];
 		if (Array.isArray(this.settings.routes))
@@ -155,7 +158,20 @@ module.exports = {
 				if (!this.routes || this.routes.length == 0)
 					return null;
 
-				// Check the URL
+				// Check aliases
+				const found = this.resolveAlias(url, req.method);
+				if (found) {
+					const route = found.alias.route;
+					// Update URLs for middlewares
+					req.baseUrl = route.path;
+					req.url = req.originalUrl.substring(route.path.length);
+					if (req.url.length == 0 || req.url[0] !== "/")
+						req.url = "/" + req.url;
+
+					return this.routeHandler(ctx, route, req, res, found);
+				}
+
+				// Check routes
 				for(let i = 0; i < this.routes.length; i++) {
 					const route = this.routes[i];
 
@@ -260,8 +276,9 @@ module.exports = {
 		 * @param {Route} route
 		 * @param {HttpRequest} req
 		 * @param {HttpResponse} res
+		 * @param {Object} foundAlias
 		 */
-		routeHandler(ctx, route, req, res) {
+		routeHandler(ctx, route, req, res, foundAlias) {
 			// Pointer to the matched route
 			req.$route = route;
 			res.$route = route;
@@ -310,27 +327,20 @@ module.exports = {
 						let action = urlPath;
 
 						// Resolve aliases
-						if (route.aliases && route.aliases.length > 0) {
-							const found = this.resolveAlias(route, urlPath, req.method);
-							if (found) {
-								const alias = found.alias;
-								this.logger.debug("  Alias:", alias.toString());
+						if (foundAlias) {
+							const alias = foundAlias.alias;
+							this.logger.debug("  Alias:", alias.toString());
 
-								if (route.opts.mergeParams === false) {
-									params.params = found.params;
-								} else {
-									Object.assign(params, found.params);
-								}
-
-								req.$alias = alias;
-
-								// Alias handler
-								return this.aliasHandler(req, res, alias);
-
-							} else if (route.mappingPolicy == MAPPING_POLICY_RESTRICT) {
-								// Blocking direct access
-								return null;
+							if (route.opts.mergeParams === false) {
+								params.params = foundAlias.params;
+							} else {
+								Object.assign(params, foundAlias.params);
 							}
+
+							req.$alias = alias;
+
+							// Alias handler
+							return this.aliasHandler(req, res, alias);
 
 						} else if (route.mappingPolicy == MAPPING_POLICY_RESTRICT) {
 							// Blocking direct access
@@ -969,14 +979,13 @@ module.exports = {
 		/**
 		 * Resolve alias names
 		 *
-		 * @param {Object} route
 		 * @param {String} url
 		 * @param {string} [method="GET"]
 		 * @returns {Object} Resolved alas & params
 		 */
-		resolveAlias(route, url, method = "GET") {
-			for(let i = 0; i < route.aliases.length; i++) {
-				const alias = route.aliases[i];
+		resolveAlias(url, method = "GET") {
+			for(let i = 0; i < this.aliases.length; i++) {
+				const alias = this.aliases[i];
 				if (alias.isMethod(method)) {
 					const params = alias.match(url);
 					if (params) {
@@ -1019,8 +1028,15 @@ module.exports = {
 		 */
 		removeRoute(path) {
 			const idx = this.routes.findIndex(r => r.opts.path == path);
-			if (idx !== -1)
+			if (idx !== -1) {
+				const route = this.routes[idx];
+
+				// Clean global aliases for this route
+				this.aliases = this.aliases.filter(a => a.route != route);
+
+				// Remote route
 				this.routes.splice(idx, 1);
+			}
 		},
 
 		/**
@@ -1146,7 +1162,11 @@ module.exports = {
 			this.createRouteAliases(route, opts.aliases);
 
 			// Set alias mapping policy
-			route.mappingPolicy = opts.mappingPolicy || MAPPING_POLICY_ALL;
+			route.mappingPolicy = opts.mappingPolicy;
+			if (!route.mappingPolicy) {
+				const hasAliases = _.isObject(opts.aliases) && Object.keys(opts.aliases).length > 0;
+				route.mappingPolicy = hasAliases ? MAPPING_POLICY_RESTRICT : MAPPING_POLICY_ALL;
+			}
 
 			this.logger.info("");
 
@@ -1159,47 +1179,58 @@ module.exports = {
 		 * @param {Object} aliases
 		 */
 		createRouteAliases(route, aliases) {
-			route.aliases = [];
+			// Clean previous aliases for this route
+			this.aliases = this.aliases.filter(a => a.route != route);
+
+			// Process aliases definitions from route settings
 			_.forIn(aliases, (action, matchPath) => {
 				if (matchPath.startsWith("REST ")) {
-					const p = matchPath.split(/\s+/);
-					const pathName = p[1];
-					const aliases = {
-						list: `GET ${pathName}`,
-						get: `GET ${pathName}/:id`,
-						create: `POST ${pathName}`,
-						update: `PUT ${pathName}/:id`,
-						patch: `PATCH ${pathName}/:id`,
-						remove: `DELETE ${pathName}/:id`,
-					};
-					let actions = ["list", "get", "create", "update", "patch", "remove"];
-
-					if (typeof action !== "string" && (action.only || action.except)) {
-						if (action.only) {
-							actions = actions.filter(item => action.only.includes(item));
-						}
-
-						if (action.except) {
-							actions = actions.filter(item => !action.except.includes(item));
-						}
-
-						action = action.action;
-					}
-
-					// Generate RESTful API. More info http://www.restapitutorial.com/
-					actions.forEach(item => route.aliases
-						.push(this.createAlias(route, aliases[item],`${action}.${item}`)));
+					this.aliases.push(...this.generateRESTAliases(route, matchPath, action));
 				} else {
-					route.aliases.push(this.createAlias(route, matchPath, action));
+					this.aliases.push(this.createAlias(route, matchPath, action));
 				}
 			});
 
 			if (route.opts.autoAliases) {
 				this.regenerateAutoAliases(route);
 			}
+		},
 
+		/**
+		 * Generate aliases for REST
+		 *
+		 * @param {Route} route
+		 * @param {String} path
+		 * @param {*} action
+		 *
+		 * @returns Array<Alias>
+		 */
+		generateRESTAliases(route, path, action) {
+			const p = path.split(/\s+/);
+			const pathName = p[1];
+			const aliases = {
+				list: `GET ${pathName}`,
+				get: `GET ${pathName}/:id`,
+				create: `POST ${pathName}`,
+				update: `PUT ${pathName}/:id`,
+				patch: `PATCH ${pathName}/:id`,
+				remove: `DELETE ${pathName}/:id`,
+			};
+			let actions = ["list", "get", "create", "update", "patch", "remove"];
 
-			return route.aliases;
+			if (typeof action !== "string" && (action.only || action.except)) {
+				if (action.only) {
+					actions = actions.filter(item => action.only.includes(item));
+				}
+
+				if (action.except) {
+					actions = actions.filter(item => !action.except.includes(item));
+				}
+
+				action = action.action;
+			}
+
+			return actions.map(item => this.createAlias(route, aliases[item],`${action}.${item}`));
 		},
 
 		/**
@@ -1210,7 +1241,8 @@ module.exports = {
 		regenerateAutoAliases(route) {
 			this.logger.info(`♻ Generate aliases for '${route.path}' route...`);
 
-			route.aliases = route.aliases.filter(alias => !alias._generated);
+			// Clean previous aliases for this route
+			this.aliases = this.aliases.filter(alias => alias.route != route || !alias._generated);
 
 			const processedServices = new Set();
 
@@ -1264,7 +1296,7 @@ module.exports = {
 						if (alias) {
 							alias.path = removeTrailingSlashes(normalizePath(alias.path));
 							alias._generated = true;
-							route.aliases.push(this.createAlias(route, alias, action.name));
+							this.aliases.push(this.createAlias(route, alias, action.name));
 						}
 					}
 

@@ -5,7 +5,7 @@
  *
  * Example:
  *
- *  - Get all posts  ( Please not if you call it again, it will come from cache! )
+ *  - Get all posts  ( Please note if you call it again, it will come from cache! )
  * 		GET http://localhost:3000/posts
  *
  *  - Create a new post  ( it will clear the cache )
@@ -17,7 +17,7 @@
  * 			"id": 11
  * 		}
  *
- *  - Get a post by ID  ( Please not if you call it again, it will come from cache! )
+ *  - Get a post by ID  ( Please note if you call it again, it will come from cache! )
  * 		GET http://localhost:3000/posts/11
  *
  *  - Update a post by ID  ( it will clear the cache )
@@ -56,7 +56,7 @@ broker.createService({
 			aliases: {
 				"REST posts": "posts"
 				/*
-				"GET posts": "posts.find",
+				"GET posts": "posts.list",
 				"GET posts/:id": "posts.get",
 				"POST posts": "posts.create",
 				"PUT posts/:id": "posts.update",
@@ -64,7 +64,7 @@ broker.createService({
 				*/
 			},
 
-			// Disable direct URLs (`/posts/find` or `/posts.find`)
+			// Disable direct URLs (`/posts/list` or `/posts.list`)
 			mappingPolicy: "restrict"
 		}]
 	}

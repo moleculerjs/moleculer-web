@@ -7,6 +7,12 @@
 ### Drop Node 6 support
 Due to Node 6 LTS end of life, the minimum Node version is 8.
 
+### Changed `mappingPolicy` default value
+In the previous version the `mappingPolicy` default value was `all` which means, you can call
+any services via API Gateway which accepted by whitelist. This setting is not too secure.
+From this version, the default value is `restrict` if at least one alias is defined in route options.
+If there are not aliases & `mappingPolicy` defined, the behaviour will be the old one.
+
 ### Use `server` property instead of `middleware`
 We have removed the `middleware` service setting because it was not straightforward. Therefore, we have created a new `server` setting.
 If `server: true` (which is the default value), API Gateway will create a HTTP(s) server. If `server: false`, it won't create a HTTP server, so you can use API Gateway as an Express middleware.

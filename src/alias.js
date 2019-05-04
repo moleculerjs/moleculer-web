@@ -68,15 +68,18 @@ class Alias {
 
 		this.path = removeTrailingSlashes(this.path);
 
+		this.fullPath = addSlashes(this.route.path) + this.path;
+		if (this.fullPath !== "/" && this.fullPath.endsWith("/")) {
+			this.fullPath = this.fullPath.slice(0, -1);
+		}
+
 		this.keys = [];
-		this.re = pathToRegexp(this.path, this.keys, {}); // Options: https://github.com/pillarjs/path-to-regexp#usage
+		this.re = pathToRegexp(this.fullPath, this.keys, {}); // Options: https://github.com/pillarjs/path-to-regexp#usage
 
 		if (this.type == "multipart") {
 			// Handle file upload in multipart form
 			this.handler = this.multipartHandler.bind(this);
 		}
-
-		this.fullPath = addSlashes(this.route.path) + this.path;
 	}
 
 	/**
