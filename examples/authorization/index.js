@@ -2,15 +2,15 @@
 
 /**
  * This example shows how to use authorization with API Gateway
- * 
+ *
  * Example:
- * 	
+ *
  *  - Try to call /test/hello. It will throw Forbidden
- * 
+ *
  * 		http://localhost:3000/test/hello
- * 	
+ *
  *  - Set "Authorization: Bearer 123456" to header" and try again. Authorization will be success and receive the response
- * 
+ *
  */
 
 let path 				= require("path");
@@ -44,12 +44,12 @@ broker.createService({
 	methods: {
 		/**
 		 * Authorize the user from request
-		 * 
-		 * @param {Context} ctx 
+		 *
+		 * @param {Context} ctx
 		 * @param {Object} route
-		 * @param {IncomingMessage} req 
-		 * @param {ServerResponse} res 
-		 * @returns 
+		 * @param {IncomingMessage} req
+		 * @param {ServerResponse} res
+		 * @returns
 		 */
 		authorize(ctx, route, req, res) {
 			let auth = req.headers["authorization"];
@@ -60,7 +60,7 @@ broker.createService({
 					ctx.meta.user = { id: 1, name: "John Doe" };
 					return Promise.resolve(ctx);
 
-				} else 
+				} else
 					return Promise.reject(new UnAuthorizedError(ERR_INVALID_TOKEN));
 
 			} else

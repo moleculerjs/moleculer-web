@@ -1,8 +1,11 @@
 -----------------------------
 <a name="0.9.0"></a>
-# 0.9.0 (2018-xx-xx)
+# 0.9.0 (2019-xx-xx)
 
 ## Breaking changes
+
+### Drop Node 6 support
+Due to Node 6 LTS end of life, the minimum Node version is 8.
 
 ### Use `server` property instead of `middleware`
 We have removed the `middleware` service setting because it was not straightforward. Therefore, we have created a new `server` setting.

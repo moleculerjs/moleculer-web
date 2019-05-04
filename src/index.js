@@ -1164,7 +1164,7 @@ module.exports = {
 				if (matchPath.startsWith("REST ")) {
 					const p = matchPath.split(/\s+/);
 					const pathName = p[1];
-                    const aliases = {
+					const aliases = {
 						list: `GET ${pathName}`,
 						get: `GET ${pathName}/:id`,
 						create: `POST ${pathName}`,
@@ -1172,15 +1172,15 @@ module.exports = {
 						patch: `PATCH ${pathName}/:id`,
 						remove: `DELETE ${pathName}/:id`,
 					};
-					let actions = ['list', 'get', 'create', 'update', 'patch', 'remove'];
+					let actions = ["list", "get", "create", "update", "patch", "remove"];
 
-					if (typeof action !== 'string' && (action.only || action.except)) {
+					if (typeof action !== "string" && (action.only || action.except)) {
 						if (action.only) {
 							actions = actions.filter(item => action.only.includes(item));
 						}
 
 						if (action.except) {
-							actions = actions.filter(item => !action.except.includes(item))
+							actions = actions.filter(item => !action.except.includes(item));
 						}
 
 						action = action.action;
