@@ -139,7 +139,8 @@ class Alias {
 		const ctx = req.$ctx;
 		const promises = [];
 
-		const busboy = new Busboy(_.defaultsDeep({ headers: req.headers }, this.busboyConfig, this.route.opts.busboyConfig));
+		const buyboxOptions = _.defaultsDeep({ headers: req.headers }, this.busboyConfig, this.route.opts.busboyConfig);
+		const busboy = new Busboy(buyboxOptions);
 		busboy.on("file", (fieldname, file, filename, encoding, mimetype) => {
 			promises.push(ctx.call(this.action, file, _.defaultsDeep({}, this.route.opts.callOptions, { meta: {
 				fieldname: fieldname,
@@ -172,6 +173,19 @@ class Alias {
 		busboy.on("error", err => {
 			this.service.sendError(req, res, err);
 		});
+
+		// Add limit event handlers
+		if (_.isFunction(buyboxOptions.onPartsLimit)) {
+			busboy.on("partsLimit", () => buyboxOptions.onPartsLimit.call(this.service, busboy, this, this.service));
+		}
+
+		if (_.isFunction(buyboxOptions.onFilesLimit)) {
+			busboy.on("filesLimit", () => buyboxOptions.onFilesLimit.call(this.service, busboy, this, this.service));
+		}
+
+		if (_.isFunction(buyboxOptions.onFieldsLimit)) {
+			busboy.on("fieldsLimit", () => buyboxOptions.onFieldsLimit.call(this.service, busboy, this, this.service));
+		}
 
 		req.pipe(busboy);
 	}

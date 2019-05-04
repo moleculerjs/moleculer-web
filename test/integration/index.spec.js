@@ -13,6 +13,9 @@ const ApiGateway = require("../../index");
 const { ServiceBroker, Context } = require("moleculer");
 const { MoleculerError } = require("moleculer").Errors;
 const { UnAuthorizedError, ERR_NO_TOKEN } = ApiGateway.Errors;
+const Busboy = require("busboy");
+const Alias = require("../../src/alias");
+
 /*
 setTimeout(() => {
 	const util = require("util");
@@ -3180,6 +3183,8 @@ describe("Test file uploading", () => {
 		}
 	});
 
+	const onFilesLimitFn = jest.fn();
+
 	const service = broker.createService(ApiGateway, {
 		settings: {
 			routes: [{
@@ -3213,7 +3218,8 @@ describe("Test file uploading", () => {
 				busboyConfig: {
 					limits: {
 						files: 1
-					}
+					},
+					onFilesLimit: onFilesLimitFn
 				},
 			}]
 		}
@@ -3253,6 +3259,8 @@ describe("Test file uploading", () => {
 				expect(res.body).toEqual([
 					{ hash: origHashes["logo.png"] }
 				]);
+
+				expect(onFilesLimitFn).toHaveBeenCalledTimes(0);
 			});
 	});
 
@@ -3267,6 +3275,8 @@ describe("Test file uploading", () => {
 				expect(res.body).toEqual([
 					{ hash: origHashes["logo.png"] }
 				]);
+				expect(onFilesLimitFn).toHaveBeenCalledTimes(1);
+				expect(onFilesLimitFn).toHaveBeenCalledWith(expect.any(Busboy), expect.any(Alias), service);
 			});
 	});
 
