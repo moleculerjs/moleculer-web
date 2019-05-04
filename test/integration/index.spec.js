@@ -3830,6 +3830,7 @@ describe("Test new alias handling", () => {
 					path: "",
 					aliases: {
 						"GET users": "users.create1",
+						"GET people": "people.list" // 503
 					},
 				},
 				{
@@ -3892,6 +3893,20 @@ describe("Test new alias handling", () => {
 			.then(res => {
 				expect(res.statusCode).toBe(200);
 				expect(res.text).toEqual("Received lang: hu");
+			});
+	});
+
+	it("should return 503 - Service unavailable for '/api/people'", () => {
+		return request(server)
+			.get("/api/people")
+			.then(res => {
+				expect(res.statusCode).toBe(503);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toEqual({
+					"name": "ServiceUnavailableError",
+					"message": "Service unavailable",
+					"code": 503
+				});
 			});
 	});
 

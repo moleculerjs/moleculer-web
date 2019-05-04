@@ -18,7 +18,7 @@ const serveStatic 				= require("serve-static");
 const isReadableStream			= require("isstream").isReadable;
 
 const { MoleculerError, MoleculerServerError, ServiceNotFoundError } = require("moleculer").Errors;
-const { NotFoundError, ForbiddenError, RateLimitExceeded, ERR_ORIGIN_NOT_ALLOWED } = require("./errors");
+const { ServiceUnavailableError, NotFoundError, ForbiddenError, RateLimitExceeded, ERR_ORIGIN_NOT_ALLOWED } = require("./errors");
 
 const Alias						= require("./alias");
 const MemoryStore				= require("./memory-store");
@@ -356,7 +356,7 @@ module.exports = {
 							action = action.split(".").map(_.camelCase).join(".");
 						}
 
-						return this.aliasHandler(req, res, { action, _generated: true }); // To handle #27
+						return this.aliasHandler(req, res, { action, _notDefined: true });
 					})
 					.then(resolve)
 					.catch(reject);
@@ -416,9 +416,10 @@ module.exports = {
 					if (alias.action) {
 						const endpoint = this.broker.findNextActionEndpoint(alias.action);
 						if (endpoint instanceof Error) {
-							// TODO: #27
-							// if (alias._generated && endpoint instanceof ServiceNotFoundError)
-							// 	 throw 503 - Service unavailable
+							if (!alias._notDefined && endpoint instanceof ServiceNotFoundError) {
+								throw new ServiceUnavailableError();
+							}
+
 							throw endpoint;
 						}
 

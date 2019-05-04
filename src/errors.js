@@ -158,6 +158,26 @@ class RateLimitExceeded extends MoleculerClientError {
 	}
 }
 
+/**
+ * Service unavailable HTTP error
+ *
+ * @class ForbiddenError
+ * @extends {Error}
+ */
+class ServiceUnavailableError extends MoleculerError {
+	/**
+	 * Creates an instance of ForbiddenError.
+	 *
+	 * @param {String} type
+	 * @param {any} data
+	 *
+	 * @memberOf ForbiddenError
+	 */
+	constructor(type, data) {
+		super("Service unavailable", 503, type, data);
+	}
+}
+
 module.exports = {
 	InvalidRequestBodyError,
 	InvalidResponseTypeError,
@@ -166,6 +186,7 @@ module.exports = {
 	BadRequestError,
 	NotFoundError,
 	RateLimitExceeded,
+	ServiceUnavailableError,
 
 	ERR_NO_TOKEN,
 	ERR_INVALID_TOKEN,
