@@ -119,6 +119,7 @@ class Alias {
 	 *
 	 */
 	printPath() {
+		/* istanbul ignore next */
 		return `${this.method} ${this.fullPath}`;
 	}
 
@@ -167,8 +168,8 @@ class Alias {
 			});
 		});
 
+		/* istanbul ignore next */
 		busboy.on("error", err => {
-			/* istanbul ignore next */
 			this.service.sendError(req, res, err);
 		});
 

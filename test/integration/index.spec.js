@@ -3911,3 +3911,37 @@ describe("Test new alias handling", () => {
 	});
 
 });
+
+describe("Test internal service special char", () => {
+	let broker;
+	let server;
+	let service;
+
+	beforeAll(() => {
+		[ broker, service, server] = setup({
+			path: "/api",
+			internalServiceSpecialChar: "@",
+		});
+
+		return broker.start();
+	});
+
+	afterAll(() => broker.stop());
+
+	it("should call '/api/@node.health'", () => {
+		return request(server)
+			.get("/api/@node/health")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+			});
+	});
+
+	it("should not call '/api/$node.health'", () => {
+		return request(server)
+			.get("/api/~node/health")
+			.then(res => {
+				expect(res.statusCode).toBe(404);
+			});
+	});
+});

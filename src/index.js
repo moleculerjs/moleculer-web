@@ -103,6 +103,11 @@ module.exports = {
 			this.logger.info("API Gateway server created.");
 		}
 
+		// Special char for internal services
+		const specChar = this.settings.internalServiceSpecialChar != null ? this.settings.internalServiceSpecialChar : "~";
+		// eslint-disable-next-line security/detect-non-literal-regexp
+		this._isscRe = new RegExp(specChar);
+
 		// Create static server middleware
 		if (this.settings.assets) {
 			const opts = this.settings.assets.options || {};
@@ -322,8 +327,8 @@ module.exports = {
 						if (urlPath.startsWith("/"))
 							urlPath = urlPath.slice(1);
 
-						// Resolve $node service
-						urlPath = urlPath.replace(/^~/, "$");
+						// Resolve internal services
+						urlPath = urlPath.replace(this._isscRe, "$");
 						let action = urlPath;
 
 						// Resolve aliases
