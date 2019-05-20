@@ -1201,7 +1201,7 @@ module.exports = {
 				create: `POST ${pathName}`,
 				update: `PUT ${pathNameWithoutEndingSlash}/:id`,
 				patch: `PATCH ${pathNameWithoutEndingSlash}/:id`,
-				remove: `DELETE ${pathNameWithoutEndingSlash}/:id`,
+				remove: `DELETE ${pathNameWithoutEndingSlash}/:id`
 			};
 			let actions = ["list", "get", "create", "update", "patch", "remove"];
 
