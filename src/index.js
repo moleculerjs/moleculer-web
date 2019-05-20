@@ -1194,13 +1194,14 @@ module.exports = {
 		generateRESTAliases(route, path, action) {
 			const p = path.split(/\s+/);
 			const pathName = p[1];
+            const pathNameWithoutEndingSlash = pathName.endsWith("/") ? pathName.slice(0, -1) : pathName;
 			const aliases = {
 				list: `GET ${pathName}`,
-				get: `GET ${pathName}/:id`,
+				get: `GET ${pathNameWithoutEndingSlash}/:id`,
 				create: `POST ${pathName}`,
-				update: `PUT ${pathName}/:id`,
-				patch: `PATCH ${pathName}/:id`,
-				remove: `DELETE ${pathName}/:id`,
+				update: `PUT ${pathNameWithoutEndingSlash}/:id`,
+				patch: `PATCH ${pathNameWithoutEndingSlash}/:id`,
+				remove: `DELETE ${pathNameWithoutEndingSlash}/:id`,
 			};
 			let actions = ["list", "get", "create", "update", "patch", "remove"];
 
