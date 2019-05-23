@@ -147,7 +147,11 @@ class Alias {
 				filename: filename,
 				encoding: encoding,
 				mimetype: mimetype,
-			} })));
+			} })).catch(err => {
+				file.resume(); // Drain file stream to continue processing form
+				busboy.emit("error", err);
+				return err;
+			}));
 		});
 
 		busboy.on("finish", async () => {
@@ -156,7 +160,7 @@ class Alias {
 				return this.service.sendError(req, res, new MoleculerClientError("File missing in the request"));
 
 			try {
-				let data = await Promise.all(promises);
+				let data = await this.service.Promise.all(promises);
 				if (this.route.onAfterCall)
 					data = await this.route.onAfterCall.call(this, ctx, this.route, req, res, data);
 
