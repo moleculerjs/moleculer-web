@@ -47,6 +47,9 @@ module.exports = {
 		// Exposed IP
 		ip: process.env.IP || "0.0.0.0",
 
+		// Set Http Server Timeout
+		httpServerTimeout: process.env.HTTP_SERVER_TIMEOUT || 120000, // default 2 minutes
+
 		// Used server instance. If null, it will create a new HTTP(s)(2) server
 		// If false, it will start without server in middleware mode
 		server: true,
@@ -95,6 +98,11 @@ module.exports = {
 				this.createServer();
 			}
 
+			/* set http server timeout */
+			if(this.settings.httpServerTimeout){
+				this.logger.info("Override Default http/https Server Timeout", this.settings.httpServerTimeout);
+				this.server.setTimeout(this.settings.httpServerTimeout)
+			}
 			/* istanbul ignore next */
 			this.server.on("error", err => {
 				this.logger.error("Server error", err);

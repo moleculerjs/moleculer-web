@@ -103,6 +103,19 @@ describe("Test default settings", () => {
 			});
 	});
 
+	it("POST /test/apitimeout", () => {
+		return request(server)
+			.post("/test/apitimeout")
+			.send({counter:5,sleeptime:1000})
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.body).toEqual({
+					"status":200,
+					"msg":"apitimeout response"
+				});
+			});
+	},600000); // 10 min
+
 	it("POST /test/greeter with query", () => {
 		return request(server)
 			.post("/test/greeter")
