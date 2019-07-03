@@ -58,7 +58,8 @@ broker.createService(ApiService, {
 					"GET /services": "$node.services"
 				},
 
-				autoAliases: true
+				autoAliases: true,
+				logging: false
 			}
 		]
 	}

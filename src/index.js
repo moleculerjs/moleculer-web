@@ -156,8 +156,6 @@ module.exports = {
 				if (ctx.requestID)
 					res.setHeader("X-Request-ID", ctx.requestID);
 
-				this.logRequest(req);
-
 				if (!req.originalUrl)
 					req.originalUrl = req.url;
 
@@ -302,6 +300,8 @@ module.exports = {
 			req.$route = route;
 			res.$route = route;
 
+			this.logRequest(req);
+
 			return new this.Promise(async (resolve, reject) => {
 				res.once("finish", () => resolve(true));
 
@@ -322,7 +322,9 @@ module.exports = {
 							});
 							res.end();
 
-							this.logResponse(req, res);
+							if (route.logging)
+								this.logResponse(req, res);
+
 							return resolve(true);
 						}
 					}
@@ -482,7 +484,9 @@ module.exports = {
 			// Call the action or alias
 			if (_.isFunction(alias.handler)) {
 				// Call custom alias handler
-				this.logger.info(`   Call custom function in '${alias.toString()}' alias`);
+				if (route.logging)
+					this.logger.info(`   Call custom function in '${alias.toString()}' alias`);
+
 				await new this.Promise((resolve, reject) => {
 					alias.handler.call(this, req, res, err => {
 						if (err)
@@ -517,9 +521,11 @@ module.exports = {
 
 			try {
 				// Logging params
-				this.logger.info(`   Call '${actionName}' action`);
-				if (this.settings.logRequestParams && this.settings.logRequestParams in this.logger)
-					this.logger[this.settings.logRequestParams]("   Params:", params);
+				if (route.logging) {
+					this.logger.info(`   Call '${actionName}' action`);
+					if (this.settings.logRequestParams && this.settings.logRequestParams in this.logger)
+						this.logger[this.settings.logRequestParams]("   Params:", params);
+				}
 
 				// Pass the `req` & `res` vars to ctx.params.
 				if (req.$alias && req.$alias.passReqResToParams) {
@@ -539,7 +545,8 @@ module.exports = {
 				// Send back the response
 				this.sendResponse(req, res, data, req.$endpoint.action);
 
-				this.logResponse(req, res, data);
+				if (route.logging)
+					this.logResponse(req, res, data);
 
 				return true;
 
@@ -812,6 +819,8 @@ module.exports = {
 		 * @param {HttpIncomingMessage} req
 		 */
 		logRequest(req) {
+			if (req.$route && !req.$route.logging) return;
+
 			this.logger.info(`=> ${req.method} ${req.url}`);
 		},
 
@@ -843,6 +852,8 @@ module.exports = {
 		 * @param {any} data
 		 */
 		logResponse(req, res, data) {
+			if (req.$route && !req.$route.logging) return;
+
 			let time = "";
 			if (req.$startTime) {
 				const diff = process.hrtime(req.$startTime);
@@ -1097,6 +1108,9 @@ module.exports = {
 						route.middlewares.push(bodyParser[key](opts));
 				});
 			}
+
+			// Logging
+			route.logging = opts.logging != null ? opts.logging : true;
 
 			// ETag
 			route.etag = opts.etag != null ? opts.etag : this.settings.etag;
