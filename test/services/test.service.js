@@ -52,6 +52,12 @@ module.exports = {
 			}
 		},
 
+		params: {
+			handler(ctx) {
+				return ctx.params;
+			}
+		},
+
 		reqres: {
 			handler(ctx) {
 				return {

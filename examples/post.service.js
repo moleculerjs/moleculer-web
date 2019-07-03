@@ -51,6 +51,13 @@ module.exports = {
 			}
 		},
 
+		feed: {
+			rest: "GET /feed",
+			handler(ctx) {
+				return this.rows;
+			}
+		},
+
 		create: {
 			rest: "POST /",
 			handler(ctx) {

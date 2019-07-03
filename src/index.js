@@ -11,6 +11,7 @@ const https 					= require("https");
 const queryString 				= require("qs");
 const chalk						= require("chalk");
 const { match, deprecate }		= require("moleculer").Utils;
+const pkg						= require("../package.json");
 
 const _ 						= require("lodash");
 const bodyParser 				= require("body-parser");
@@ -81,6 +82,15 @@ module.exports = {
 
 	},
 
+	// Service's metadata
+	metadata: {
+		$category: "api-gateway",
+		$official: true,
+		$name: pkg.name,
+		$version: pkg.version,
+		$repo: pkg.repository ? pkg.repository.url : null,
+	},
+
 	/**
 	 * Service created lifecycle event handler
 	 */
@@ -130,6 +140,11 @@ module.exports = {
 		 */
 		rest: {
 			visibility: "private",
+			tracing: {
+				tags: {
+					params: false
+				}
+			},
 			handler(ctx) {
 				const req = ctx.params.req;
 				const res = ctx.params.res;
@@ -480,7 +495,7 @@ module.exports = {
 				if (alias.action)
 					return this.callAction(route, alias.action, req, res, alias.type == "stream" ? req : req.$params);
 				else
-					throw new MoleculerServerError("No alias handler", 500, "NO_ALIAS_HANDLER", { path: req.originalUrl });
+					throw new MoleculerServerError("No alias handler", 500, "NO_ALIAS_HANDLER", { path: req.originalUrl, alias: _.pick(alias, ["method", "path"]) });
 
 			} else if (alias.action) {
 				return this.callAction(route, alias.action, req, res, alias.type == "stream" ? req : req.$params);
@@ -551,7 +566,7 @@ module.exports = {
 
 			/* istanbul ignore next */
 			if (res.headersSent) {
-				this.logger.warn("Headers have already sent");
+				this.logger.warn("Headers have already sent.", { url: req.url, action });
 				return;
 			}
 
@@ -571,10 +586,11 @@ module.exports = {
 			if (res.statusCode >= 300 && res.statusCode < 400 && res.statusCode !== 304) {
 				const location = ctx.meta.$location;
 				/* istanbul ignore next */
-				if (!location)
-					this.logger.warn(`The 'ctx.meta.$location' is missing for status code ${res.statusCode}!`);
-				else
+				if (!location) {
+					this.logger.warn(`The 'ctx.meta.$location' is missing for status code '${res.statusCode}'!`);
+				} else {
 					res.setHeader("Location", location);
+				}
 			}
 
 			// Override responseType by action (Deprecated)
@@ -1029,7 +1045,16 @@ module.exports = {
 		 * Optimize route order by route path depth
 		 */
 		optimizeRouteOrder() {
-			this.routes.sort((a,b) => addSlashes(b.path).split("/").length - addSlashes(a.path).split("/").length);
+			this.routes.sort((a,b) => {
+				let c = addSlashes(b.path).split("/").length - addSlashes(a.path).split("/").length;
+				if (c == 0) {
+					// Second level ordering (considering URL params)
+					c = a.path.split(":").length - b.path.split(":").length;
+				}
+
+				return c;
+			});
+
 			this.logger.debug("Optimized path order: ", this.routes.map(r => r.path));
 		},
 
@@ -1147,6 +1172,11 @@ module.exports = {
 			// Create aliases
 			this.createRouteAliases(route, opts.aliases);
 
+			// Optimize aliases order
+			if (this.settings.optimizeOrder) {
+				this.optimizeAliasesOrder();
+			}
+
 			// Set alias mapping policy
 			route.mappingPolicy = opts.mappingPolicy;
 			if (!route.mappingPolicy) {
@@ -1194,7 +1224,7 @@ module.exports = {
 		generateRESTAliases(route, path, action) {
 			const p = path.split(/\s+/);
 			const pathName = p[1];
-            const pathNameWithoutEndingSlash = pathName.endsWith("/") ? pathName.slice(0, -1) : pathName;
+			const pathNameWithoutEndingSlash = pathName.endsWith("/") ? pathName.slice(0, -1) : pathName;
 			const aliases = {
 				list: `GET ${pathName}`,
 				get: `GET ${pathNameWithoutEndingSlash}/:id`,
@@ -1217,7 +1247,7 @@ module.exports = {
 				action = action.action;
 			}
 
-			return actions.map(item => this.createAlias(route, aliases[item],`${action}.${item}`));
+			return actions.map(item => this.createAlias(route, aliases[item], `${action}.${item}`));
 		},
 
 		/**
@@ -1233,9 +1263,9 @@ module.exports = {
 
 			const processedServices = new Set();
 
-			const services = this.broker.registry.getServiceList({ withActions: true });
+			const services = this.broker.registry.getServiceList({ withActions: true, grouping: true });
 			services.forEach(service => {
-				const serviceName = service.version ? `v${service.version}.${service.name}` : service.name;
+				const serviceName = service.fullName || (service.version ? `v${service.version}.${service.name}` : service.name);
 				const basePath = addSlashes(_.isString(service.settings.rest) ? service.settings.rest : serviceName.replace(/\./g, "/"));
 
 				// Skip multiple instances of services
@@ -1290,6 +1320,29 @@ module.exports = {
 					processedServices.add(serviceName);
 				});
 
+			});
+
+			if (this.settings.optimizeOrder) {
+				this.optimizeAliasesOrder();
+			}
+		},
+
+		/**
+		 * Optimize order of alias path.
+		 */
+		optimizeAliasesOrder() {
+			this.aliases.sort((a,b) => {
+				let c = addSlashes(b.path).split("/").length - addSlashes(a.path).split("/").length;
+				if (c == 0) {
+				// Second level ordering (considering URL params)
+					c = a.path.split(":").length - b.path.split(":").length;
+				}
+
+				if (c == 0) {
+					c = a.path.localeCompare(b.path);
+				}
+
+				return c;
 			});
 		},
 

@@ -44,7 +44,7 @@ module.exports = {
 ```
 
 ### Other low-level breaking changes
-- `sendResponse` signature is changed: `this.sendResponse(req, res, data)`
+- `sendResponse` signature is changed to `this.sendResponse(req, res, data)`
 
 ## New 
 
@@ -286,7 +286,7 @@ DELETE /api/v2/posts/:id   => v2.posts.remove
 > If `rest: true` in action definition, API Gateway will use action name in path.
 
 ## Changes
-- new `optimizeOrder: true` setting in order to optimize route paths (deeper first). Defaults: `true`.
+- new `optimizeOrder: true` setting in order to optimize route & alias paths (deeper first). Defaults: `true`.
 - tilde (`~`) replace issue fixed. [#98](https://github.com/moleculerjs/moleculer-web/pull/98)
 - throw `503` - `ServiceUnavailableError` when a service defined in aliases but not available. Ref: [#27](https://github.com/moleculerjs/moleculer-web/issues/27)
 - new `internalServiceSpecialChar` service setting to override special char for internal services (`~`)
