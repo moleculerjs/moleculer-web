@@ -98,8 +98,8 @@ module.exports = {
                     limits: {
                         files: 1
                     }
-					// Can be defined limit event handlers
-					// `onPartsLimit`, `onFilesLimit` or `onFieldsLimit`
+                    // Can be defined limit event handlers
+                    // `onPartsLimit`, `onFilesLimit` or `onFieldsLimit`
                 },
 
                 mappingPolicy: "restrict"
@@ -233,7 +233,7 @@ module.exports = {
 // posts.service.js
 module.exports = {
     name: "posts",
-	version: 2,
+    version: 2,
 
     settings: {
         // Base path
@@ -273,7 +273,7 @@ module.exports = {
 
 **The generated aliases**
 ```
-   GET /api/hi          	=> test.hello
+   GET /api/hi             => test.hello
    GET /api/v2/posts       => v2.posts.list
    GET /api/v2/posts/:id   => v2.posts.get
   POST /api/v2/posts       => v2.posts.create
