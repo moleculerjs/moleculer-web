@@ -14,7 +14,9 @@
     "lint:fix": "eslint --ext=.js --fix src",
     "deps": "npm-check -u",
     "postdeps": "npm test",
-    "coverall": "cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js"
+    "coverall": "cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js",
+    "snyk-protect": "snyk protect",
+    "prepare": "npm run snyk-protect"
   },
   "keywords": [
     "api-gateway",
@@ -73,7 +75,8 @@
     "lodash": "^4.17.11",
     "path-to-regexp": "^3.0.0",
     "qs": "^6.7.0",
-    "serve-static": "^1.13.2"
+    "serve-static": "^1.13.2",
+    "snyk": "^1.189.0"
   },
   "engines": {
     "node": ">= 8.x.x"
@@ -90,5 +93,6 @@
       "/node_modules/",
       "/test/services/"
     ]
-  }
+  },
+  "snyk": true
 }
