@@ -1310,12 +1310,6 @@ module.exports = {
 									path: basePath + action.rest
 								};
 							}
-						} else if (action.rest === true) {
-							// "route: true" is converted to "* {baseName}/{action.rawName}"
-							alias = {
-								method: "*",
-								path: basePath + action.rawName
-							};
 						} else if (_.isObject(action.rest)) {
 							// Handle route: { method: "POST", route: "/other" }
 							alias = Object.assign({}, action.rest, {

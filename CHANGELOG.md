@@ -281,10 +281,6 @@ module.exports = {
 DELETE /api/v2/posts/:id   => v2.posts.remove
 ```
 
-> If `rest: true` in service settings, API Gateway will use the service name (with version) as base path.
-
-> If `rest: true` in action definition, API Gateway will use action name in path.
-
 ## Changes
 - new `optimizeOrder: true` setting in order to optimize route & alias paths (deeper first). Default: `true`.
 - new `logging` route option to disable request logging. It can be useful for health check routes. Default: `true`.

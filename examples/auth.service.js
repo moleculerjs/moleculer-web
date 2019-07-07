@@ -24,10 +24,6 @@ const users = [
 module.exports = {
 	name: "auth",
 
-	settings: {
-		rest: true
-	},
-
 	actions: {
 		/**
 		 * Login action.
@@ -81,7 +77,7 @@ module.exports = {
 			params: {
 				token: "string"
 			},
-			handler (ctx) {
+			handler(ctx) {
 				return new this.Promise((resolve, reject) => {
 					jwt.verify(ctx.params.token, JWT_SECRET, (err, decoded) => {
 						if (err) {

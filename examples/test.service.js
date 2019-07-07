@@ -13,7 +13,7 @@ module.exports = {
 
 	actions: {
 		hello: {
-			rest: true,
+			rest: "GET /hello",
 			handler(ctx) {
 				ctx.meta.$responseType = "text/plain";
 				return "Hello Moleculer";
@@ -24,7 +24,7 @@ module.exports = {
 			params: {
 				name: "string"
 			},
-			rest: true,
+			rest: "GET /greeter",
 			handler(ctx) {
 				return `Hello ${ctx.params.name}`;
 			}
@@ -72,7 +72,7 @@ module.exports = {
 
 		dangerZone: {
 			visibility: "public",
-			rest: true,
+			rest: "dangerZone",
 			handler(ctx) {
 				return "You cannot call this action via API Gateway!";
 			}
