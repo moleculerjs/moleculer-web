@@ -156,7 +156,7 @@ class Alias {
 
 		busboy.on("finish", async () => {
 			/* istanbul ignore next */
-			if (!promises.length)
+			if (!this.route.opts.busboyConfig.empty && !promises.length)
 				return this.service.sendError(req, res, new MoleculerClientError("File missing in the request"));
 
 			try {
