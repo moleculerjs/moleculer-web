@@ -242,13 +242,13 @@ module.exports = {
 
     actions: {
         list: {
-            // Expose as "/v2/posts/"
+            // Expose as "/api/v2/posts/"
             rest: "GET /",
             handler(ctx) {}
         },
 
         get: {
-            // Expose as "/v2/posts/:id"
+            // Expose as "/api/v2/posts/:id"
             rest: "GET /:id",
             handler(ctx) {}
         },
@@ -280,6 +280,30 @@ module.exports = {
    PUT /api/v2/posts/:id   => v2.posts.update
 DELETE /api/v2/posts/:id   => v2.posts.remove
 ```
+
+**Example to define full path alias**
+```js
+// posts.service.js
+module.exports = {
+    name: "posts",
+    version: 2,
+
+    settings: {
+        // Base path
+        rest: "posts/"
+    },
+
+    actions: {
+        tags: {
+            // Expose as "/tags/" instead of "/api/v2/posts/tags"
+            rest: {
+				method: "GET",
+				fullPath: "/tags"
+			},
+            handler(ctx) {}
+        }
+	}
+};
 
 ## Changes
 - new `optimizeOrder: true` setting in order to optimize route & alias paths (deeper first). Default: `true`.

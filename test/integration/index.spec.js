@@ -3495,7 +3495,8 @@ describe("Test auto aliasing", () => {
 					path: "api",
 					whitelist: [
 						"posts.*",
-						"test.hello"
+						"test.hello",
+						"test.full*"
 					],
 
 					autoAliases: true,
@@ -3635,6 +3636,16 @@ describe("Test auto aliasing", () => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
 				expect(res.body.length).toBe(5);
+			});
+	});
+
+	it("should call 'GET /fullPath'", () => {
+		return request(server)
+			.get("/fullPath")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toBe("Full path");
 			});
 	});
 });

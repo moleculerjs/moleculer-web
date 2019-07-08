@@ -62,8 +62,14 @@ module.exports = {
 			ctx.meta.$statusCode = 204;
 		},
 
-		sayHi(ctx) {
-			return "Hi!";
+		sayHi: {
+			rest: {
+				method: "GET",
+				fullPath: "/hi"
+			},
+			handler(ctx) {
+				return "Hi!";
+			}
 		},
 
 		utf(ctx) {

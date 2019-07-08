@@ -68,7 +68,7 @@ class Alias {
 
 		this.path = removeTrailingSlashes(this.path);
 
-		this.fullPath = addSlashes(this.route.path) + this.path;
+		this.fullPath = this.fullPath || (addSlashes(this.route.path) + this.path);
 		if (this.fullPath !== "/" && this.fullPath.endsWith("/")) {
 			this.fullPath = this.fullPath.slice(0, -1);
 		}
