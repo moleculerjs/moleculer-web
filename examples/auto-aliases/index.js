@@ -36,7 +36,7 @@ broker.createService(ApiService, {
 				path: "api",
 
 				whitelist: [
-					"posts.*",
+					"**posts.*",
 					"test.*"
 				],
 

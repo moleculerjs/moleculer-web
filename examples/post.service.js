@@ -23,7 +23,7 @@ module.exports = {
 	//version: 2,
 
 	settings: {
-		rest: "posts/"
+		//rest: "posts/"
 	},
 
 	actions: {

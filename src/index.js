@@ -29,6 +29,13 @@ const { removeTrailingSlashes, addSlashes, normalizePath, composeThen, generateE
 const MAPPING_POLICY_ALL		= "all";
 const MAPPING_POLICY_RESTRICT	= "restrict";
 
+function getServiceFullname(svc) {
+	if (svc.version != null && svc.settings.$noVersionPrefix !== true)
+		return (typeof(svc.version) == "number" ? "v" + svc.version : svc.version) + "." + svc.name;
+
+	return svc.name;
+}
+
 /**
  * Official API Gateway service for Moleculer microservices framework.
  *
@@ -1195,7 +1202,7 @@ module.exports = {
 			route.mappingPolicy = opts.mappingPolicy;
 			if (!route.mappingPolicy) {
 				const hasAliases = _.isObject(opts.aliases) && Object.keys(opts.aliases).length > 0;
-				route.mappingPolicy = hasAliases ? MAPPING_POLICY_RESTRICT : MAPPING_POLICY_ALL;
+				route.mappingPolicy = hasAliases || opts.autoAliases ? MAPPING_POLICY_RESTRICT : MAPPING_POLICY_ALL;
 			}
 
 			this.logger.info("");
@@ -1205,6 +1212,7 @@ module.exports = {
 
 		/**
 		 * Create all aliases for route.
+		 *
 		 * @param {Object} route
 		 * @param {Object} aliases
 		 */
@@ -1227,7 +1235,7 @@ module.exports = {
 		},
 
 		/**
-		 * Generate aliases for REST
+		 * Generate aliases for REST.
 		 *
 		 * @param {Route} route
 		 * @param {String} path
@@ -1279,7 +1287,7 @@ module.exports = {
 
 			const services = this.broker.registry.getServiceList({ withActions: true, grouping: true });
 			services.forEach(service => {
-				const serviceName = service.fullName || (service.version ? `v${service.version}.${service.name}` : service.name);
+				const serviceName = service.fullName || getServiceFullname(service);
 				const basePath = addSlashes(_.isString(service.settings.rest) ? service.settings.rest : serviceName.replace(/\./g, "/"));
 
 				// Skip multiple instances of services
