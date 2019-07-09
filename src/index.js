@@ -11,6 +11,7 @@ const https 					= require("https");
 const queryString 				= require("qs");
 const chalk						= require("chalk");
 const { match, deprecate }		= require("moleculer").Utils;
+const pkg						= require("../package.json");
 
 const _ 						= require("lodash");
 const bodyParser 				= require("body-parser");
@@ -27,6 +28,13 @@ const { removeTrailingSlashes, addSlashes, normalizePath, composeThen, generateE
 
 const MAPPING_POLICY_ALL		= "all";
 const MAPPING_POLICY_RESTRICT	= "restrict";
+
+function getServiceFullname(svc) {
+	if (svc.version != null && svc.settings.$noVersionPrefix !== true)
+		return (typeof(svc.version) == "number" ? "v" + svc.version : svc.version) + "." + svc.name;
+
+	return svc.name;
+}
 
 /**
  * Official API Gateway service for Moleculer microservices framework.
@@ -84,6 +92,15 @@ module.exports = {
 
 	},
 
+	// Service's metadata
+	metadata: {
+		$category: "api-gateway",
+		$official: true,
+		$name: pkg.name,
+		$version: pkg.version,
+		$repo: pkg.repository ? pkg.repository.url : null,
+	},
+
 	/**
 	 * Service created lifecycle event handler
 	 */
@@ -133,6 +150,11 @@ module.exports = {
 		 */
 		rest: {
 			visibility: "private",
+			tracing: {
+				tags: {
+					params: false
+				}
+			},
 			handler(ctx) {
 				const req = ctx.params.req;
 				const res = ctx.params.res;
@@ -143,8 +165,6 @@ module.exports = {
 
 				if (ctx.requestID)
 					res.setHeader("X-Request-ID", ctx.requestID);
-
-				this.logRequest(req);
 
 				if (!req.originalUrl)
 					req.originalUrl = req.url;
@@ -296,6 +316,8 @@ module.exports = {
 			req.$route = route;
 			res.$route = route;
 
+			this.logRequest(req);
+
 			return new this.Promise(async (resolve, reject) => {
 				res.once("finish", () => resolve(true));
 
@@ -316,7 +338,9 @@ module.exports = {
 							});
 							res.end();
 
-							this.logResponse(req, res);
+							if (route.logging)
+								this.logResponse(req, res);
+
 							return resolve(true);
 						}
 					}
@@ -476,7 +500,9 @@ module.exports = {
 			// Call the action or alias
 			if (_.isFunction(alias.handler)) {
 				// Call custom alias handler
-				this.logger.info(`   Call custom function in '${alias.toString()}' alias`);
+				if (route.logging)
+					this.logger.info(`   Call custom function in '${alias.toString()}' alias`);
+
 				await new this.Promise((resolve, reject) => {
 					alias.handler.call(this, req, res, err => {
 						if (err)
@@ -489,7 +515,7 @@ module.exports = {
 				if (alias.action)
 					return this.callAction(route, alias.action, req, res, alias.type == "stream" ? req : req.$params);
 				else
-					throw new MoleculerServerError("No alias handler", 500, "NO_ALIAS_HANDLER", { path: req.originalUrl });
+					throw new MoleculerServerError("No alias handler", 500, "NO_ALIAS_HANDLER", { path: req.originalUrl, alias: _.pick(alias, ["method", "path"]) });
 
 			} else if (alias.action) {
 				return this.callAction(route, alias.action, req, res, alias.type == "stream" ? req : req.$params);
@@ -511,9 +537,11 @@ module.exports = {
 
 			try {
 				// Logging params
-				this.logger.info(`   Call '${actionName}' action`);
-				if (this.settings.logRequestParams && this.settings.logRequestParams in this.logger)
-					this.logger[this.settings.logRequestParams]("   Params:", params);
+				if (route.logging) {
+					this.logger.info(`   Call '${actionName}' action`);
+					if (this.settings.logRequestParams && this.settings.logRequestParams in this.logger)
+						this.logger[this.settings.logRequestParams]("   Params:", params);
+				}
 
 				// Pass the `req` & `res` vars to ctx.params.
 				if (req.$alias && req.$alias.passReqResToParams) {
@@ -533,7 +561,8 @@ module.exports = {
 				// Send back the response
 				this.sendResponse(req, res, data, req.$endpoint.action);
 
-				this.logResponse(req, res, data);
+				if (route.logging)
+					this.logResponse(req, res, data);
 
 				return true;
 
@@ -560,7 +589,7 @@ module.exports = {
 
 			/* istanbul ignore next */
 			if (res.headersSent) {
-				this.logger.warn("Headers have already sent");
+				this.logger.warn("Headers have already sent.", { url: req.url, action });
 				return;
 			}
 
@@ -580,10 +609,11 @@ module.exports = {
 			if (res.statusCode >= 300 && res.statusCode < 400 && res.statusCode !== 304) {
 				const location = ctx.meta.$location;
 				/* istanbul ignore next */
-				if (!location)
-					this.logger.warn(`The 'ctx.meta.$location' is missing for status code ${res.statusCode}!`);
-				else
+				if (!location) {
+					this.logger.warn(`The 'ctx.meta.$location' is missing for status code '${res.statusCode}'!`);
+				} else {
 					res.setHeader("Location", location);
+				}
 			}
 
 			// Override responseType by action (Deprecated)
@@ -805,6 +835,8 @@ module.exports = {
 		 * @param {HttpIncomingMessage} req
 		 */
 		logRequest(req) {
+			if (req.$route && !req.$route.logging) return;
+
 			this.logger.info(`=> ${req.method} ${req.url}`);
 		},
 
@@ -836,6 +868,8 @@ module.exports = {
 		 * @param {any} data
 		 */
 		logResponse(req, res, data) {
+			if (req.$route && !req.$route.logging) return;
+
 			let time = "";
 			if (req.$startTime) {
 				const diff = process.hrtime(req.$startTime);
@@ -1038,7 +1072,16 @@ module.exports = {
 		 * Optimize route order by route path depth
 		 */
 		optimizeRouteOrder() {
-			this.routes.sort((a,b) => addSlashes(b.path).split("/").length - addSlashes(a.path).split("/").length);
+			this.routes.sort((a,b) => {
+				let c = addSlashes(b.path).split("/").length - addSlashes(a.path).split("/").length;
+				if (c == 0) {
+					// Second level ordering (considering URL params)
+					c = a.path.split(":").length - b.path.split(":").length;
+				}
+
+				return c;
+			});
+
 			this.logger.debug("Optimized path order: ", this.routes.map(r => r.path));
 		},
 
@@ -1081,6 +1124,9 @@ module.exports = {
 						route.middlewares.push(bodyParser[key](opts));
 				});
 			}
+
+			// Logging
+			route.logging = opts.logging != null ? opts.logging : true;
 
 			// ETag
 			route.etag = opts.etag != null ? opts.etag : this.settings.etag;
@@ -1156,11 +1202,16 @@ module.exports = {
 			// Create aliases
 			this.createRouteAliases(route, opts.aliases);
 
+			// Optimize aliases order
+			if (this.settings.optimizeOrder) {
+				this.optimizeAliasesOrder();
+			}
+
 			// Set alias mapping policy
 			route.mappingPolicy = opts.mappingPolicy;
 			if (!route.mappingPolicy) {
 				const hasAliases = _.isObject(opts.aliases) && Object.keys(opts.aliases).length > 0;
-				route.mappingPolicy = hasAliases ? MAPPING_POLICY_RESTRICT : MAPPING_POLICY_ALL;
+				route.mappingPolicy = hasAliases || opts.autoAliases ? MAPPING_POLICY_RESTRICT : MAPPING_POLICY_ALL;
 			}
 
 			this.logger.info("");
@@ -1170,6 +1221,7 @@ module.exports = {
 
 		/**
 		 * Create all aliases for route.
+		 *
 		 * @param {Object} route
 		 * @param {Object} aliases
 		 */
@@ -1192,7 +1244,7 @@ module.exports = {
 		},
 
 		/**
-		 * Generate aliases for REST
+		 * Generate aliases for REST.
 		 *
 		 * @param {Route} route
 		 * @param {String} path
@@ -1226,7 +1278,7 @@ module.exports = {
 				action = action.action;
 			}
 
-			return actions.map(item => this.createAlias(route, aliases[item],`${action}.${item}`));
+			return actions.map(item => this.createAlias(route, aliases[item], `${action}.${item}`));
 		},
 
 		/**
@@ -1242,9 +1294,9 @@ module.exports = {
 
 			const processedServices = new Set();
 
-			const services = this.broker.registry.getServiceList({ withActions: true });
+			const services = this.broker.registry.getServiceList({ withActions: true, grouping: true });
 			services.forEach(service => {
-				const serviceName = service.version ? `v${service.version}.${service.name}` : service.name;
+				const serviceName = service.fullName || getServiceFullname(service);
 				const basePath = addSlashes(_.isString(service.settings.rest) ? service.settings.rest : serviceName.replace(/\./g, "/"));
 
 				// Skip multiple instances of services
@@ -1275,17 +1327,11 @@ module.exports = {
 									path: basePath + action.rest
 								};
 							}
-						} else if (action.rest === true) {
-							// "route: true" is converted to "* {baseName}/{action.rawName}"
-							alias = {
-								method: "*",
-								path: basePath + action.rawName
-							};
 						} else if (_.isObject(action.rest)) {
-							// Handle route: { method: "POST", route: "/other" }
+							// Handle route: { method: "POST", path: "/other" }
 							alias = Object.assign({}, action.rest, {
 								method: action.rest.method || "*",
-								path: basePath + action.rest.path ? action.rest.path : action.rawName
+								path: basePath + (action.rest.path ? action.rest.path : action.rawName)
 							});
 						}
 
@@ -1299,6 +1345,29 @@ module.exports = {
 					processedServices.add(serviceName);
 				});
 
+			});
+
+			if (this.settings.optimizeOrder) {
+				this.optimizeAliasesOrder();
+			}
+		},
+
+		/**
+		 * Optimize order of alias path.
+		 */
+		optimizeAliasesOrder() {
+			this.aliases.sort((a,b) => {
+				let c = addSlashes(b.path).split("/").length - addSlashes(a.path).split("/").length;
+				if (c == 0) {
+				// Second level ordering (considering URL params)
+					c = a.path.split(":").length - b.path.split(":").length;
+				}
+
+				if (c == 0) {
+					c = a.path.localeCompare(b.path);
+				}
+
+				return c;
 			});
 		},
 

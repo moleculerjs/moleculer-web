@@ -1041,7 +1041,11 @@ describe("Test aliases", () => {
 					"code": 500,
 					"type": "NO_ALIAS_HANDLER",
 					"data": {
-						"path": "/api/wrong-middleware"
+						"path": "/api/wrong-middleware",
+						"alias": {
+							"method": "GET",
+							"path": "wrong-middleware"
+						}
 					}
 				});
 
@@ -3412,7 +3416,11 @@ describe("Test route path optimization", () => {
 			routes: [
 				{ path: "/", aliases: { "b": "test.hello" } },
 				{ path: "/a", aliases: { "c": "test.hello" } },
-				{ path: "/a/b", aliases: { "c": "test.hello" } },
+				{ path: "/a/b", aliases: {
+					"c": "test.hello",
+					"d/:id": "test.params",
+					"d/e": "test.params",
+				} },
 			]
 		});
 		return broker.start();
@@ -3449,6 +3457,26 @@ describe("Test route path optimization", () => {
 				expect(res.body).toBe("Hello Moleculer");
 			});
 	});
+
+	it("should find '/a/b/d/e'", () => {
+		return request(server)
+			.get("/a/b/d/e")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toEqual({});
+			});
+	});
+
+	it("should find '/a/b/d/:id'", () => {
+		return request(server)
+			.get("/a/b/d/1234")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toEqual({ id: "1234" });
+			});
+	});
 });
 
 describe("Test auto aliasing", () => {
@@ -3467,7 +3495,8 @@ describe("Test auto aliasing", () => {
 					path: "api",
 					whitelist: [
 						"posts.*",
-						"test.hello"
+						"test.hello",
+						"test.full*"
 					],
 
 					autoAliases: true,
@@ -3607,6 +3636,16 @@ describe("Test auto aliasing", () => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
 				expect(res.body.length).toBe(5);
+			});
+	});
+
+	it("should call 'GET /fullPath'", () => {
+		return request(server)
+			.get("/fullPath")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toBe("Full path");
 			});
 	});
 });

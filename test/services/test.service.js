@@ -32,6 +32,16 @@ module.exports = {
 			}
 		},
 
+		fullPath: {
+			rest: {
+				method: "GET",
+				fullPath: "/fullPath",
+			},
+			handler(ctx) {
+				return "Full path";
+			}
+		},
+
 		whoami: {
 			handler(ctx) {
 				if (ctx.meta.user) {
@@ -79,6 +89,12 @@ module.exports = {
 					params: ctx.params,
 					meta: ctx.meta
 				};
+			}
+		},
+
+		params: {
+			handler(ctx) {
+				return ctx.params;
 			}
 		},
 

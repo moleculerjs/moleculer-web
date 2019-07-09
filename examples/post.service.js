@@ -23,7 +23,7 @@ module.exports = {
 	//version: 2,
 
 	settings: {
-		rest: "posts/"
+		//rest: "posts/"
 	},
 
 	actions: {
@@ -48,6 +48,13 @@ module.exports = {
 					return post;
 
 				return Promise.reject(new MoleculerError("Post not found!", 404));
+			}
+		},
+
+		feed: {
+			rest: "GET /feed",
+			handler(ctx) {
+				return this.rows;
 			}
 		},
 
