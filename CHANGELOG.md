@@ -304,6 +304,7 @@ module.exports = {
         }
 	}
 };
+```
 
 ## Changes
 - new `optimizeOrder: true` setting in order to optimize route & alias paths (deeper first). Default: `true`.
