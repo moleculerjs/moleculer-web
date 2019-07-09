@@ -1,6 +1,6 @@
 /*
  * moleculer
- * Copyright (c) 2018 MoleculerJS (https://github.com/moleculerjs/moleculer)
+ * Copyright (c) 2019 MoleculerJS (https://github.com/moleculerjs/moleculer)
  * MIT Licensed
  */
 
@@ -47,9 +47,6 @@ module.exports = {
 		// Exposed IP
 		ip: process.env.IP || "0.0.0.0",
 
-		// Set Http Server Timeout
-		httpServerTimeout: process.env.HTTP_SERVER_TIMEOUT || 120000, // default 2 minutes
-
 		// Used server instance. If null, it will create a new HTTP(s)(2) server
 		// If false, it will start without server in middleware mode
 		server: true,
@@ -79,6 +76,9 @@ module.exports = {
 		// Use HTTP2 server (experimental)
 		http2: false,
 
+		// HTTP Server Timeout
+		httpServerTimeout: null,
+
 		// Optimize route order
 		optimizeOrder: true,
 
@@ -98,11 +98,6 @@ module.exports = {
 				this.createServer();
 			}
 
-			/* set http server timeout */
-			if(this.settings.httpServerTimeout){
-				this.logger.info("Override Default http/https Server Timeout", this.settings.httpServerTimeout);
-				this.server.setTimeout(this.settings.httpServerTimeout)
-			}
 			/* istanbul ignore next */
 			this.server.on("error", err => {
 				this.logger.error("Server error", err);
@@ -218,6 +213,12 @@ module.exports = {
 			} else {
 				this.server = this.settings.http2 ? this.tryLoadHTTP2Lib().createServer(this.httpHandler) : http.createServer(this.httpHandler);
 				this.isHTTPS = false;
+			}
+
+			// HTTP server timeout
+			if(this.settings.httpServerTimeout){
+				this.logger.debug("Override Default http(s) server timeout:", this.settings.httpServerTimeout);
+				this.server.setTimeout(this.settings.httpServerTimeout);
 			}
 		},
 
@@ -1202,7 +1203,7 @@ module.exports = {
 		generateRESTAliases(route, path, action) {
 			const p = path.split(/\s+/);
 			const pathName = p[1];
-            const pathNameWithoutEndingSlash = pathName.endsWith("/") ? pathName.slice(0, -1) : pathName;
+			const pathNameWithoutEndingSlash = pathName.endsWith("/") ? pathName.slice(0, -1) : pathName;
 			const aliases = {
 				list: `GET ${pathName}`,
 				get: `GET ${pathNameWithoutEndingSlash}/:id`,
