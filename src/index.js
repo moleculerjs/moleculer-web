@@ -1,6 +1,6 @@
 /*
  * moleculer
- * Copyright (c) 2018 MoleculerJS (https://github.com/moleculerjs/moleculer)
+ * Copyright (c) 2019 MoleculerJS (https://github.com/moleculerjs/moleculer)
  * MIT Licensed
  */
 
@@ -83,6 +83,9 @@ module.exports = {
 
 		// Use HTTP2 server (experimental)
 		http2: false,
+
+		// HTTP Server Timeout
+		httpServerTimeout: null,
 
 		// Optimize route order
 		optimizeOrder: true,
@@ -230,6 +233,12 @@ module.exports = {
 			} else {
 				this.server = this.settings.http2 ? this.tryLoadHTTP2Lib().createServer(this.httpHandler) : http.createServer(this.httpHandler);
 				this.isHTTPS = false;
+			}
+
+			// HTTP server timeout
+			if(this.settings.httpServerTimeout){
+				this.logger.debug("Override Default http(s) server timeout:", this.settings.httpServerTimeout);
+				this.server.setTimeout(this.settings.httpServerTimeout);
 			}
 		},
 

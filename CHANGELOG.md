@@ -312,6 +312,7 @@ module.exports = {
 - tilde (`~`) replace issue fixed. [#98](https://github.com/moleculerjs/moleculer-web/pull/98)
 - throw `503` - `ServiceUnavailableError` when a service defined in aliases but not available. Ref: [#27](https://github.com/moleculerjs/moleculer-web/issues/27)
 - new `internalServiceSpecialChar` service setting to override special char for internal services (`~`)
+- new `httpServerTimeout` setting to overwrite the default HTTP server timeout. [#126](https://github.com/moleculerjs/moleculer-web/pull/126)
 
 -----------------------------
 <a name="0.8.5"></a>

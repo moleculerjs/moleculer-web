@@ -52,6 +52,36 @@ module.exports = {
 			}
 		},
 
+		apitimeout: {
+			rest: "/apitimeout",
+			params: {
+				counter: "number",
+				sleeptime: "number"
+			},
+			async handler(ctx) {
+				function sleep(ms) {
+					return new Promise(resolve => setTimeout(resolve, ms));
+				}
+				try{
+					var c=0
+					while(c!=ctx.params.counter){
+						await sleep(ctx.params.sleeptime)
+						c++;
+					}
+					return {
+						status:200,
+						msg:"apitimeout response"
+					}
+				}catch(e){
+					return {
+						status:500,
+						msg:"apitimeout response",
+						error:e
+					}
+				}
+			}
+		},
+
 		echo: {
 			handler(ctx) {
 				return {

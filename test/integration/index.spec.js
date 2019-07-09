@@ -3994,3 +3994,46 @@ describe("Test internal service special char", () => {
 			});
 	});
 });
+
+describe("Test httpServerTimeout setting", () => {
+	let broker;
+	let server;
+	let service;
+
+	beforeAll(() => {
+		[ broker, service, server] = setup({
+			httpServerTimeout: 500
+		});
+
+		return broker.start();
+	});
+
+	afterAll(() => broker.stop());
+
+	it("should return response", () => {
+		return request(server)
+			.post("/test/apitimeout")
+			.send({ counter:2, sleeptime: 100 })
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.body).toEqual({
+					"status": 200,
+					"msg": "apitimeout response"
+				});
+			});
+	});
+
+	it("should throw timeout error", () => {
+		return request(server)
+			.post("/test/apitimeout")
+			.send({ counter:6, sleeptime: 100 })
+			.then(res => {
+				expect(true).toBe(false);
+			})
+			.catch(err => {
+				expect(err.name).toBe("Error");
+				expect(err.message).toBe("socket hang up");
+			});
+	});
+
+});
