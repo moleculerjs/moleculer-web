@@ -297,12 +297,12 @@ module.exports = {
         tags: {
             // Expose as "/tags/" instead of "/api/v2/posts/tags"
             rest: {
-				method: "GET",
-				fullPath: "/tags"
-			},
+                method: "GET",
+                fullPath: "/tags"
+            },
             handler(ctx) {}
         }
-	}
+    }
 };
 ```
 
