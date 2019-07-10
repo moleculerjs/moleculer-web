@@ -26,7 +26,7 @@ setTimeout(() => {
 }, 10 * 1000).unref();*/
 
 function setup(settings, brokerSettings = {}) {
-	const broker = new ServiceBroker(Object.assign({}, { nodeID: undefined,  logger: false }, brokerSettings));
+	const broker = new ServiceBroker(Object.assign({}, { nodeID: undefined, logger: false }, brokerSettings));
 	broker.loadService("./test/services/test.service");
 
 	const service = broker.createService(ApiGateway, {
@@ -3283,7 +3283,7 @@ describe("Test file uploading", () => {
 					}
 				},
 				onAfterCall(ctx, route, req, res, data) {
-					return Promise.resolve(ctx.params.name ? ctx.params.name : data);
+					return Promise.resolve(ctx.params.name ? { name: ctx.params.name, files: data } : data);
 				},
 				// https://github.com/mscdex/busboy#busboy-methods
 				busboyConfig: {
@@ -3343,7 +3343,7 @@ describe("Test file uploading", () => {
 			.then(res => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
-				expect(res.body).toEqual('moleculer');
+				expect(res.body).toEqual({name: "moleculer", files: [{ hash: origHashes["logo.png"] }]});
 
 				expect(onFilesLimitFn).toHaveBeenCalledTimes(0);
 			});
@@ -3356,7 +3356,7 @@ describe("Test file uploading", () => {
 			.then(res => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
-				expect(res.body).toEqual('moleculer');
+				expect(res.body).toEqual("moleculer");
 			});
 	});
 
