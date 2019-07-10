@@ -159,10 +159,13 @@ class Alias {
 				return err;
 			}));
 		});
+		busboy.on("field", (field, value) => {
+			ctx.params[field] = value;
+		});
 
 		busboy.on("finish", async () => {
 			/* istanbul ignore next */
-			if (!this.route.opts.busboyConfig.empty && !promises.length)
+			if (!buyboxOptions.empty && !promises.length)
 				return this.service.sendError(req, res, new MoleculerClientError("File missing in the request"));
 
 			try {
