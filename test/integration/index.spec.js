@@ -3109,6 +3109,70 @@ describe("Test lifecycle events", () => {
 	});
 });
 
+describe("Test route.path and aliases", () => {
+	let broker;
+	let service;
+	let nextHandler = jest.fn((req, res) => res.sendStatus(200));
+
+	beforeAll(() => {
+
+		broker = new ServiceBroker({ logger: false });
+
+		service = broker.createService(ApiGateway, {
+			settings: {
+				path: "/api",
+				autoAliases: true,
+				routes: [{
+					path: "/te",
+					aliases: {
+						"GET test"(req, res) {
+							res.end("/api/te/test");
+						}
+					}
+				},{
+					path: "",
+					aliases: {
+						"GET test"(req, res) {
+							res.end("/api/test");
+						}
+					}
+				}]
+			}
+		});
+		broker.loadService("./test/services/test.service");
+
+		return broker.start();
+	});
+
+	afterAll(() => {
+		return broker.stop();
+	});
+
+	it("GET /api/te/test", () => {
+		return request(service.server)
+			.get("/api/te/test")
+			.then(res => {
+				console.log(res.body);
+				expect(res.statusCode).toBe(200);
+				expect(res.text).toBe("/api/te/test");
+				expect(nextHandler).toHaveBeenCalledTimes(0);
+			});
+	});
+
+	it("GET /api/test", () => {
+		return request(service.server)
+			.get("/api/test")
+			.then(res => {
+				console.log(res.body);
+				expect(res.statusCode).toBe(200);
+				expect(res.text).toBe("/api/test");
+				expect(nextHandler).toHaveBeenCalledTimes(0);
+			});
+	});
+
+});
+
+
 describe("Test middleware mode", () => {
 	let broker;
 	let app;
@@ -3210,6 +3274,7 @@ describe("Test file uploading", () => {
 						type: "multipart",
 						// Action level busboy config
 						busboyConfig: {
+							empty: true,
 							limits: {
 								files: 3
 							}
@@ -3217,7 +3282,11 @@ describe("Test file uploading", () => {
 						action: "file.save"
 					}
 				},
-
+				onAfterCall(ctx, route, req, res, data) {
+					if(ctx.meta.$multipart && "name" in ctx.meta.$multipart)
+						data = { name: ctx.meta.$multipart.name, files: data };
+					return Promise.resolve(data);
+				},
 				// https://github.com/mscdex/busboy#busboy-methods
 				busboyConfig: {
 					limits: {
@@ -3265,6 +3334,31 @@ describe("Test file uploading", () => {
 				]);
 
 				expect(onFilesLimitFn).toHaveBeenCalledTimes(0);
+			});
+	});
+
+	it("should send data field with multipart", () => {
+		return request(server)
+			.post("/upload")
+			.attach("myFile", assetsDir + "logo.png")
+			.field("name", "moleculer")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toEqual({name: "moleculer", files: [{ hash: origHashes["logo.png"] }]});
+
+				expect(onFilesLimitFn).toHaveBeenCalledTimes(0);
+			});
+	});
+
+	it("should empty file with multipart", () => {
+		return request(server)
+			.post("/upload/multi")
+			.field("name", "moleculer")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toEqual({name: "moleculer", files: []});
 			});
 	});
 

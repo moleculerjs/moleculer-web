@@ -143,6 +143,7 @@ class Alias {
 	 */
 	multipartHandler(req, res) {
 		const ctx = req.$ctx;
+		ctx.meta.$multipart = {};
 		const promises = [];
 
 		const buyboxOptions = _.defaultsDeep({ headers: req.headers }, this.busboyConfig, this.route.opts.busboyConfig);
@@ -159,10 +160,13 @@ class Alias {
 				return err;
 			}));
 		});
+		busboy.on("field", (field, value) => {
+			ctx.meta.$multipart[field] = value;
+		});
 
 		busboy.on("finish", async () => {
 			/* istanbul ignore next */
-			if (!this.route.opts.busboyConfig.empty && !promises.length)
+			if (!buyboxOptions.empty && !promises.length)
 				return this.service.sendError(req, res, new MoleculerClientError("File missing in the request"));
 
 			try {
