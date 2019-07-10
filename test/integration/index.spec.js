@@ -3283,7 +3283,9 @@ describe("Test file uploading", () => {
 					}
 				},
 				onAfterCall(ctx, route, req, res, data) {
-					return Promise.resolve(ctx.params.name ? { name: ctx.params.name, files: data } : data);
+					if(ctx.meta.$multipart && "name" in ctx.meta.$multipart)
+						data = { name: ctx.meta.$multipart.name, files: data };
+					return Promise.resolve(data);
 				},
 				// https://github.com/mscdex/busboy#busboy-methods
 				busboyConfig: {

@@ -143,6 +143,7 @@ class Alias {
 	 */
 	multipartHandler(req, res) {
 		const ctx = req.$ctx;
+		ctx.meta.$multipart = {};
 		const promises = [];
 
 		const buyboxOptions = _.defaultsDeep({ headers: req.headers }, this.busboyConfig, this.route.opts.busboyConfig);
@@ -160,7 +161,7 @@ class Alias {
 			}));
 		});
 		busboy.on("field", (field, value) => {
-			ctx.params[field] = value;
+			ctx.meta.$multipart[field] = value;
 		});
 
 		busboy.on("finish", async () => {
