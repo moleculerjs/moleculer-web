@@ -3356,7 +3356,7 @@ describe("Test file uploading", () => {
 			.then(res => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
-				expect(res.body).toEqual("moleculer");
+				expect(res.body).toEqual({name: "moleculer", files: []});
 			});
 	});
 
