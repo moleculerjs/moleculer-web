@@ -30,7 +30,7 @@
   "author": "MoleculerJS",
   "license": "MIT",
   "devDependencies": {
-    "benchmarkify": "2.1.1",
+    "benchmarkify": "2.1.2",
     "compression": "1.7.4",
     "coveralls": "3.0.4",
     "cross-env": "5.2.0",
