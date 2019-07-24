@@ -95,10 +95,13 @@ module.exports = {
 	// Service's metadata
 	metadata: {
 		$category: "api-gateway",
+		$description: "Official API Gateway service",
 		$official: true,
-		$name: pkg.name,
-		$version: pkg.version,
-		$repo: pkg.repository ? pkg.repository.url : null,
+		$package: {
+			name: pkg.name,
+			version: pkg.version,
+			repo: pkg.repository ? pkg.repository.url : null
+		}
 	},
 
 	/**
