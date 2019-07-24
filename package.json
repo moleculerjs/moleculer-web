@@ -59,10 +59,10 @@
     "webpack-dev-middleware": "3.7.0"
   },
   "peerDependencies": {
-    "moleculer": ">= 0.13.0"
+    "moleculer": "^0.13.0 || ^0.14.0"
   },
   "dependencies": {
-    "bluebird": "3.5.5",
+    "bluebird": "^3.5.5",
     "body-parser": "^1.19.0",
     "busboy": "^0.3.1",
     "chalk": "^2.4.2",
@@ -70,10 +70,10 @@
     "etag": "^1.8.1",
     "fresh": "^0.5.2",
     "isstream": "^0.1.2",
-    "lodash": "^4.17.11",
+    "lodash": "^4.17.15",
     "path-to-regexp": "^3.0.0",
     "qs": "^6.7.0",
-    "serve-static": "1.14.1"
+    "serve-static": "^1.14.1"
   },
   "engines": {
     "node": ">= 8.x.x"
