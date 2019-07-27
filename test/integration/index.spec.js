@@ -2583,6 +2583,7 @@ describe("Test onBeforeCall & onAfterCall", () => {
 				const response = beforeCall.mock.calls[0][3];
 
 				expect(ctx.action.name).toBe("api.rest");
+				expect(ctx.meta.custom).toBe("John");
 				// expect(ctx.meta.endpoint).toBe(broker.nodeID + ":test.hello");
 				// expect(ctx.meta.action).toBe("test.hello");
 
