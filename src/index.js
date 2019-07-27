@@ -452,9 +452,14 @@ module.exports = {
 				}
 			}
 
+			// onBeforeCall handling
+			if (route.onBeforeCall) {
+				await route.onBeforeCall.call(this, ctx, route, req, res);
+			}
+
 			// Resolve endpoint by action name
 			if (alias.action) {
-				const endpoint = this.broker.findNextActionEndpoint(alias.action);
+				const endpoint = this.broker.findNextActionEndpoint(alias.action, route.callOptions);
 				if (endpoint instanceof Error) {
 					if (!alias._notDefined && endpoint instanceof ServiceNotFoundError) {
 						throw new ServiceUnavailableError();
@@ -476,11 +481,6 @@ module.exports = {
 
 				req.$endpoint = endpoint;
 				req.$action = endpoint.action;
-			}
-
-			// onBeforeCall handling
-			if (route.onBeforeCall) {
-				await route.onBeforeCall.call(this, ctx, route, req, res);
 			}
 
 			// Authentication
