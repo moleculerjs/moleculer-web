@@ -79,4 +79,16 @@ describe.skip("Test Errors", () => {
 		expect(err.message).toBe("Rate limit exceeded");
 		expect(err.data).toEqual({ a: 5 });
 	});
+
+	it("test ServiceUnavailable", () => {
+		let err = new errors.ServiceUnavailableError("ERR_NOT_AVAILABLE", { a: 5 });
+		expect(err).toBeDefined();
+		expect(err).toBeInstanceOf(Error);
+		expect(err).toBeInstanceOf(errors.ServiceUnavailableError);
+		expect(err.code).toBe(503);
+		expect(err.type).toBe("ERR_NOT_AVAILABLE");
+		expect(err.name).toBe("ServiceUnavailableError");
+		expect(err.message).toBe("Service unavailable");
+		expect(err.data).toEqual({ a: 5 });
+	});
 });

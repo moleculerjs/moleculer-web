@@ -1,8 +1,17 @@
 -----------------------------
 <a name="0.9.0"></a>
-# 0.9.0 (2018-xx-xx)
+# 0.9.0 (2019-xx-xx)
 
 ## Breaking changes
+
+### Drop Node 6 support
+Due to Node 6 LTS end of life, the minimum Node version is 8.
+
+### Changed `mappingPolicy` default value
+In the previous version the `mappingPolicy` default value was `all` which means, you can call
+any services via API Gateway which accepted by whitelist. This setting is not too secure.
+From this version, the default value is `restrict` if at least one alias is defined in route options.
+If there are not aliases & `mappingPolicy` defined, the behaviour will be the old one.
 
 ### Use `server` property instead of `middleware`
 We have removed the `middleware` service setting because it was not straightforward. Therefore, we have created a new `server` setting.
@@ -35,7 +44,7 @@ module.exports = {
 ```
 
 ### Other low-level breaking changes
-- `sendResponse` signature is changed: `this.sendResponse(req, res, data)`
+- `sendResponse` signature is changed to `this.sendResponse(req, res, data)`
 
 ## New 
 
@@ -89,6 +98,8 @@ module.exports = {
                     limits: {
                         files: 1
                     }
+                    // Can be defined limit event handlers
+                    // `onPartsLimit`, `onFilesLimit` or `onFieldsLimit`
                 },
 
                 mappingPolicy: "restrict"
@@ -222,7 +233,7 @@ module.exports = {
 // posts.service.js
 module.exports = {
     name: "posts",
-	version: 2,
+    version: 2,
 
     settings: {
         // Base path
@@ -231,13 +242,13 @@ module.exports = {
 
     actions: {
         list: {
-            // Expose as "/v2/posts/"
+            // Expose as "/api/v2/posts/"
             rest: "GET /",
             handler(ctx) {}
         },
 
         get: {
-            // Expose as "/v2/posts/:id"
+            // Expose as "/api/v2/posts/:id"
             rest: "GET /:id",
             handler(ctx) {}
         },
@@ -262,7 +273,7 @@ module.exports = {
 
 **The generated aliases**
 ```
-   GET /api/hi          	=> test.hello
+   GET /api/hi             => test.hello
    GET /api/v2/posts       => v2.posts.list
    GET /api/v2/posts/:id   => v2.posts.get
   POST /api/v2/posts       => v2.posts.create
@@ -270,13 +281,38 @@ module.exports = {
 DELETE /api/v2/posts/:id   => v2.posts.remove
 ```
 
-> If `rest: true` in service settings, API Gateway will use the service name (with version) as base path.
+**Example to define full path alias**
+```js
+// posts.service.js
+module.exports = {
+    name: "posts",
+    version: 2,
 
-> If `rest: true` in action definition, API Gateway will use action name in path.
+    settings: {
+        // Base path
+        rest: "posts/"
+    },
+
+    actions: {
+        tags: {
+            // Expose as "/tags/" instead of "/api/v2/posts/tags"
+            rest: {
+                method: "GET",
+                fullPath: "/tags"
+            },
+            handler(ctx) {}
+        }
+    }
+};
+```
 
 ## Changes
-- new `optimizeOrder: true` setting in order to optimize route paths (deeper first). Defaults: `true`.
+- new `optimizeOrder: true` setting in order to optimize route & alias paths (deeper first). Default: `true`.
+- new `logging` route option to disable request logging. It can be useful for health check routes. Default: `true`.
 - tilde (`~`) replace issue fixed. [#98](https://github.com/moleculerjs/moleculer-web/pull/98)
+- throw `503` - `ServiceUnavailableError` when a service defined in aliases but not available. Ref: [#27](https://github.com/moleculerjs/moleculer-web/issues/27)
+- new `internalServiceSpecialChar` service setting to override special char for internal services (`~`)
+- new `httpServerTimeout` setting to overwrite the default HTTP server timeout. [#126](https://github.com/moleculerjs/moleculer-web/pull/126)
 
 -----------------------------
 <a name="0.8.5"></a>

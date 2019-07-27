@@ -9,20 +9,17 @@
 			"type": "node",
 			"request": "launch",
 			"name": "Launch demo",
-			"program": "${workspaceRoot}\\examples\\index.js",
+			"program": "${file}",
 			"cwd": "${workspaceRoot}",
 			"env": {
 				"PORT": "3000"
-			},
-			"args": [
-				"simple"
-			]
+			}
 		},
 		{
 			"type": "node",
 			"request": "launch",
 			"name": "Jest",
-			"program": "${workspaceRoot}\\node_modules\\jest-cli\\bin\\jest.js",
+			"program": "${workspaceRoot}/node_modules/jest-cli/bin/jest.js",
 			"args": ["--runInBand"],
 			"cwd": "${workspaceRoot}",
 			"console": "internalConsole",

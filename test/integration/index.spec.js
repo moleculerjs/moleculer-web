@@ -13,6 +13,9 @@ const ApiGateway = require("../../index");
 const { ServiceBroker, Context } = require("moleculer");
 const { MoleculerError } = require("moleculer").Errors;
 const { UnAuthorizedError, ERR_NO_TOKEN } = ApiGateway.Errors;
+const Busboy = require("busboy");
+const Alias = require("../../src/alias");
+
 /*
 setTimeout(() => {
 	const util = require("util");
@@ -750,28 +753,33 @@ describe("Test aliases", () => {
 
 	beforeAll(() => {
 		[ broker, service, server] = setup({
-			routes: [{
-				path: "/api",
-				aliases: {
-					"add": "math.add",
-					"GET hello": "test.hello",
-					"POST   /hello": "test.greeter",
-					"GET 	greeter/:name": "test.greeter",
-					"POST 	greeting/:name": "test.greeter",
-					"opt-test/:name?": "test.echo",
-					"/repeat-test/:args*": "test.echo",
-					"GET /": "test.hello",
-					"GET custom": customAlias,
-					"GET /middleware": customMiddlewares,
-					"GET /wrong-middleware": [customMiddlewares[0], customMiddlewares[1]],
-					"GET /error-middleware": [customMiddlewares[0], customMiddlewares[1], throwMiddleware],
-					"GET /error-handled-middleware": [customMiddlewares[0], customMiddlewares[1], throwMiddleware, errorHandlerMiddleware],
-					"GET reqres": {
-						action: "test.reqres",
-						passReqResToParams: true
-					},
+			routes: [
+				{
+					path: "/api",
+					aliases: {
+						"add": "math.add",
+						"GET hello": "test.hello",
+						"POST   /hello": "test.greeter",
+						"GET 	greeter/:name": "test.greeter",
+						"POST 	greeting/:name": "test.greeter",
+						"opt-test/:name?": "test.echo",
+						"/repeat-test/:args*": "test.echo",
+						"GET /": "test.hello",
+						"GET custom": customAlias,
+						"GET /middleware": customMiddlewares,
+						"GET /wrong-middleware": [customMiddlewares[0], customMiddlewares[1]],
+						"GET /error-middleware": [customMiddlewares[0], customMiddlewares[1], throwMiddleware],
+						"GET /error-handled-middleware": [customMiddlewares[0], customMiddlewares[1], throwMiddleware, errorHandlerMiddleware],
+						"GET reqres": {
+							action: "test.reqres",
+							passReqResToParams: true
+						},
+					}
+				},
+				{
+					path: "/unsecure",
 				}
-			}]
+			]
 		});
 
 		broker.loadService("./test/services/math.service");
@@ -781,9 +789,9 @@ describe("Test aliases", () => {
 	afterAll(() => broker.stop());
 
 
-	it("GET /api/math.add", () => {
+	it("GET /unsecure/math.add", () => {
 		return request(server)
-			.get("/api/math.add")
+			.get("/unsecure/math.add")
 			.query({ a: 5, b: 8 })
 			.then(res => {
 				expect(res.statusCode).toBe(200);
@@ -792,6 +800,21 @@ describe("Test aliases", () => {
 			});
 	});
 
+	it("GET /api/math.add", () => {
+		return request(server)
+			.get("/api/math.add")
+			.query({ a: 5, b: 8 })
+			.then(res => {
+				expect(res.statusCode).toBe(404);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toEqual({
+					"name": "NotFoundError",
+					"message": "Not found",
+					"code": 404,
+					"type": "NOT_FOUND",
+				});
+			});
+	});
 
 	it("GET /api/add", () => {
 		return request(server)
@@ -815,9 +838,9 @@ describe("Test aliases", () => {
 			});
 	});
 
-	it("GET /api/test/hello", () => {
+	it("GET /unsecure/test/hello", () => {
 		return request(server)
-			.get("/api/test/hello")
+			.get("/unsecure/test/hello")
 			.then(res => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
@@ -866,9 +889,9 @@ describe("Test aliases", () => {
 			});
 	});
 
-	it("GET /api/~node/health", () => {
+	it("GET /unsecure/~node/health", () => {
 		return request(server)
-			.get("/api/~node/health")
+			.get("/unsecure/~node/health")
 			.then(res => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
@@ -882,11 +905,10 @@ describe("Test aliases", () => {
 				expect(res.statusCode).toBe(404);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
 				expect(res.body).toEqual({
-					"name": "ServiceNotFoundError",
-					"message": "Service 'greeter.Norbert' is not found.",
+					"name": "NotFoundError",
+					"message": "Not found",
 					"code": 404,
-					"type": "SERVICE_NOT_FOUND",
-					"data": { "action": "greeter.Norbert", nodeID: undefined }
+					"type": "NOT_FOUND"
 				});
 			});
 	});
@@ -1019,7 +1041,11 @@ describe("Test aliases", () => {
 					"code": 500,
 					"type": "NO_ALIAS_HANDLER",
 					"data": {
-						"path": "/api/wrong-middleware"
+						"path": "/api/wrong-middleware",
+						"alias": {
+							"method": "GET",
+							"path": "wrong-middleware"
+						}
 					}
 				});
 
@@ -1852,7 +1878,8 @@ describe("Test multiple routes", () => {
 					],
 					aliases: {
 						"main": "math.add"
-					}
+					},
+					mappingPolicy: "all"
 				},
 				{
 					path: "/api2",
@@ -1861,7 +1888,8 @@ describe("Test multiple routes", () => {
 					],
 					aliases: {
 						"main": "test.greeter"
-					}
+					},
+					mappingPolicy: "all"
 				}
 			]
 		});
@@ -1950,7 +1978,7 @@ describe("Test mappingPolicy route option", () => {
 						aliases: {
 							"add": "math.add"
 						},
-						// mappingPolicy: "all" (default value)
+						mappingPolicy: "all"
 					}
 				]
 			});
@@ -2526,6 +2554,7 @@ describe("Test onBeforeCall & onAfterCall", () => {
 			settings: {
 				routes: [{
 					aliases: {
+						"hello": "test.hello",
 						"custom": (req, res) => res.end("Hello Custom")
 					},
 					onBeforeCall: beforeCall,
@@ -2540,7 +2569,7 @@ describe("Test onBeforeCall & onAfterCall", () => {
 
 		return broker.start()
 			.then(() => request(server)
-				.get("/test/hello"))
+				.get("/hello"))
 			.then(res => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
@@ -3080,6 +3109,70 @@ describe("Test lifecycle events", () => {
 	});
 });
 
+describe("Test route.path and aliases", () => {
+	let broker;
+	let service;
+	let nextHandler = jest.fn((req, res) => res.sendStatus(200));
+
+	beforeAll(() => {
+
+		broker = new ServiceBroker({ logger: false });
+
+		service = broker.createService(ApiGateway, {
+			settings: {
+				path: "/api",
+				autoAliases: true,
+				routes: [{
+					path: "/te",
+					aliases: {
+						"GET test"(req, res) {
+							res.end("/api/te/test");
+						}
+					}
+				},{
+					path: "",
+					aliases: {
+						"GET test"(req, res) {
+							res.end("/api/test");
+						}
+					}
+				}]
+			}
+		});
+		broker.loadService("./test/services/test.service");
+
+		return broker.start();
+	});
+
+	afterAll(() => {
+		return broker.stop();
+	});
+
+	it("GET /api/te/test", () => {
+		return request(service.server)
+			.get("/api/te/test")
+			.then(res => {
+				console.log(res.body);
+				expect(res.statusCode).toBe(200);
+				expect(res.text).toBe("/api/te/test");
+				expect(nextHandler).toHaveBeenCalledTimes(0);
+			});
+	});
+
+	it("GET /api/test", () => {
+		return request(service.server)
+			.get("/api/test")
+			.then(res => {
+				console.log(res.body);
+				expect(res.statusCode).toBe(200);
+				expect(res.text).toBe("/api/test");
+				expect(nextHandler).toHaveBeenCalledTimes(0);
+			});
+	});
+
+});
+
+
 describe("Test middleware mode", () => {
 	let broker;
 	let app;
@@ -3158,6 +3251,8 @@ describe("Test file uploading", () => {
 		}
 	});
 
+	const onFilesLimitFn = jest.fn();
+
 	const service = broker.createService(ApiGateway, {
 		settings: {
 			routes: [{
@@ -3179,6 +3274,7 @@ describe("Test file uploading", () => {
 						type: "multipart",
 						// Action level busboy config
 						busboyConfig: {
+							empty: true,
 							limits: {
 								files: 3
 							}
@@ -3186,12 +3282,17 @@ describe("Test file uploading", () => {
 						action: "file.save"
 					}
 				},
-
+				onAfterCall(ctx, route, req, res, data) {
+					if(ctx.meta.$multipart && "name" in ctx.meta.$multipart)
+						data = { name: ctx.meta.$multipart.name, files: data };
+					return Promise.resolve(data);
+				},
 				// https://github.com/mscdex/busboy#busboy-methods
 				busboyConfig: {
 					limits: {
 						files: 1
-					}
+					},
+					onFilesLimit: onFilesLimitFn
 				},
 			}]
 		}
@@ -3231,6 +3332,33 @@ describe("Test file uploading", () => {
 				expect(res.body).toEqual([
 					{ hash: origHashes["logo.png"] }
 				]);
+
+				expect(onFilesLimitFn).toHaveBeenCalledTimes(0);
+			});
+	});
+
+	it("should send data field with multipart", () => {
+		return request(server)
+			.post("/upload")
+			.attach("myFile", assetsDir + "logo.png")
+			.field("name", "moleculer")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toEqual({name: "moleculer", files: [{ hash: origHashes["logo.png"] }]});
+
+				expect(onFilesLimitFn).toHaveBeenCalledTimes(0);
+			});
+	});
+
+	it("should empty file with multipart", () => {
+		return request(server)
+			.post("/upload/multi")
+			.field("name", "moleculer")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toEqual({name: "moleculer", files: []});
 			});
 	});
 
@@ -3245,6 +3373,8 @@ describe("Test file uploading", () => {
 				expect(res.body).toEqual([
 					{ hash: origHashes["logo.png"] }
 				]);
+				expect(onFilesLimitFn).toHaveBeenCalledTimes(1);
+				expect(onFilesLimitFn).toHaveBeenCalledWith(expect.any(Busboy), expect.any(Alias), service);
 			});
 	});
 
@@ -3358,6 +3488,16 @@ describe("Test dynamic routing", () => {
 				});
 			});
 	});
+
+	it("but should find '/my/hello'", () => {
+		return request(server)
+			.get("/my/hello")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toBe("Hello Moleculer");
+			});
+	});
 });
 
 describe("Test route path optimization", () => {
@@ -3370,7 +3510,11 @@ describe("Test route path optimization", () => {
 			routes: [
 				{ path: "/", aliases: { "b": "test.hello" } },
 				{ path: "/a", aliases: { "c": "test.hello" } },
-				{ path: "/a/b", aliases: { "c": "test.hello" } },
+				{ path: "/a/b", aliases: {
+					"c": "test.hello",
+					"d/:id": "test.params",
+					"d/e": "test.params",
+				} },
 			]
 		});
 		return broker.start();
@@ -3407,6 +3551,26 @@ describe("Test route path optimization", () => {
 				expect(res.body).toBe("Hello Moleculer");
 			});
 	});
+
+	it("should find '/a/b/d/e'", () => {
+		return request(server)
+			.get("/a/b/d/e")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toEqual({});
+			});
+	});
+
+	it("should find '/a/b/d/:id'", () => {
+		return request(server)
+			.get("/a/b/d/1234")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toEqual({ id: "1234" });
+			});
+	});
 });
 
 describe("Test auto aliasing", () => {
@@ -3425,7 +3589,8 @@ describe("Test auto aliasing", () => {
 					path: "api",
 					whitelist: [
 						"posts.*",
-						"test.hello"
+						"test.hello",
+						"test.full*"
 					],
 
 					autoAliases: true,
@@ -3534,11 +3699,10 @@ describe("Test auto aliasing", () => {
 				expect(res.statusCode).toBe(404);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
 				expect(res.body).toEqual({
-					"name": "ServiceNotFoundError",
-					"message": "Service 'posts' is not found.",
+					"name": "NotFoundError",
+					"message": "Not found",
 					"code": 404,
-					"type": "SERVICE_NOT_FOUND",
-					"data": { "action": "posts" }
+					"type": "NOT_FOUND"
 				});
 			});
 	});
@@ -3566,6 +3730,16 @@ describe("Test auto aliasing", () => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
 				expect(res.body.length).toBe(5);
+			});
+	});
+
+	it("should call 'GET /fullPath'", () => {
+		return request(server)
+			.get("/fullPath")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toBe("Full path");
 			});
 	});
 });
@@ -3784,4 +3958,176 @@ describe("Test ETag cache control", () => {
 				});
 		});
 	});
+});
+
+describe("Test new alias handling", () => {
+	let broker;
+	let server;
+	let service;
+
+	beforeAll(() => {
+		[ broker, service, server] = setup({
+			path: "/api",
+			routes: [
+				{
+					path: "",
+					aliases: {
+						"GET users": "users.create1",
+						"GET people": "people.list" // 503
+					},
+				},
+				{
+					path: "/user",
+					aliases: {
+						"GET users": "users.create2",
+					},
+				},
+				{
+					path: "/lang/:lng/",
+					aliases: {
+						"GET /": (req, res) => {
+							res.end("Received lang: " + req.$params.lng);
+						}
+					}
+				}
+			],
+		});
+
+		broker.createService({
+			name: "users",
+			actions: {
+				create1() {
+					return "OK1";
+				},
+				create2() {
+					return "OK2";
+				}
+			}
+		});
+
+		return broker.start();
+	});
+
+	afterAll(() => broker.stop());
+
+	it("should find '/api/user/users'", () => {
+		return request(server)
+			.get("/api/user/users")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toEqual("OK2");
+			});
+	});
+
+	it("should find '/api/users'", () => {
+		return request(server)
+			.get("/api/users")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toEqual("OK1");
+			});
+	});
+
+	it("should receive the language '/api/lang/:lng'", () => {
+		return request(server)
+			.get("/api/lang/hu")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.text).toEqual("Received lang: hu");
+			});
+	});
+
+	it("should return 503 - Service unavailable for '/api/people'", () => {
+		return request(server)
+			.get("/api/people")
+			.then(res => {
+				expect(res.statusCode).toBe(503);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toEqual({
+					"name": "ServiceUnavailableError",
+					"message": "Service unavailable",
+					"code": 503
+				});
+			});
+	});
+
+});
+
+describe("Test internal service special char", () => {
+	let broker;
+	let server;
+	let service;
+
+	beforeAll(() => {
+		[ broker, service, server] = setup({
+			path: "/api",
+			internalServiceSpecialChar: "@",
+		});
+
+		return broker.start();
+	});
+
+	afterAll(() => broker.stop());
+
+	it("should call '/api/@node.health'", () => {
+		return request(server)
+			.get("/api/@node/health")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+			});
+	});
+
+	it("should not call '/api/$node.health'", () => {
+		return request(server)
+			.get("/api/~node/health")
+			.then(res => {
+				expect(res.statusCode).toBe(404);
+			});
+	});
+});
+
+describe("Test httpServerTimeout setting", () => {
+	let broker;
+	let server;
+	let service;
+
+	beforeAll(() => {
+		[ broker, service, server] = setup({
+			httpServerTimeout: 500
+		});
+
+		return broker.start();
+	});
+
+	afterAll(() => broker.stop());
+
+	it("should return response", () => {
+		return request(server)
+			.post("/test/apitimeout")
+			.send({ counter:2, sleeptime: 100 })
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.body).toEqual({
+					"status": 200,
+					"msg": "apitimeout response"
+				});
+			});
+	});
+
+	it("should throw timeout error", () => {
+		return request(server)
+			.post("/test/apitimeout")
+			.send({ counter:6, sleeptime: 100 })
+			.then(res => {
+				expect(true).toBe(false);
+			})
+			.catch(err => {
+				expect(err.name).toBe("Error");
+				expect(err.message).toBe("socket hang up");
+			});
+	});
+
 });

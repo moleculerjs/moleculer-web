@@ -1,3 +1,9 @@
+/*
+ * moleculer
+ * Copyright (c) 2019 MoleculerJS (https://github.com/moleculerjs/moleculer)
+ * MIT Licensed
+ */
+
 "use strict";
 
 const Promise 			= require("bluebird");
@@ -21,13 +27,13 @@ function decodeParam(param) {
 	}
 }
 
-// Remove slashes "/" from the left & right sides
+// Remove slashes "/" from the left & right sides and remove double "//" slashes
 function removeTrailingSlashes(s) {
 	if (s.startsWith("/"))
 		s = s.slice(1);
 	if (s.endsWith("/"))
 		s = s.slice(0, -1);
-	return s;
+	return s; //.replace(/\/\//g, "/");
 }
 
 // Add slashes "/" to the left & right sides

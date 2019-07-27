@@ -1,3 +1,9 @@
+/*
+ * moleculer
+ * Copyright (c) 2019 MoleculerJS (https://github.com/moleculerjs/moleculer)
+ * MIT Licensed
+ */
+
 "use strict";
 
 const pathToRegexp 				= require("path-to-regexp");
@@ -68,15 +74,18 @@ class Alias {
 
 		this.path = removeTrailingSlashes(this.path);
 
+		this.fullPath = this.fullPath || (addSlashes(this.route.path) + this.path);
+		if (this.fullPath !== "/" && this.fullPath.endsWith("/")) {
+			this.fullPath = this.fullPath.slice(0, -1);
+		}
+
 		this.keys = [];
-		this.re = pathToRegexp(this.path, this.keys, {}); // Options: https://github.com/pillarjs/path-to-regexp#usage
+		this.re = pathToRegexp(this.fullPath, this.keys, {}); // Options: https://github.com/pillarjs/path-to-regexp#usage
 
 		if (this.type == "multipart") {
 			// Handle file upload in multipart form
 			this.handler = this.multipartHandler.bind(this);
 		}
-
-		this.fullPath = addSlashes(this.route.path) + this.path;
 	}
 
 	/**
@@ -116,6 +125,7 @@ class Alias {
 	 *
 	 */
 	printPath() {
+		/* istanbul ignore next */
 		return `${this.method} ${this.fullPath}`;
 	}
 
@@ -133,41 +143,62 @@ class Alias {
 	 */
 	multipartHandler(req, res) {
 		const ctx = req.$ctx;
+		ctx.meta.$multipart = {};
 		const promises = [];
 
-		const busboy = new Busboy(_.defaultsDeep({ headers: req.headers }, this.busboyConfig, this.route.opts.busboyConfig));
+		const buyboxOptions = _.defaultsDeep({ headers: req.headers }, this.busboyConfig, this.route.opts.busboyConfig);
+		const busboy = new Busboy(buyboxOptions);
 		busboy.on("file", (fieldname, file, filename, encoding, mimetype) => {
 			promises.push(ctx.call(this.action, file, _.defaultsDeep({}, this.route.opts.callOptions, { meta: {
 				fieldname: fieldname,
 				filename: filename,
 				encoding: encoding,
 				mimetype: mimetype,
-			} })));
+			} })).catch(err => {
+				file.resume(); // Drain file stream to continue processing form
+				busboy.emit("error", err);
+				return err;
+			}));
+		});
+		busboy.on("field", (field, value) => {
+			ctx.meta.$multipart[field] = value;
 		});
 
-		busboy.on("finish", () => {
+		busboy.on("finish", async () => {
 			/* istanbul ignore next */
-			if (!promises.length)
+			if (!buyboxOptions.empty && !promises.length)
 				return this.service.sendError(req, res, new MoleculerClientError("File missing in the request"));
 
-			Promise.all(promises).then(data => {
+			try {
+				let data = await this.service.Promise.all(promises);
 				if (this.route.onAfterCall)
-					return this.route.onAfterCall.call(this, ctx, this.route, req, res, data);
-				return data;
+					data = await this.route.onAfterCall.call(this, ctx, this.route, req, res, data);
 
-			}).then(data => {
 				this.service.sendResponse(req, res, data, {});
 
-			}).catch(err => {
+			} catch(err) {
 				/* istanbul ignore next */
 				this.service.sendError(req, res, err);
-			});
+			}
 		});
 
+		/* istanbul ignore next */
 		busboy.on("error", err => {
-			/* istanbul ignore next */
 			this.service.sendError(req, res, err);
 		});
+
+		// Add limit event handlers
+		if (_.isFunction(buyboxOptions.onPartsLimit)) {
+			busboy.on("partsLimit", () => buyboxOptions.onPartsLimit.call(this.service, busboy, this, this.service));
+		}
+
+		if (_.isFunction(buyboxOptions.onFilesLimit)) {
+			busboy.on("filesLimit", () => buyboxOptions.onFilesLimit.call(this.service, busboy, this, this.service));
+		}
+
+		if (_.isFunction(buyboxOptions.onFieldsLimit)) {
+			busboy.on("fieldsLimit", () => buyboxOptions.onFieldsLimit.call(this.service, busboy, this, this.service));
+		}
 
 		req.pipe(busboy);
 	}

@@ -36,7 +36,7 @@ broker.createService(ApiService, {
 				path: "api",
 
 				whitelist: [
-					"posts.*",
+					"**posts.*",
 					"test.*"
 				],
 
@@ -50,10 +50,16 @@ broker.createService(ApiService, {
 				path: "/admin",
 
 				whitelist: [
-					"auth.*"
+					"auth.*",
+					"$node.*"
 				],
 
-				autoAliases: true
+				aliases: {
+					"GET /services": "$node.services"
+				},
+
+				autoAliases: true,
+				logging: false
 			}
 		]
 	}

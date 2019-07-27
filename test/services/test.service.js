@@ -32,12 +32,52 @@ module.exports = {
 			}
 		},
 
+		fullPath: {
+			rest: {
+				method: "GET",
+				fullPath: "/fullPath",
+			},
+			handler(ctx) {
+				return "Full path";
+			}
+		},
+
 		whoami: {
 			handler(ctx) {
 				if (ctx.meta.user) {
 					return `Hello ${ctx.meta.user.username || "no-name-user"}`;
 				} else {
 					return "Who are you?";
+				}
+			}
+		},
+
+		apitimeout: {
+			rest: "/apitimeout",
+			params: {
+				counter: "number",
+				sleeptime: "number"
+			},
+			async handler(ctx) {
+				function sleep(ms) {
+					return new Promise(resolve => setTimeout(resolve, ms));
+				}
+				try{
+					var c=0
+					while(c!=ctx.params.counter){
+						await sleep(ctx.params.sleeptime)
+						c++;
+					}
+					return {
+						status:200,
+						msg:"apitimeout response"
+					}
+				}catch(e){
+					return {
+						status:500,
+						msg:"apitimeout response",
+						error:e
+					}
 				}
 			}
 		},
@@ -49,6 +89,12 @@ module.exports = {
 					params: ctx.params,
 					meta: ctx.meta
 				};
+			}
+		},
+
+		params: {
+			handler(ctx) {
+				return ctx.params;
 			}
 		},
 
