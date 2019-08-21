@@ -155,7 +155,10 @@ module.exports = {
 			visibility: "private",
 			tracing: {
 				tags: {
-					params: false
+					params: [
+						"req.url",
+						"req.method"
+					]
 				}
 			},
 			handler(ctx) {
