@@ -1334,10 +1334,10 @@ module.exports = {
 								};
 							}
 						} else if (_.isObject(action.rest)) {
-							// Handle route: { method: "POST", path: "/other" }
+							// Handle route: { method: "POST", path: "/other", basePath: "newBasePath" }
 							alias = Object.assign({}, action.rest, {
 								method: action.rest.method || "*",
-								path: basePath + (action.rest.path ? action.rest.path : action.rawName)
+								path: (action.rest.basePath ? action.rest.basePath : basePath) + (action.rest.path ? action.rest.path : action.rawName)
 							});
 						}
 
