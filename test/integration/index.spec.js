@@ -3583,14 +3583,15 @@ describe("Test auto aliasing", () => {
 	}
 
 	beforeAll(() => {
-		[ broker, service, server] = setup({
+		[broker, service, server] = setup({
 			routes: [
 				{
 					path: "api",
 					whitelist: [
 						"posts.*",
 						"test.hello",
-						"test.full*"
+						"test.full*",
+						"test.base*"
 					],
 
 					autoAliases: true,
@@ -3707,13 +3708,28 @@ describe("Test auto aliasing", () => {
 			});
 	});
 
-	it("should call 'GET /api/hi'", () => {
+	it("should call 'GET /api/custom-base-path/base-path'", () => {
 		return request(server)
-			.get("/api/hi")
+			.get("/api/custom-base-path/base-path")
 			.then(res => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
-				expect(res.body).toBe("Hello Moleculer");
+				expect(res.body).toBe("Hello Custom Moleculer Root Path");
+			});
+	});
+
+	it("should not call 'GET /api/custom-base-path/base-path-error'", () => {
+		return request(server)
+			.get("/api/custom-base-path/base-path-error")
+			.then(res => {
+				expect(res.statusCode).toBe(404);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toEqual({
+					"code": 404,
+					"message": "Not found",
+					"name": "NotFoundError",
+					"type": "NOT_FOUND"
+				});
 			});
 	});
 
