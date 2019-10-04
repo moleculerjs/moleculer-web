@@ -42,6 +42,27 @@ module.exports = {
 			}
 		},
 
+		basePath: {
+			rest: {
+				method: "GET",
+				path: "/base-path",
+				basePath: "custom-base-path"
+			},
+			handler(ctx) {
+				return "Hello Custom Moleculer Root Path";
+			}
+		},
+
+		basePathError: {
+			rest: {
+				method: "GET",
+				path: "/base-path-error"
+			},
+			handler(ctx) {
+				return "Hello Custom Moleculer Root Path with Error";
+			}
+		},
+
 		whoami: {
 			handler(ctx) {
 				if (ctx.meta.user) {
