@@ -63,7 +63,7 @@
     "chalk": "2.4.1",
     "es6-error": "4.1.1",
     "isstream": "0.1.2",
-    "lodash": "4.17.11",
+    "lodash": "^4.17.15",
     "path-to-regexp": "2.4.0",
     "qs": "6.6.0",
     "serve-static": "1.13.2"
