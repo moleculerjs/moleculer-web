@@ -12,15 +12,14 @@
  * 		https://localhost:3000/hi?name=John
  */
 
-let path 				= require("path");
-let fs 					= require("fs");
-let chalk 				= require("chalk");
-let { ServiceBroker } 	= require("moleculer");
-let ApiGatewayService 	= require("../../index");
-let spdy 				= require("spdy");
+const path 					= require("path");
+const fs 					= require("fs");
+const { ServiceBroker } 	= require("moleculer");
+const ApiGatewayService 	= require("../../index");
+const spdy 					= require("spdy");
 
 // Create broker
-let broker = new ServiceBroker({
+const broker = new ServiceBroker({
 	logger: console
 });
 
