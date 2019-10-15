@@ -1,7 +1,16 @@
 "use strict";
 
 /**
+ * This example demonstrate to lock route aliases to a dedicated nodeID.
+ * The nodeID can be defined in the `route.callOptions`.
  *
+ * Example:
+ *
+ *  Call service only on `node-1`
+ * 		GET http://localhost:3000/node-1/where
+ *
+ *  Call service only on `node-2`
+ * 		GET http://localhost:3000/node-2/where
  */
 
 let path 				= require("path");
