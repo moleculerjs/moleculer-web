@@ -106,5 +106,9 @@ module.exports = {
 				return stream;
 			}
 		},
+
+		where(ctx) {
+			return `Response from ${this.broker.nodeID}`;
+		}
 	}
 };

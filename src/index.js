@@ -358,7 +358,7 @@ module.exports = {
 						const body = _.isObject(req.body) ? req.body : {};
 						Object.assign(params, body, req.query);
 					}
-					req.$params = params;
+					req.$params = params; // eslint-disable-line require-atomic-updates
 
 					// Resolve action name
 					let urlPath = req.parsedUrl.slice(route.path.length);
@@ -380,7 +380,7 @@ module.exports = {
 							Object.assign(params, foundAlias.params);
 						}
 
-						req.$alias = alias;
+						req.$alias = alias; // eslint-disable-line require-atomic-updates
 
 						// Alias handler
 						return resolve(await this.aliasHandler(req, res, alias));
@@ -457,7 +457,7 @@ module.exports = {
 
 			// Resolve endpoint by action name
 			if (alias.action) {
-				const endpoint = this.broker.findNextActionEndpoint(alias.action);
+				const endpoint = this.broker.findNextActionEndpoint(alias.action, route.callOptions);
 				if (endpoint instanceof Error) {
 					if (!alias._notDefined && endpoint instanceof ServiceNotFoundError) {
 						throw new ServiceUnavailableError();
