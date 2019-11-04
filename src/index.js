@@ -9,7 +9,7 @@
 const http 						= require("http");
 const https 					= require("https");
 const queryString 				= require("qs");
-const chalk						= require("chalk");
+const kleur						= require("kleur");
 const { match, deprecate }		= require("moleculer").Utils;
 const pkg						= require("../package.json");
 
@@ -155,7 +155,10 @@ module.exports = {
 			visibility: "private",
 			tracing: {
 				tags: {
-					params: false
+					params: [
+						"req.url",
+						"req.method"
+					]
 				}
 			},
 			handler(ctx) {
@@ -355,7 +358,7 @@ module.exports = {
 						const body = _.isObject(req.body) ? req.body : {};
 						Object.assign(params, body, req.query);
 					}
-					req.$params = params;
+					req.$params = params; // eslint-disable-line require-atomic-updates
 
 					// Resolve action name
 					let urlPath = req.parsedUrl.slice(route.path.length);
@@ -377,7 +380,7 @@ module.exports = {
 							Object.assign(params, foundAlias.params);
 						}
 
-						req.$alias = alias;
+						req.$alias = alias; // eslint-disable-line require-atomic-updates
 
 						// Alias handler
 						return resolve(await this.aliasHandler(req, res, alias));
@@ -851,13 +854,13 @@ module.exports = {
 		 */
 		coloringStatusCode(code) {
 			if (code >= 500)
-				return chalk.red.bold(code);
+				return kleur.red().bold(code);
 			if (code >= 400 && code < 500)
-				return chalk.red.bold(code);
+				return kleur.red().bold(code);
 			if (code >= 300 && code < 400)
-				return chalk.cyan.bold(code);
+				return kleur.cyan().bold(code);
 			if (code >= 200 && code < 300)
-				return chalk.green.bold(code);
+				return kleur.green().bold(code);
 
 			/* istanbul ignore next */
 			return code;
@@ -878,11 +881,11 @@ module.exports = {
 				const diff = process.hrtime(req.$startTime);
 				const duration = (diff[0] + diff[1] / 1e9) * 1000;
 				if (duration > 1000)
-					time = chalk.red(`[+${Number(duration / 1000).toFixed(3)} s]`);
+					time = kleur.red(`[+${Number(duration / 1000).toFixed(3)} s]`);
 				else
-					time = chalk.grey(`[+${Number(duration).toFixed(3)} ms]`);
+					time = kleur.grey(`[+${Number(duration).toFixed(3)} ms]`);
 			}
-			this.logger.info(`<= ${this.coloringStatusCode(res.statusCode)} ${req.method} ${chalk.bold(req.originalUrl)} ${time}`);
+			this.logger.info(`<= ${this.coloringStatusCode(res.statusCode)} ${req.method} ${kleur.bold(req.originalUrl)} ${time}`);
 
 			/* istanbul ignore next */
 			if (this.settings.logResponseData && this.settings.logResponseData in this.logger) {
@@ -1331,10 +1334,10 @@ module.exports = {
 								};
 							}
 						} else if (_.isObject(action.rest)) {
-							// Handle route: { method: "POST", path: "/other" }
+							// Handle route: { method: "POST", path: "/other", basePath: "newBasePath" }
 							alias = Object.assign({}, action.rest, {
 								method: action.rest.method || "*",
-								path: basePath + (action.rest.path ? action.rest.path : action.rawName)
+								path: (action.rest.basePath ? action.rest.basePath : basePath) + (action.rest.path ? action.rest.path : action.rawName)
 							});
 						}
 

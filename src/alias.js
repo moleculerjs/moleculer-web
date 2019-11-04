@@ -8,7 +8,7 @@
 
 const pathToRegexp 				= require("path-to-regexp");
 const Busboy 					= require("busboy");
-const chalk 					= require("chalk");
+const kleur 					= require("kleur");
 const _ 						= require("lodash");
 
 const { MoleculerClientError } = require("moleculer").Errors;
@@ -133,7 +133,7 @@ class Alias {
 	 *
 	 */
 	toString() {
-		return chalk.magenta(_.padStart(this.method, 6)) + " " + chalk.cyan(this.fullPath) + chalk.grey(" => ") + (this.handler != null && this.type !== "multipart" ? "<Function>" : this.action);
+		return kleur.magenta(_.padStart(this.method, 6)) + " " + kleur.cyan(this.fullPath) + kleur.grey(" => ") + (this.handler != null && this.type !== "multipart" ? "<Function>" : this.action);
 	}
 
 	/**
