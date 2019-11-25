@@ -462,7 +462,7 @@ module.exports = {
 
 			// Resolve endpoint by action name
 			if (alias.action) {
-				const endpoint = this.broker.findNextActionEndpoint(alias.action, route.callOptions);
+				const endpoint = this.broker.findNextActionEndpoint(alias.action, route.callOptions, ctx);
 				if (endpoint instanceof Error) {
 					if (!alias._notDefined && endpoint instanceof ServiceNotFoundError) {
 						throw new ServiceUnavailableError();
