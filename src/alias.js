@@ -11,6 +11,7 @@ const Busboy 					= require("busboy");
 const kleur 					= require("kleur");
 const _ 						= require("lodash");
 
+const { PayloadTooLarge } = require("./errors");
 const { MoleculerClientError } = require("moleculer").Errors;
 const { removeTrailingSlashes, addSlashes, decodeParam, compose } = require("./utils");
 
@@ -149,6 +150,13 @@ class Alias {
 		const buyboxOptions = _.defaultsDeep({ headers: req.headers }, this.busboyConfig, this.route.opts.busboyConfig);
 		const busboy = new Busboy(buyboxOptions);
 		busboy.on("file", (fieldname, file, filename, encoding, mimetype) => {
+			file.on("limit", () => {
+				// This file reached the file size limit.
+				if (_.isFunction(buyboxOptions.onFileSizeLimit)) {
+					buyboxOptions.onFileSizeLimit.call(this.service, file, busboy);
+				}
+				file.destroy(new PayloadTooLarge({ fieldname, filename, encoding, mimetype }));
+			});
 			promises.push(ctx.call(this.action, file, _.defaultsDeep({}, this.route.opts.callOptions, { meta: {
 				fieldname: fieldname,
 				filename: filename,
@@ -184,6 +192,8 @@ class Alias {
 
 		/* istanbul ignore next */
 		busboy.on("error", err => {
+			req.unpipe(req.busboy);
+			req.resume();
 			this.service.sendError(req, res, err);
 		});
 

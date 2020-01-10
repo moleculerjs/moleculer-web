@@ -52,7 +52,17 @@ broker.createService({
 						// Action level busboy config
 						busboyConfig: {
 							limits: {
-								files: 3
+								files: 3,
+								fileSize: 1 * 1024 * 1024
+							},
+							onPartsLimit(busboy, alias, svc) {
+								this.logger.info("Busboy parts limit!", busboy);
+							},
+							onFilesLimit(busboy, alias, svc) {
+								this.logger.info("Busboy file limit!", busboy);
+							},
+							onFieldsLimit(busboy, alias, svc) {
+								this.logger.info("Busboy fields limit!", busboy);
 							}
 						},
 						action: "file.save"

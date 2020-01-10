@@ -139,6 +139,26 @@ class NotFoundError extends MoleculerError {
 }
 
 /**
+ * Payload is too large HTTP error
+ *
+ * @class PayloadTooLarge
+ * @extends {Error}
+ */
+class PayloadTooLarge extends MoleculerClientError {
+	/**
+	 * Creates an instance of PayloadTooLarge.
+	 *
+	 * @param {String} type
+	 * @param {any} data
+	 *
+	 * @memberOf PayloadTooLarge
+	 */
+	constructor(data) {
+		super("Payload too large", 413, "PAYLOAD_TOO_LARGE", data);
+	}
+}
+
+/**
  * Rate limit exceeded HTTP error
  *
  * @class RateLimitExceeded
@@ -185,6 +205,7 @@ module.exports = {
 	ForbiddenError,
 	BadRequestError,
 	NotFoundError,
+	PayloadTooLarge,
 	RateLimitExceeded,
 	ServiceUnavailableError,
 

@@ -51,10 +51,23 @@ module.exports = {
 					const filePath = path.join(uploadDir, ctx.meta.filename || this.randomName());
 					const f = fs.createWriteStream(filePath);
 					f.on("close", () => {
+						// File written successfully
 						this.logger.info(`Uploaded file stored in '${filePath}'`);
 						resolve({ filePath, meta: ctx.meta });
 					});
-					f.on("error", err => reject(err));
+
+					ctx.params.on("error", err => {
+						this.logger.info("File error received", err.message);
+						reject(err);
+
+						// Destroy the local file
+						f.destroy(err);
+					});
+
+					f.on("error", () => {
+						// Remove the errored file.
+						fs.unlinkSync(filePath);
+					});
 
 					ctx.params.pipe(f);
 				});
