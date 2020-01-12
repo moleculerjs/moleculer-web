@@ -159,7 +159,8 @@ module.exports = {
 						"req.url",
 						"req.method"
 					]
-				}
+				},
+				spanName: ctx => `${ctx.params.req.method} ${ctx.params.req.url}`
 			},
 			handler(ctx) {
 				const req = ctx.params.req;
