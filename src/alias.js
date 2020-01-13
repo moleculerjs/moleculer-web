@@ -11,6 +11,7 @@ const Busboy 					= require("busboy");
 const kleur 					= require("kleur");
 const _ 						= require("lodash");
 
+const { PayloadTooLarge } = require("./errors");
 const { MoleculerClientError } = require("moleculer").Errors;
 const { removeTrailingSlashes, addSlashes, decodeParam, compose } = require("./utils");
 
@@ -146,9 +147,16 @@ class Alias {
 		ctx.meta.$multipart = {};
 		const promises = [];
 
-		const buyboxOptions = _.defaultsDeep({ headers: req.headers }, this.busboyConfig, this.route.opts.busboyConfig);
-		const busboy = new Busboy(buyboxOptions);
+		const busboyOptions = _.defaultsDeep({ headers: req.headers }, this.busboyConfig, this.route.opts.busboyConfig);
+		const busboy = new Busboy(busboyOptions);
 		busboy.on("file", (fieldname, file, filename, encoding, mimetype) => {
+			file.on("limit", () => {
+				// This file reached the file size limit.
+				if (_.isFunction(busboyOptions.onFileSizeLimit)) {
+					busboyOptions.onFileSizeLimit.call(this.service, file, busboy);
+				}
+				file.destroy(new PayloadTooLarge({ fieldname, filename, encoding, mimetype }));
+			});
 			promises.push(ctx.call(this.action, file, _.defaultsDeep({}, this.route.opts.callOptions, { meta: {
 				fieldname: fieldname,
 				filename: filename,
@@ -166,7 +174,7 @@ class Alias {
 
 		busboy.on("finish", async () => {
 			/* istanbul ignore next */
-			if (!buyboxOptions.empty && !promises.length)
+			if (!busboyOptions.empty && !promises.length)
 				return this.service.sendError(req, res, new MoleculerClientError("File missing in the request"));
 
 			try {
@@ -184,20 +192,22 @@ class Alias {
 
 		/* istanbul ignore next */
 		busboy.on("error", err => {
+			req.unpipe(req.busboy);
+			req.resume();
 			this.service.sendError(req, res, err);
 		});
 
 		// Add limit event handlers
-		if (_.isFunction(buyboxOptions.onPartsLimit)) {
-			busboy.on("partsLimit", () => buyboxOptions.onPartsLimit.call(this.service, busboy, this, this.service));
+		if (_.isFunction(busboyOptions.onPartsLimit)) {
+			busboy.on("partsLimit", () => busboyOptions.onPartsLimit.call(this.service, busboy, this, this.service));
 		}
 
-		if (_.isFunction(buyboxOptions.onFilesLimit)) {
-			busboy.on("filesLimit", () => buyboxOptions.onFilesLimit.call(this.service, busboy, this, this.service));
+		if (_.isFunction(busboyOptions.onFilesLimit)) {
+			busboy.on("filesLimit", () => busboyOptions.onFilesLimit.call(this.service, busboy, this, this.service));
 		}
 
-		if (_.isFunction(buyboxOptions.onFieldsLimit)) {
-			busboy.on("fieldsLimit", () => buyboxOptions.onFieldsLimit.call(this.service, busboy, this, this.service));
+		if (_.isFunction(busboyOptions.onFieldsLimit)) {
+			busboy.on("fieldsLimit", () => busboyOptions.onFieldsLimit.call(this.service, busboy, this, this.service));
 		}
 
 		req.pipe(busboy);
