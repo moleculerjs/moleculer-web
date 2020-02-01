@@ -66,7 +66,7 @@ class Alias {
 				else if(_.isFunction(mw))
 					return mw;
 			}));
-			this.handler = compose(...mws);
+			this.handler = compose.call(service, ...mws);
 		} else if (action != null) {
 			Object.assign(this, _.cloneDeep(action));
 		}

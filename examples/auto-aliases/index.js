@@ -36,8 +36,16 @@ broker.createService(ApiService, {
 				path: "api",
 
 				whitelist: [
+					"api.*",
 					"**posts.*",
 					"test.*"
+				],
+
+				use: [
+					function(req, res, next) {
+						this.logger.info("Middleware ", this.name);
+						next();
+					},
 				],
 
 				aliases: {
@@ -62,6 +70,12 @@ broker.createService(ApiService, {
 				logging: false
 			}
 		]
+	},
+
+	actions: {
+		listAliases: {
+			visibility: "published"
+		}
 	}
 });
 

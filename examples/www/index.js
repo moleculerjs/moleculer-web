@@ -40,7 +40,6 @@ let broker = new ServiceBroker({
 // Load other services
 broker.loadService(path.join(__dirname, "..", "math.service"));
 broker.loadService(path.join(__dirname, "..", "file.service"));
-broker.createService(require("moleculer-console-tracer"));
 
 // Load API Gateway
 broker.createService({
