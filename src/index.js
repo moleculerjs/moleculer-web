@@ -162,6 +162,7 @@ module.exports = {
 				},
 				spanName: ctx => `${ctx.params.req.method} ${ctx.params.req.url}`
 			},
+			timeout: 0,
 			handler(ctx) {
 				const req = ctx.params.req;
 				const res = ctx.params.res;
