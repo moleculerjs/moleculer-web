@@ -6,7 +6,6 @@
 
 "use strict";
 
-const Promise 			= require("bluebird");
 const _ 				= require("lodash");
 const fresh 			= require("fresh");
 const etag 				= require("etag");

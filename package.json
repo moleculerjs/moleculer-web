@@ -62,7 +62,6 @@
     "moleculer": "^0.13.0 || ^0.14.0"
   },
   "dependencies": {
-    "bluebird": "^3.7.1",
     "body-parser": "^1.19.0",
     "busboy": "^0.3.1",
     "es6-error": "^4.1.1",
