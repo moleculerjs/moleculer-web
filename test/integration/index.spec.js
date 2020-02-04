@@ -4231,7 +4231,7 @@ describe("Test listAliases action", () => {
 										withActionSchema: { convert: true, optional: true, type: "boolean" }
 									},
 									rawName: "listAliases",
-									rest: "list-aliases"
+									rest: "GET /list-aliases"
 								},
 								actionName: "api.listAliases",
 								fullPath: "/api/aliases",
