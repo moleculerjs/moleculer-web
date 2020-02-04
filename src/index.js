@@ -228,7 +228,7 @@ module.exports = {
 		},
 
 		listAliases: {
-			rest: "list-aliases",
+			rest: "GET /list-aliases",
 			params: {
 				grouping: { type: "boolean", optional: true, convert: true },
 				withActionSchema: { type: "boolean", optional: true, convert: true }
