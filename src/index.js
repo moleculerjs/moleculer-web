@@ -90,7 +90,6 @@ module.exports = {
 
 		// Optimize route order
 		optimizeOrder: true,
-
 	},
 
 	// Service's metadata
@@ -640,6 +639,17 @@ module.exports = {
 		},
 
 		/**
+		 * Encode response data
+		 *
+		 * @param {HttpIncomingMessage} req
+		 * @param {HttpResponse} res
+		 * @param {any} data
+		 */
+		encodeResponse(req, res, data) {
+			return JSON.stringify(data, null, 2);
+		},
+
+		/**
 		 * Convert data & send back to client
 		 *
 		 * @param {HttpIncomingMessage} req
@@ -736,13 +746,13 @@ module.exports = {
 			// Object or Array (stringify)
 			else if (_.isObject(data) || Array.isArray(data)) {
 				res.setHeader("Content-Type", responseType || "application/json; charset=utf-8");
-				chunk = JSON.stringify(data);
+				chunk = this.encodeResponse(req, res, data);
 			}
 			// Other (stringify or raw text)
 			else {
 				if (!responseType) {
 					res.setHeader("Content-Type", "application/json; charset=utf-8");
-					chunk = JSON.stringify(data);
+					chunk = this.encodeResponse(req, res, data);
 				} else {
 					res.setHeader("Content-Type", responseType);
 					if (_.isString(data))
@@ -854,7 +864,7 @@ module.exports = {
 			const code = _.isNumber(err.code) && _.inRange(err.code, 400, 599) ? err.code : 500;
 			res.writeHead(code);
 			const errObj = this.reformatError(err, req, res);
-			res.end(errObj !== undefined ? JSON.stringify(errObj, null, 2) : undefined);
+			res.end(errObj !== undefined ? this.encodeResponse(req, res, errObj) : undefined);
 
 			this.logResponse(req, res);
 		},

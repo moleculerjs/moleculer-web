@@ -2675,6 +2675,118 @@ describe("Test onBeforeCall & onAfterCall", () => {
 	});
 });
 
+describe("Test encodeResponse", () => {
+
+	it("should call encodeResponse in sendResponse", () => {
+		const broker = new ServiceBroker({ logger: true, logLevel: "error" });
+		broker.loadService("./test/services/test.service");
+
+		const encodeResponse = jest.fn((req, res, data) => {
+			return JSON.stringify(req.headers["accept"]);
+		});
+
+		const service = broker.createService(ApiGateway, {
+			settings: {
+				routes: [{
+					aliases: {
+						"hello": "test.hello",
+					},
+				}]
+			},
+			methods: {
+				encodeResponse: encodeResponse,
+			}
+		});
+		const server = service.server;
+
+		return broker.start()
+			.then(() => request(server)
+				.get("/hello")
+				.set("Accept", "some/encoding"))
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.body).toBe("some/encoding");
+				expect(encodeResponse).toHaveBeenCalledTimes(1);
+				expect(encodeResponse).toHaveBeenCalledWith(jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse), jasmine.any(String));
+
+				encodeResponse.mockClear();
+			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
+	});
+
+	it("should overwrite the content type header", () => {
+		const broker = new ServiceBroker({ logger: true, logLevel: "error" });
+		broker.loadService("./test/services/test.service");
+
+		const encodeResponse = jest.fn((req, res, data) => {
+			res.setHeader("Content-Type", "text/html");
+			return data;
+		});
+
+		const service = broker.createService(ApiGateway, {
+			settings: {
+				routes: [{
+					aliases: {
+						"hello": "test.hello",
+					},
+				}]
+			},
+			methods: {
+				encodeResponse: encodeResponse,
+			}
+		});
+		const server = service.server;
+
+		return broker.start()
+			.then(() => request(server)
+				.get("/hello"))
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.text).toBe("Hello Moleculer");
+				expect(res.header["content-type"]).toBe("text/html");
+				expect(encodeResponse).toHaveBeenCalledTimes(1);
+				expect(encodeResponse).toHaveBeenCalledWith(jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse), jasmine.any(String));
+
+				encodeResponse.mockClear();
+			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
+	});
+
+	it("should call encodeResponse in sendError", () => {
+		const broker = new ServiceBroker({ logger: false });
+		broker.loadService("./test/services/test.service");
+
+		const encodeResponse = jest.fn((req, res, data) => {
+			return JSON.stringify(req.headers["accept"]);
+		});
+
+		const service = broker.createService(ApiGateway, {
+			settings: {
+				routes: [{
+					aliases: {
+						"error": "test.error",
+					},
+				}]
+			},
+			methods: {
+				encodeResponse: encodeResponse,
+			}
+		});
+		const server = service.server;
+
+		return broker.start()
+			.then(() => request(server)
+				.get("/error")
+				.set("Accept", "some/encoding"))
+			.then(res => {
+				expect(res.statusCode).toBe(500);
+				expect(res.body).toBe("some/encoding");
+				expect(encodeResponse).toHaveBeenCalledTimes(1);
+				expect(encodeResponse).toHaveBeenCalledWith(jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse), jasmine.any(Object));
+
+				encodeResponse.mockClear();
+			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
+	});
+});
+
 describe("Test route middlewares", () => {
 
 	it("should call global & route middlewares", () => {
