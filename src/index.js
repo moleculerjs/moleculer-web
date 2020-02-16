@@ -646,7 +646,7 @@ module.exports = {
 		 * @param {any} data
 		 */
 		encodeResponse(req, res, data) {
-			return JSON.stringify(data, null, 2);
+			return JSON.stringify(data);
 		},
 
 		/**
