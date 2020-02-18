@@ -970,7 +970,6 @@ module.exports = {
 			if (this.settings.logResponseData && this.settings.logResponseData in this.logger) {
 				this.logger[this.settings.logResponseData]("  Data:", data);
 			}
-			this.logger.info("");
 		},
 
 		/**
