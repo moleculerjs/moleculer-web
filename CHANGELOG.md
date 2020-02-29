@@ -1,4 +1,12 @@
 -----------------------------
+<a name="0.9.1"></a>
+# 0.9.1 (2020-02-29)
+
+## Changes
+- remove empty log lines
+- add `encodeResponse(req, res, data)` method. You can overwrite it in order to use other response encoding instead of JSON.
+
+-----------------------------
 <a name="0.9.0"></a>
 # 0.9.0 (2020-02-12)
 
