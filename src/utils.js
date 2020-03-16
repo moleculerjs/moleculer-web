@@ -1,12 +1,11 @@
 /*
  * moleculer
- * Copyright (c) 2019 MoleculerJS (https://github.com/moleculerjs/moleculer)
+ * Copyright (c) 2020 MoleculerJS (https://github.com/moleculerjs/moleculer)
  * MIT Licensed
  */
 
 "use strict";
 
-const Promise 			= require("bluebird");
 const _ 				= require("lodash");
 const fresh 			= require("fresh");
 const etag 				= require("etag");
@@ -23,7 +22,7 @@ function decodeParam(param) {
 		return decodeURIComponent(param);
 	} catch (_) {
 		/* istanbul ignore next */
-		throw BadRequestError(ERR_UNABLE_DECODE_PARAM, { param });
+		throw new BadRequestError(ERR_UNABLE_DECODE_PARAM, { param });
 	}
 }
 
@@ -52,11 +51,12 @@ function normalizePath(s) {
  * @param {...Function} mws
  */
 function compose(...mws) {
+	const self = this;
 	return (req, res, done) => {
 		const next = (i, err) => {
 			if (i >= mws.length) {
 				if (_.isFunction(done))
-					return done.call(this, err);
+					return done.call(self, err);
 
 				/* istanbul ignore next */
 				return;
@@ -65,12 +65,12 @@ function compose(...mws) {
 			if (err) {
 				// Call only error middlewares (err, req, res, next)
 				if (mws[i].length == 4)
-					mws[i].call(this, err, req, res, err => next(i + 1, err));
+					mws[i].call(self, err, req, res, err => next(i + 1, err));
 				else
 					next(i + 1, err);
 			} else {
 				if (mws[i].length < 4)
-					mws[i].call(this, req, res, err => next(i + 1, err));
+					mws[i].call(self, req, res, err => next(i + 1, err));
 				else
 					next(i + 1);
 			}
@@ -87,7 +87,7 @@ function compose(...mws) {
  */
 function composeThen(req, res, ...mws) {
 	return new Promise((resolve, reject) => {
-		compose(...mws)(req, res, err => {
+		compose.call(this, ...mws)(req, res, err => {
 			if (err) {
 				/* istanbul ignore next */
 				if (err instanceof MoleculerError)

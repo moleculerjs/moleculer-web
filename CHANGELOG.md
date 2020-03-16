@@ -1,11 +1,19 @@
 -----------------------------
+<a name="0.9.1"></a>
+# 0.9.1 (2020-02-29)
+
+## Changes
+- remove empty log lines
+- add `encodeResponse(req, res, data)` method. You can overwrite it in order to use other response encoding instead of JSON.
+
+-----------------------------
 <a name="0.9.0"></a>
-# 0.9.0 (2019-xx-xx)
+# 0.9.0 (2020-02-12)
 
 ## Breaking changes
 
-### Drop Node 6 support
-Due to Node 6 LTS end of life, the minimum Node version is 8.
+### Drop Node 6 & 8 support
+Due to Node 6 & 8 LTS end of life, the minimum Node version is 10.
 
 ### Changed `mappingPolicy` default value
 In the previous version the `mappingPolicy` default value was `all` which means, you can call
@@ -313,6 +321,9 @@ module.exports = {
 - throw `503` - `ServiceUnavailableError` when a service defined in aliases but not available. Ref: [#27](https://github.com/moleculerjs/moleculer-web/issues/27)
 - new `internalServiceSpecialChar` service setting to override special char for internal services (`~`)
 - new `httpServerTimeout` setting to overwrite the default HTTP server timeout. [#126](https://github.com/moleculerjs/moleculer-web/pull/126)
+- add `reformatError` method to change the response error object (remove or add fields, localize error message...etc).
+- new `listAliases` action to get all registered route aliases.
+- remove bluebird dependency & using native Promise & async/await.
 
 -----------------------------
 <a name="0.8.5"></a>

@@ -9,6 +9,7 @@
 const jwt 					= require("jsonwebtoken");
 const _ 					= require("lodash");
 const { MoleculerError } 	= require("moleculer").Errors;
+const { promisify }			= require("util");
 
 const JWT_SECRET = "TOP SECRET!!!";
 
@@ -96,8 +97,8 @@ module.exports = {
 
 	created() {
 		// Create Promisify encode & verify methods
-		this.encode = this.Promise.promisify(jwt.sign);
-		this.verify = this.Promise.promisify(jwt.verify);
+		this.encode = promisify(jwt.sign);
+		this.verify = promisify(jwt.verify);
 	},
 
 	methods: {

@@ -12,22 +12,20 @@
  * 		http://localhost:3333/api/hi?name=John
  */
 
-let path 				= require("path");
-let { ServiceBroker } 	= require("moleculer");
-let ApiGatewayService 	= require("../../index");
-let express 			= require("express");
+const path 				= require("path");
+const { ServiceBroker } = require("moleculer");
+const ApiGatewayService = require("../../index");
+const express 			= require("express");
 
 // Create broker
-let broker = new ServiceBroker({
-	logger: console
-});
+const broker = new ServiceBroker();
 
 // Load other services
 broker.loadService(path.join(__dirname, "..", "test.service"));
 
 // Load API Gateway
-const svc = broker.createService({
-	mixins: ApiGatewayService,
+broker.createService({
+	mixins: [ApiGatewayService],
 
 	settings: {
 		server: false,
@@ -41,21 +39,24 @@ const svc = broker.createService({
 			},
 			mappingPolicy: "all"
 		}]
+	},
+
+	started() {
+
+		// Create Express application
+		const app = express();
+
+		// Use ApiGateway as middleware
+		app.use("/api", this.express());
+
+		// Listening
+		app.listen(3333, err => {
+			if (err)
+				return this.logger.error(err);
+
+			this.logger.info("Open http://localhost:3333/api/hi?name=John");
+		});
 	}
-});
-
-// Create Express application
-const app = express();
-
-// Use ApiGateway as middleware
-app.use("/api", svc.express());
-
-// Listening
-app.listen(3333, err => {
-	if (err)
-		return console.error(err);
-
-	console.log("Open http://localhost:3333/api/test/hello");
 });
 
 // Start server
