@@ -1,6 +1,6 @@
 /*
  * moleculer
- * Copyright (c) 2019 MoleculerJS (https://github.com/moleculerjs/moleculer)
+ * Copyright (c) 2020 MoleculerJS (https://github.com/moleculerjs/moleculer)
  * MIT Licensed
  */
 
@@ -9,6 +9,7 @@
 const http 						= require("http");
 const https 					= require("https");
 const queryString 				= require("qs");
+const os 						= require("os");
 const kleur						= require("kleur");
 const { match, deprecate }		= require("moleculer").Utils;
 const pkg						= require("../package.json");
@@ -89,7 +90,6 @@ module.exports = {
 
 		// Optimize route order
 		optimizeOrder: true,
-
 	},
 
 	// Service's metadata
@@ -162,6 +162,7 @@ module.exports = {
 				},
 				spanName: ctx => `${ctx.params.req.method} ${ctx.params.req.url}`
 			},
+			timeout: 0,
 			handler(ctx) {
 				const req = ctx.params.req;
 				const res = ctx.params.res;
@@ -223,6 +224,61 @@ module.exports = {
 
 				return null;
 			}
+		},
+
+		listAliases: {
+			rest: "GET /list-aliases",
+			params: {
+				grouping: { type: "boolean", optional: true, convert: true },
+				withActionSchema: { type: "boolean", optional: true, convert: true }
+			},
+			handler(ctx) {
+				const grouping = !!ctx.params.grouping;
+				const withActionSchema = !!ctx.params.withActionSchema;
+
+				const actionList = withActionSchema ? this.broker.registry.getActionList({}) : null;
+
+				const res = [];
+
+				this.aliases.forEach(alias => {
+					const obj = {
+						actionName: alias.action,
+						path: alias.path,
+						fullPath: alias.fullPath,
+						methods: alias.method,
+						routePath: alias.route.path
+					};
+
+					if (withActionSchema && alias.action) {
+						const actionSchema = actionList.find(item => item.name == alias.action);
+						if (actionSchema && actionSchema.action) {
+							obj.action = _.omit(actionSchema.action, ["handler"]);
+						}
+					}
+
+					if (grouping) {
+						const r = res.find(item => item.route == alias.route);
+						if (r) r.aliases.push(obj);
+						else {
+							res.push({
+								route: alias.route,
+								aliases: [obj]
+							});
+						}
+					} else {
+						res.push(obj);
+					}
+				});
+
+				if (grouping) {
+					res.forEach(item => {
+						item.path = item.route.path;
+						delete item.route;
+					});
+				}
+
+				return res;
+			}
 		}
 	},
 
@@ -243,8 +299,8 @@ module.exports = {
 			}
 
 			// HTTP server timeout
-			if(this.settings.httpServerTimeout){
-				this.logger.debug("Override Default http(s) server timeout:", this.settings.httpServerTimeout);
+			if (this.settings.httpServerTimeout){
+				this.logger.debug("Override default http(s) server timeout:", this.settings.httpServerTimeout);
 				this.server.setTimeout(this.settings.httpServerTimeout);
 			}
 		},
@@ -329,7 +385,7 @@ module.exports = {
 				res.once("finish", () => resolve(true));
 
 				try {
-					await composeThen(req, res, ...route.middlewares);
+					await composeThen.call(this, req, res, ...route.middlewares);
 					let params = {};
 
 					// CORS headers
@@ -576,10 +632,21 @@ module.exports = {
 			} catch(err) {
 				/* istanbul ignore next */
 				if (!err)
-					return;
+					return; // Cancelling promise chain, no error
 
 				throw err;
 			}
+		},
+
+		/**
+		 * Encode response data
+		 *
+		 * @param {HttpIncomingMessage} req
+		 * @param {HttpResponse} res
+		 * @param {any} data
+		 */
+		encodeResponse(req, res, data) {
+			return JSON.stringify(data);
 		},
 
 		/**
@@ -623,18 +690,16 @@ module.exports = {
 				}
 			}
 
-			// Override responseType by action (Deprecated)
+			// Override responseType from action schema
 			let responseType;
 			/* istanbul ignore next */
 			if (action && action.responseType) {
-				deprecate("The 'responseType' action property has been deprecated. Use 'ctx.meta.$responseType' instead");
 				responseType = action.responseType;
 			}
 
-			// Custom headers (Deprecated)
+			// Custom headers from action schema
 			/* istanbul ignore next */
 			if (action && action.responseHeaders) {
-				deprecate("The 'responseHeaders' action property has been deprecated. Use 'ctx.meta.$responseHeaders' instead");
 				Object.keys(action.responseHeaders).forEach(key => {
 					res.setHeader(key, action.responseHeaders[key]);
 					if (key == "Content-Type" && !responseType)
@@ -681,13 +746,13 @@ module.exports = {
 			// Object or Array (stringify)
 			else if (_.isObject(data) || Array.isArray(data)) {
 				res.setHeader("Content-Type", responseType || "application/json; charset=utf-8");
-				chunk = JSON.stringify(data);
+				chunk = this.encodeResponse(req, res, data);
 			}
 			// Other (stringify or raw text)
 			else {
 				if (!responseType) {
 					res.setHeader("Content-Type", "application/json; charset=utf-8");
-					chunk = JSON.stringify(data);
+					chunk = this.encodeResponse(req, res, data);
 				} else {
 					res.setHeader("Content-Type", responseType);
 					if (_.isString(data))
@@ -739,6 +804,7 @@ module.exports = {
 		/**
 		 * Send 404 response
 		 *
+		 * @param {HttpIncomingMessage} req
 		 * @param {HttpResponse} res
 		 */
 		send404(req, res) {
@@ -751,6 +817,7 @@ module.exports = {
 		/**
 		 * Send an error response
 		 *
+		 * @param {HttpIncomingMessage} req
 		 * @param {HttpResponse} res
 		 * @param {Error} err
 		 */
@@ -796,10 +863,21 @@ module.exports = {
 
 			const code = _.isNumber(err.code) && _.inRange(err.code, 400, 599) ? err.code : 500;
 			res.writeHead(code);
-			const errObj = _.pick(err, ["name", "message", "code", "type", "data"]);
-			res.end(JSON.stringify(errObj, null, 2));
+			const errObj = this.reformatError(err, req, res);
+			res.end(errObj !== undefined ? this.encodeResponse(req, res, errObj) : undefined);
 
 			this.logResponse(req, res);
+		},
+
+		/**
+		 * Reformatting the error object to response
+		 * @param {Error} err
+		 * @param {HttpIncomingMessage} req
+		 * @param {HttpResponse} res
+		 @returns {Object}
+		 */
+		reformatError(err/*, req, res*/) {
+			return _.pick(err, ["name", "message", "code", "type", "data"]);
 		},
 
 		/**
@@ -892,7 +970,6 @@ module.exports = {
 			if (this.settings.logResponseData && this.settings.logResponseData in this.logger) {
 				this.logger[this.settings.logResponseData]("  Data:", data);
 			}
-			this.logger.info("");
 		},
 
 		/**
@@ -1191,11 +1268,11 @@ module.exports = {
 
 			// `onBeforeCall` handler
 			if (opts.onBeforeCall)
-				route.onBeforeCall = this.Promise.method(opts.onBeforeCall);
+				route.onBeforeCall = opts.onBeforeCall;
 
 			// `onAfterCall` handler
 			if (opts.onAfterCall)
-				route.onAfterCall = this.Promise.method(opts.onAfterCall);
+				route.onAfterCall = opts.onAfterCall;
 
 			// `onError` handler
 			if (opts.onError)
@@ -1396,8 +1473,8 @@ module.exports = {
 			/* istanbul ignore next */
 			this.routes.forEach(route => route.opts.autoAliases && this.regenerateAutoAliases(route));
 		}, 500)
-	},
 
+	},
 
 	events: {
 		"$services.changed"() {
@@ -1419,7 +1496,8 @@ module.exports = {
 					return reject(err);
 
 				const addr = this.server.address();
-				this.logger.info(`API Gateway listening on ${this.isHTTPS ? "https" : "http"}://${addr.address}:${addr.port}`);
+				const listenAddr = addr.address == "0.0.0.0" && os.platform() == "win32" ? "localhost" : addr.address;
+				this.logger.info(`API Gateway listening on ${this.isHTTPS ? "https" : "http"}://${listenAddr}:${addr.port}`);
 				resolve();
 			});
 		});

@@ -2,6 +2,7 @@
 
 process.env.PORT = 0; // Use random ports
 
+const _ = require("lodash");
 const fs = require("fs");
 const http = require("http");
 const path = require("path");
@@ -29,7 +30,7 @@ function setup(settings, brokerSettings = {}) {
 	const broker = new ServiceBroker(Object.assign({}, { nodeID: undefined, logger: false }, brokerSettings));
 	broker.loadService("./test/services/test.service");
 
-	const service = broker.createService(ApiGateway, {
+	const service = broker.createService(_.cloneDeep(ApiGateway), {
 		settings
 	});
 	const server = service.server;
@@ -1764,8 +1765,10 @@ describe("Test body-parsers", () => {
 					"code": 422,
 					"data": [{
 						"field": "name",
-						"message": "The 'name' field is required!",
-						"type": "required"
+						"message": "The 'name' field is required.",
+						"type": "required",
+						"action": "test.greeter",
+						"nodeID": broker.nodeID
 					}],
 					"message": "Parameters validation error!",
 					"name": "ValidationError",
@@ -2669,6 +2672,118 @@ describe("Test onBeforeCall & onAfterCall", () => {
 					}
 				});
 				expect(afterCall).toHaveBeenCalledTimes(1);
+			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
+	});
+});
+
+describe("Test encodeResponse", () => {
+
+	it("should call encodeResponse in sendResponse", () => {
+		const broker = new ServiceBroker({ logger: true, logLevel: "error" });
+		broker.loadService("./test/services/test.service");
+
+		const encodeResponse = jest.fn((req, res, data) => {
+			return JSON.stringify(req.headers["accept"]);
+		});
+
+		const service = broker.createService(ApiGateway, {
+			settings: {
+				routes: [{
+					aliases: {
+						"hello": "test.hello",
+					},
+				}]
+			},
+			methods: {
+				encodeResponse: encodeResponse,
+			}
+		});
+		const server = service.server;
+
+		return broker.start()
+			.then(() => request(server)
+				.get("/hello")
+				.set("Accept", "some/encoding"))
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.body).toBe("some/encoding");
+				expect(encodeResponse).toHaveBeenCalledTimes(1);
+				expect(encodeResponse).toHaveBeenCalledWith(jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse), jasmine.any(String));
+
+				encodeResponse.mockClear();
+			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
+	});
+
+	it("should overwrite the content type header", () => {
+		const broker = new ServiceBroker({ logger: true, logLevel: "error" });
+		broker.loadService("./test/services/test.service");
+
+		const encodeResponse = jest.fn((req, res, data) => {
+			res.setHeader("Content-Type", "text/html");
+			return data;
+		});
+
+		const service = broker.createService(ApiGateway, {
+			settings: {
+				routes: [{
+					aliases: {
+						"hello": "test.hello",
+					},
+				}]
+			},
+			methods: {
+				encodeResponse: encodeResponse,
+			}
+		});
+		const server = service.server;
+
+		return broker.start()
+			.then(() => request(server)
+				.get("/hello"))
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.text).toBe("Hello Moleculer");
+				expect(res.header["content-type"]).toBe("text/html");
+				expect(encodeResponse).toHaveBeenCalledTimes(1);
+				expect(encodeResponse).toHaveBeenCalledWith(jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse), jasmine.any(String));
+
+				encodeResponse.mockClear();
+			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
+	});
+
+	it("should call encodeResponse in sendError", () => {
+		const broker = new ServiceBroker({ logger: false });
+		broker.loadService("./test/services/test.service");
+
+		const encodeResponse = jest.fn((req, res, data) => {
+			return JSON.stringify(req.headers["accept"]);
+		});
+
+		const service = broker.createService(ApiGateway, {
+			settings: {
+				routes: [{
+					aliases: {
+						"error": "test.error",
+					},
+				}]
+			},
+			methods: {
+				encodeResponse: encodeResponse,
+			}
+		});
+		const server = service.server;
+
+		return broker.start()
+			.then(() => request(server)
+				.get("/error")
+				.set("Accept", "some/encoding"))
+			.then(res => {
+				expect(res.statusCode).toBe(500);
+				expect(res.body).toBe("some/encoding");
+				expect(encodeResponse).toHaveBeenCalledTimes(1);
+				expect(encodeResponse).toHaveBeenCalledWith(jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse), jasmine.any(Object));
+
+				encodeResponse.mockClear();
 			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
 	});
 });
@@ -4145,4 +4260,136 @@ describe("Test httpServerTimeout setting", () => {
 			});
 	});
 
+});
+
+describe("Test listAliases action", () => {
+	let broker;
+	let server;
+	let service;
+
+	beforeAll(() => {
+		[ broker, service, server] = setup({
+			routes: [
+				{
+					path: "/api",
+
+					aliases: {
+						"GET aliases": "api.listAliases",
+						"GET greeter": "test.greeter"
+					},
+
+					mappingPolicy: "restrict"
+				},
+				{
+					path: "/admin",
+
+					aliases: {
+						"basePath": "test.basePath"
+					}
+				}
+			]
+		});
+
+		broker.loadService("./test/services/test.service");
+
+		return broker.start();
+	});
+
+	afterAll(() => broker.stop());
+
+	it("should return flat response", () => {
+		return request(server)
+			.get("/api/aliases")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.body).toEqual([
+					{
+						actionName: "api.listAliases",
+						fullPath: "/api/aliases",
+						methods: "GET",
+						path: "aliases",
+						routePath: "/api"
+					},
+					{
+						actionName: "test.basePath",
+						fullPath: "/admin/basePath",
+						methods: "*",
+						path: "basePath",
+						routePath: "/admin"
+					},
+					{
+						actionName: "test.greeter",
+						fullPath: "/api/greeter",
+						methods: "GET",
+						path: "greeter",
+						routePath: "/api"
+					},
+				]);
+			});
+	});
+
+	it("should return grouped response with action schemas", () => {
+		return request(server)
+			.get("/api/aliases?grouping=true&withActionSchema=1")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.body).toEqual([
+					{
+						aliases: [
+							{
+								action: {
+									name: "api.listAliases",
+									params: {
+										grouping: { convert: true, optional: true, type: "boolean" },
+										withActionSchema: { convert: true, optional: true, type: "boolean" }
+									},
+									rawName: "listAliases",
+									rest: "GET /list-aliases"
+								},
+								actionName: "api.listAliases",
+								fullPath: "/api/aliases",
+								methods: "GET",
+								path: "aliases",
+								routePath: "/api"
+							},
+							{
+								action: {
+									name: "test.greeter",
+									params: { name: "string" },
+									rawName: "greeter",
+									rest: "/greeter"
+								},
+								actionName: "test.greeter",
+								fullPath: "/api/greeter",
+								methods: "GET",
+								path: "greeter",
+								routePath: "/api"
+							}
+						],
+						path: "/api"
+					},
+					{
+						aliases: [
+							{
+								action: {
+									name: "test.basePath",
+									rawName: "basePath",
+									rest: {
+										basePath: "custom-base-path",
+										method: "GET",
+										path: "/base-path"
+									}
+								},
+								actionName: "test.basePath",
+								fullPath: "/admin/basePath",
+								methods: "*",
+								path: "basePath",
+								routePath: "/admin"
+							}
+						],
+						path: "/admin"
+					}
+				]);
+			});
+	});
 });

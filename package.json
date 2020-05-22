@@ -1,6 +1,6 @@
 {
   "name": "moleculer-web",
-  "version": "0.9.0-beta7",
+  "version": "0.9.1",
   "description": "Official API Gateway service for Moleculer framework",
   "main": "index.js",
   "scripts": {
@@ -14,7 +14,9 @@
     "lint:fix": "eslint --ext=.js --fix src",
     "deps": "npm-check -u",
     "postdeps": "npm test",
-    "coverall": "cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js"
+    "coverall": "cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js",
+    "release": "npm publish --access public && git push --tags",
+    "release:beta": "npm publish --tag next --access public && git push --tags"
   },
   "keywords": [
     "api-gateway",
@@ -31,39 +33,37 @@
   "license": "MIT",
   "devDependencies": {
     "@types/cors": "^2.8.6",
-    "benchmarkify": "2.1.2",
-    "compression": "1.7.4",
-    "coveralls": "^3.0.7",
+    "benchmarkify": "^2.1.2",
+    "compression": "^1.7.4",
+    "coveralls": "^3.0.9",
     "cross-env": "^6.0.3",
-    "eslint": "^6.6.0",
-    "eslint-plugin-node": "^10.0.0",
-    "eslint-plugin-promise": "4.2.1",
-    "eslint-plugin-security": "1.4.0",
-    "express": "4.17.1",
-    "fakerator": "0.3.0",
-    "jest": "^24.9.0",
-    "jest-cli": "^24.9.0",
-    "jsonwebtoken": "8.5.1",
-    "lolex": "^5.1.1",
-    "mime-types": "^2.1.25",
-    "mkdirp": "0.5.1",
-    "moleculer": "^0.13.11",
-    "moleculer-console-tracer": "0.2.2",
-    "moleculer-repl": "^0.6.1",
-    "nats": "^1.3.2",
-    "nodemon": "^2.0.0",
-    "npm-check": "5.9.0",
+    "eslint": "^6.8.0",
+    "eslint-plugin-node": "^11.0.0",
+    "eslint-plugin-promise": "^4.2.1",
+    "eslint-plugin-security": "^1.4.0",
+    "express": "^4.17.1",
+    "fakerator": "^0.3.1",
+    "jest": "^25.1.0",
+    "jest-cli": "^25.1.0",
+    "jsonwebtoken": "^8.5.1",
+    "lolex": "^5.1.2",
+    "mime-types": "^2.1.26",
+    "mkdirp": "^0.5.1",
+    "moleculer": "^0.14.0",
+    "moleculer-repl": "^0.6.2",
+    "nats": "^1.4.0",
+    "nodemon": "^2.0.2",
+    "npm-check": "^5.9.0",
     "socket.io": "^2.3.0",
     "spdy": "^4.0.1",
-    "supertest": "4.0.2",
-    "webpack": "^4.41.2",
+    "supertest": "^4.0.2",
+    "webpack": "^4.41.6",
     "webpack-dev-middleware": "^3.7.2"
   },
   "peerDependencies": {
     "moleculer": "^0.13.0 || ^0.14.0"
   },
   "dependencies": {
-    "bluebird": "^3.7.1",
     "body-parser": "^1.19.0",
     "busboy": "^0.3.1",
     "es6-error": "^4.1.1",
@@ -77,7 +77,7 @@
     "serve-static": "^1.14.1"
   },
   "engines": {
-    "node": ">= 8.x.x"
+    "node": ">= 10.x.x"
   },
   "typings": "./index.d.ts",
   "jest": {
