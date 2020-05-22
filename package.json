@@ -32,7 +32,6 @@
   "author": "MoleculerJS",
   "license": "MIT",
   "devDependencies": {
-    "@types/cors": "^2.8.6",
     "benchmarkify": "^2.1.2",
     "compression": "^1.7.4",
     "coveralls": "^3.0.9",

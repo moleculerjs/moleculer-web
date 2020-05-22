@@ -1,7 +1,6 @@
 declare module "moleculer-web" {
     import { Errors, ServiceSchema, Context, ActionEndpoint, Service, ActionSchema } from "moleculer";
     import { IncomingMessage, ServerResponse } from "http"
-    import { CorsOptions } from "cors"
 
     class InvalidRequestBodyError extends Errors.MoleculerError { constructor(body: any, error: any) }
     class InvalidResponseTypeError extends Errors.MoleculerError { constructor(dataType: string) }
@@ -37,6 +36,23 @@ declare module "moleculer-web" {
         path: string
         handler: null | Array<Function>
         action: string
+    }
+
+    // From: https://github.com/DefinitelyTyped/DefinitelyTyped/blob/master/types/cors/index.d.ts
+    type CustomOrigin = (
+        requestOrigin: string | undefined,
+        callback: (err: Error | null, allow?: boolean) => void
+    ) => void;
+
+    interface CorsOptions {
+        origin?: boolean | string | RegExp | (string | RegExp)[] | CustomOrigin;
+        methods?: string | string[];
+        allowedHeaders?: string | string[];
+        exposedHeaders?: string | string[];
+        credentials?: boolean;
+        maxAge?: number;
+        preflightContinue?: boolean;
+        optionsSuccessStatus?: number;
     }
 
     class Route {
