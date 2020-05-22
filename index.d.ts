@@ -1,5 +1,7 @@
 declare module "moleculer-web" {
-    import { Errors, ServiceSchema } from "moleculer";
+    import { Errors, ServiceSchema, Context, ActionEndpoint, Service, ActionSchema } from "moleculer";
+    import { IncomingMessage, ServerResponse } from "http"
+
     class InvalidRequestBodyError extends Errors.MoleculerError { constructor(body: any, error: any) }
     class InvalidResponseTypeError extends Errors.MoleculerError { constructor(dataType: string) }
     class UnAuthorizedError extends Errors.MoleculerError { constructor(type: string|null|undefined, data: any) }
@@ -25,6 +27,70 @@ declare module "moleculer-web" {
         ERR_ORIGIN_NOT_FOUND: "ORIGIN_NOT_FOUND";
     }
 
-    const ApiGatewayService: ServiceSchema & { Errors: ApiGatewayErrors };
+    class Alias {
+        _generated: boolean
+        service: Service
+        route: Route
+        type: string
+        method: string
+        path: string
+        handler: null | Array<Function>
+        action: string
+    }
+
+    // From: https://github.com/DefinitelyTyped/DefinitelyTyped/blob/master/types/cors/index.d.ts
+    type CustomOrigin = (
+        requestOrigin: string | undefined,
+        callback: (err: Error | null, allow?: boolean) => void
+    ) => void;
+
+    interface CorsOptions {
+        origin?: boolean | string | RegExp | (string | RegExp)[] | CustomOrigin;
+        methods?: string | string[];
+        allowedHeaders?: string | string[];
+        exposedHeaders?: string | string[];
+        credentials?: boolean;
+        maxAge?: number;
+        preflightContinue?: boolean;
+        optionsSuccessStatus?: number;
+    }
+
+    class Route {
+        callOptions: any
+        cors: CorsOptions
+        etag: boolean | "weak" | "strong" | Function
+        hasWhitelist: boolean
+        logging: boolean
+        mappingPolicy: string
+        middlewares: Array<Function>
+        onBeforeCall?: onBeforeCall
+        onAfterCall?: onAfterCall
+        opts: any
+        path: string
+        whitelist: Array<string>
+    }
+
+    type onBeforeCall = (ctx: Context, route: Route, req: IncomingMessage, res: ServerResponse) => void
+    type onAfterCall = (ctx: Context, route: Route, req: IncomingMessage, res: ServerResponse, data: any) => void
+
+    class IncomingRequest extends IncomingMessage {
+        $action: ActionSchema
+        $alias: Alias
+        $ctx: Context
+        $endpoint: ActionEndpoint
+        $next: any
+        $params: any
+        $route: Route
+        $service: Service
+        $startTime: Array<number>
+    }
+
+    class GatewayResponse extends ServerResponse {
+        $ctx: Context
+        $route: Route
+        $service: Service
+    }
+
+    const ApiGatewayService: ServiceSchema & { Errors: ApiGatewayErrors, IncomingRequest: IncomingRequest, GatewayResponse: GatewayResponse };
     export = ApiGatewayService;
 }
