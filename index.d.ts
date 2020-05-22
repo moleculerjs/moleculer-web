@@ -1,5 +1,5 @@
 declare module "moleculer-web" {
-    import { Errors, ServiceSchema, Context, ActionEndpoint, Service, Action } from "moleculer";
+    import { Errors, ServiceSchema, Context, ActionEndpoint, Service, ActionSchema } from "moleculer";
     import { IncomingMessage, ServerResponse } from "http"
     import { CorsOptions } from "cors"
 
@@ -58,7 +58,7 @@ declare module "moleculer-web" {
     type onAfterCall = (ctx: Context, route: Route, req: IncomingMessage, res: ServerResponse, data: any) => void
 
     class IncomingRequest extends IncomingMessage {
-        $action: Action
+        $action: ActionSchema
         $alias: Alias
         $ctx: Context
         $endpoint: ActionEndpoint
