@@ -72,6 +72,13 @@ module.exports = {
 					ctx.params.pipe(f);
 				});
 			}
+		},
+
+		saveParams: {
+			handler(ctx) {
+				// get params from url
+				return ctx.params.$params;
+			}
 		}
 	},
 	methods: {
