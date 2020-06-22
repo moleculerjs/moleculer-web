@@ -859,7 +859,7 @@ module.exports = {
 			}
 
 			const ctx = req.$ctx;
-			let responseType = "application/json; charset=utf-8";
+			let responseType = "";
 			if (ctx.meta.$responseType) {
 				responseType = ctx.meta.$responseType;
 			}
@@ -873,7 +873,7 @@ module.exports = {
 			}
 
 			// Return with the error as JSON object
-			res.setHeader("Content-type", responseType);
+			res.setHeader("Content-type", responseType || "application/json; charset=utf-8");
 
 			const code = _.isNumber(err.code) && _.inRange(err.code, 400, 599) ? err.code : 500;
 			res.writeHead(code);
