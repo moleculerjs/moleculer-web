@@ -858,8 +858,22 @@ module.exports = {
 				err.name = e.name;
 			}
 
+			const ctx = req.$ctx;
+			let responseType = "application/json; charset=utf-8";
+			if (ctx.meta.$responseType) {
+				responseType = ctx.meta.$responseType;
+			}
+			if (ctx.meta.$responseHeaders) {
+				Object.keys(ctx.meta.$responseHeaders).forEach(key => {
+					if (key === "Content-Type" && !responseType)
+						responseType = ctx.meta.$responseHeaders[key];
+					else
+						res.setHeader(key, ctx.meta.$responseHeaders[key]);
+				});
+			}
+
 			// Return with the error as JSON object
-			res.setHeader("Content-type", "application/json; charset=utf-8");
+			res.setHeader("Content-type", responseType);
 
 			const code = _.isNumber(err.code) && _.inRange(err.code, 400, 599) ? err.code : 500;
 			res.writeHead(code);
