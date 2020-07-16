@@ -73,8 +73,14 @@ module.exports = {
 			}
 		],
 
+		// Log each request (default to "info" level)
+		logRequest: "info",
+
 		// Log the request ctx.params (default to "debug" level)
 		logRequestParams: "debug",
+
+		// Log each response (default to "info" level)
+		logResponse: "info",
 
 		// Log the response data (default to disable)
 		logResponseData: null,
@@ -563,8 +569,8 @@ module.exports = {
 			// Call the action or alias
 			if (_.isFunction(alias.handler)) {
 				// Call custom alias handler
-				if (route.logging)
-					this.logger.info(`   Call custom function in '${alias.toString()}' alias`);
+				if (route.logging && (this.settings.logRequest && this.settings.logRequest in this.logger))
+					this.logger[this.settings.logRequest](`   Call custom function in '${alias.toString()}' alias`);
 
 				await new this.Promise((resolve, reject) => {
 					alias.handler.call(this, req, res, err => {
@@ -601,7 +607,8 @@ module.exports = {
 			try {
 				// Logging params
 				if (route.logging) {
-					this.logger.info(`   Call '${actionName}' action`);
+					if (this.settings.logRequest && this.settings.logRequest in this.logger)
+						this.logger[this.settings.logRequest](`   Call '${actionName}' action`);
 					if (this.settings.logRequestParams && this.settings.logRequestParams in this.logger)
 						this.logger[this.settings.logRequestParams]("   Params:", params);
 				}
@@ -922,7 +929,8 @@ module.exports = {
 		logRequest(req) {
 			if (req.$route && !req.$route.logging) return;
 
-			this.logger.info(`=> ${req.method} ${req.url}`);
+			if (this.settings.logRequest && this.settings.logRequest in this.logger)
+				this.logger[this.settings.logRequest](`=> ${req.method} ${req.url}`);
 		},
 
 		/**
@@ -964,7 +972,9 @@ module.exports = {
 				else
 					time = kleur.grey(`[+${Number(duration).toFixed(3)} ms]`);
 			}
-			this.logger.info(`<= ${this.coloringStatusCode(res.statusCode)} ${req.method} ${kleur.bold(req.originalUrl)} ${time}`);
+
+			if (this.settings.logResponse && this.settings.logResponse in this.logger)
+				this.logger[this.settings.logResponse](`<= ${this.coloringStatusCode(res.statusCode)} ${req.method} ${kleur.bold(req.originalUrl)} ${time}`);
 
 			/* istanbul ignore next */
 			if (this.settings.logResponseData && this.settings.logResponseData in this.logger) {
