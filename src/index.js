@@ -110,48 +110,6 @@ module.exports = {
 		}
 	},
 
-	/**
-	 * Service created lifecycle event handler
-	 */
-	created() {
-		if (this.settings.server !== false) {
-
-			if (_.isObject(this.settings.server)) {
-				// Use an existing server instance
-				this.server = this.settings.server;
-			} else {
-				// Create a new HTTP/HTTPS/HTTP2 server instance
-				this.createServer();
-			}
-
-			/* istanbul ignore next */
-			this.server.on("error", err => {
-				this.logger.error("Server error", err);
-			});
-
-			this.logger.info("API Gateway server created.");
-		}
-
-		// Special char for internal services
-		const specChar = this.settings.internalServiceSpecialChar != null ? this.settings.internalServiceSpecialChar : "~";
-		// eslint-disable-next-line security/detect-non-literal-regexp
-		this._isscRe = new RegExp(specChar);
-
-		// Create static server middleware
-		if (this.settings.assets) {
-			const opts = this.settings.assets.options || {};
-			this.serve = serveStatic(this.settings.assets.folder, opts);
-		}
-
-		// Alias store
-		this.aliases = [];
-
-		// Process routes
-		this.routes = [];
-		if (Array.isArray(this.settings.routes))
-			this.settings.routes.forEach(route => this.addRoute(route));
-	},
-
 	actions: {
 
 		/**
@@ -1476,14 +1434,7 @@ module.exports = {
 			const alias = new Alias(this, route, path, action);
 			this.logger.info("  " + alias.toString());
 			return alias;
-		},
-
-		// Regenerate all auto aliases routes
-		regenerateAllAutoAliases: _.debounce(function() {
-			/* istanbul ignore next */
-			this.routes.forEach(route => route.opts.autoAliases && this.regenerateAutoAliases(route));
-		}, 500)
-
+		}
 	},
 
 	events: {
@@ -1491,6 +1442,55 @@ module.exports = {
 			this.regenerateAllAutoAliases();
 		}
 	},
+
+	/**
+	 * Service created lifecycle event handler
+	 */
+	created() {
+		if (this.settings.server !== false) {
+
+			if (_.isObject(this.settings.server)) {
+				// Use an existing server instance
+				this.server = this.settings.server;
+			} else {
+				// Create a new HTTP/HTTPS/HTTP2 server instance
+				this.createServer();
+			}
+
+			/* istanbul ignore next */
+			this.server.on("error", err => {
+				this.logger.error("Server error", err);
+			});
+
+			this.logger.info("API Gateway server created.");
+		}
+
+		// Special char for internal services
+		const specChar = this.settings.internalServiceSpecialChar != null ? this.settings.internalServiceSpecialChar : "~";
+		// eslint-disable-next-line security/detect-non-literal-regexp
+		this._isscRe = new RegExp(specChar);
+
+		// Create static server middleware
+		if (this.settings.assets) {
+			const opts = this.settings.assets.options || {};
+			this.serve = serveStatic(this.settings.assets.folder, opts);
+		}
+
+		// Alias store
+		this.aliases = [];
+
+		// Process routes
+		this.routes = [];
+		if (Array.isArray(this.settings.routes))
+			this.settings.routes.forEach(route => this.addRoute(route));
+
+		// Regenerate all auto aliases routes
+		this.regenerateAllAutoAliases = _.debounce(() => {
+			/* istanbul ignore next */
+			this.routes.forEach(route => route.opts.autoAliases && this.regenerateAutoAliases(route));
+		}, 500);
+	},
+
 
 	/**
 	 * Service started lifecycle event handler
