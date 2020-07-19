@@ -147,6 +147,8 @@ class Alias {
 		ctx.meta.$multipart = {};
 		const promises = [];
 
+		let numOfFiles = 0;
+
 		const busboyOptions = _.defaultsDeep({ headers: req.headers }, this.busboyConfig, this.route.opts.busboyConfig);
 		const busboy = new Busboy(busboyOptions);
 		busboy.on("file", (fieldname, file, filename, encoding, mimetype) => {
@@ -157,6 +159,7 @@ class Alias {
 				}
 				file.destroy(new PayloadTooLarge({ fieldname, filename, encoding, mimetype }));
 			});
+			numOfFiles++;
 			promises.push(ctx.call(this.action, file, _.defaultsDeep({}, this.route.opts.callOptions, { meta: {
 				fieldname: fieldname,
 				filename: filename,
@@ -174,11 +177,16 @@ class Alias {
 
 		busboy.on("finish", async () => {
 			/* istanbul ignore next */
-			if (!busboyOptions.empty && !promises.length)
+			if (!busboyOptions.empty && numOfFiles == 0)
 				return this.service.sendError(req, res, new MoleculerClientError("File missing in the request"));
 
 			try {
 				let data = await this.service.Promise.all(promises);
+				const fileLimit = busboyOptions.limits && busboyOptions.limits.files != null ? busboyOptions.limits.files : null;
+				if (numOfFiles == 1 && fileLimit == 1) {
+					// Remove the array wrapping
+					data = data[0];
+				}
 				if (this.route.onAfterCall)
 					data = await this.route.onAfterCall.call(this, ctx, this.route, req, res, data);
 

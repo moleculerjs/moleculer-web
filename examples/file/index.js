@@ -51,7 +51,28 @@ broker.createService({
 
 					// File upload from AJAX or cURL with params
 					"PUT /:id": "stream:file.saveParams",
-					
+
+					// File upload from HTML form and overwrite busboy config
+					"POST /single": {
+						type: "multipart",
+						// Action level busboy config
+						busboyConfig: {
+							limits: {
+								files: 1
+							},
+							onPartsLimit(busboy, alias, svc) {
+								this.logger.info("Busboy parts limit!", busboy);
+							},
+							onFilesLimit(busboy, alias, svc) {
+								this.logger.info("Busboy file limit!", busboy);
+							},
+							onFieldsLimit(busboy, alias, svc) {
+								this.logger.info("Busboy fields limit!", busboy);
+							}
+						},
+						action: "file.save"
+					},
+
 					// File upload from HTML form and overwrite busboy config
 					"POST /multi": {
 						type: "multipart",
