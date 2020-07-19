@@ -20,14 +20,14 @@ module.exports = {
             {
                 path: "/upload",
 
-				busboyConfig: {
-					limits: {
-						files: 1
-					}
-				},
-			}
-		]
-	}
+                busboyConfig: {
+                    limits: {
+                        files: 1
+                    }
+                },
+            }
+        ]
+    }
 };
 ```
 
@@ -44,10 +44,10 @@ module.exports = {
         routes: [
             {
                 path: "/api",
-				bodyParsers: false
-			}
-		]
-	}
+                bodyParsers: false
+            }
+        ]
+    }
 };
 ```
 ## New features
@@ -58,13 +58,13 @@ The `addRoute` and `removeRoute` methods exposed to service actions, as well. It
 **Adding a new route**
 ```js
 broker.call("api.addRoute", {
-	route: {
-		path: "/api",
-		aliases: {
-			"hi": "greeter.hello"
-		}
-	},
-	toBottom: true // add this route to the end of the route list.
+    route: {
+        path: "/api",
+        aliases: {
+            "hi": "greeter.hello"
+        }
+    },
+    toBottom: true // add this route to the end of the route list.
 })
 ```
 
@@ -82,10 +82,10 @@ const ApiGateway = require("moleculer-web");
 module.exports = {
     mixins: [ApiGateway],
     settings: {
-		logRequest: "debug", // Logging with debug level
-		logResponse: false, // Disable logging
+        logRequest: "debug", // Logging with debug level
+        logResponse: false, // Disable logging
         //.....
-	}
+    }
 };
 ```
 
