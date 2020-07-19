@@ -1,3 +1,100 @@
+<a name="0.10.0"></a>
+# 0.10.0 (2020-??-??)
+
+## Breaking changes
+
+### Avoid array wrapping at file uploading
+Many users issued that at file uploading the response always wrapped into an array even single file uploading. This issues is fixed in this version. 
+If you define `files: 1` in busboy settings, the response won't be wrapped into array.
+
+**Example**
+```js
+const ApiGateway = require("moleculer-web");
+
+module.exports = {
+    mixins: [ApiGateway],
+    settings: {
+        path: "/upload",
+
+        routes: [
+            {
+                path: "/upload",
+
+				busboyConfig: {
+					limits: {
+						files: 1
+					}
+				},
+			}
+		]
+	}
+};
+```
+
+### JSON body-parser is the new default.
+In early version, if you added multiple routes, you should always set JSON body-parser. As of v0.10, it's the new default, if you don't define `bodyParsers` in the route options. If you don't want to use any body-parsers just set `bodyParsers: false`.
+
+**Example: disable body parsers**
+```js
+const ApiGateway = require("moleculer-web");
+
+module.exports = {
+    mixins: [ApiGateway],
+    settings: {
+        routes: [
+            {
+                path: "/api",
+				bodyParsers: false
+			}
+		]
+	}
+};
+```
+## New features
+
+### Actions for adding and removing routes
+The `addRoute` and `removeRoute` methods exposed to service actions, as well. It means, you can add/remove routes from remote nodes, as well.
+
+**Adding a new route**
+```js
+broker.call("api.addRoute", {
+	route: {
+		path: "/api",
+		aliases: {
+			"hi": "greeter.hello"
+		}
+	},
+	toBottom: true // add this route to the end of the route list.
+})
+```
+
+**Removing a route**
+```js
+broker.call("api.removeRoute", { path: "/api" });
+```
+
+### New logging options
+There are two new logging service settings: `logRequest`, `logResponse`. You can define the logging level for request & response log messages.
+
+```js
+const ApiGateway = require("moleculer-web");
+
+module.exports = {
+    mixins: [ApiGateway],
+    settings: {
+		logRequest: "debug", // Logging with debug level
+		logResponse: false, // Disable logging
+        //.....
+	}
+};
+```
+
+## Other changes
+- set response header from `ctx.meta` in case of errors, as well.
+- update dependencies.
+- update index.d.ts.
+- remove deprecated `publish: false` condition. Use `visibility: "public", instead.
+
 -----------------------------
 <a name="0.9.1"></a>
 # 0.9.1 (2020-02-29)
