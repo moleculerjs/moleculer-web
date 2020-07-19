@@ -130,13 +130,6 @@ module.exports = {
 		},
 
 		dangerZone: {
-			publish: false,
-			handler(ctx) {
-				return "Danger zone!";
-			}
-		},
-
-		dangerZone2: {
 			visibility: "public",
 			handler(ctx) {
 				return "Danger zone 2!";
