@@ -1,10 +1,10 @@
 "use strict";
 
-let { ServiceBroker } 	= require("moleculer");
-let ApiService 			= require("../../index");
+const { ServiceBroker } 	= require("moleculer");
+const ApiService 			= require("../../index");
 
 // Create broker
-let broker = new ServiceBroker({
+const broker = new ServiceBroker({
 	nodeID: process.argv[2],
 	logger: console,
 	logLevel: "error"

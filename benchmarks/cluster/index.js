@@ -30,11 +30,11 @@ if (cluster.isMaster) {
 	}
 
 	if (production) {
-		stopSignals.forEach(function (signal) {
-			process.on(signal, function () {
+		stopSignals.forEach(function(signal) {
+			process.on(signal, function() {
 				console.log(`Got ${signal}, stopping workers...`);
 				stopping = true;
-				cluster.disconnect(function () {
+				cluster.disconnect(function() {
 					console.log("All workers stopped, exiting.");
 					process.exit(0);
 				});
@@ -50,3 +50,9 @@ if (cluster.isMaster) {
 	require("./worker.js");
 
 }
+
+/**
+ * Result on i7 4770K 32GB RAM Windows 10 x64
+ *
+ * 	Throughtput: 21 220 req/sec
+ */
