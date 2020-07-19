@@ -487,12 +487,6 @@ module.exports = {
 					throw endpoint;
 				}
 
-				if (endpoint.action.publish === false) {
-					deprecate("The 'publish: false' action property has been deprecated. Use 'visibility: public' instead.");
-					// Action is not publishable (Deprecated in >=0.13)
-					throw new ServiceNotFoundError({ action: alias.action });
-				}
-
 				if (endpoint.action.visibility != null && endpoint.action.visibility != "published") {
 					// Action can't be published
 					throw new ServiceNotFoundError({ action: alias.action });
