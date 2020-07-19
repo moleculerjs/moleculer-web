@@ -7,6 +7,7 @@
 "use strict";
 
 const http 						= require("http");
+const http2 					= require("http2");
 const https 					= require("https");
 const queryString 				= require("qs");
 const os 						= require("os");
@@ -61,17 +62,7 @@ module.exports = {
 		server: true,
 
 		// Routes
-		routes: [
-			// TODO: should remove it and add only in `created` if it's empty
-			{
-				// Path prefix to this route
-				path: "/",
-
-				bodyParsers: {
-					json: true
-				}
-			}
-		],
+		routes: [],
 
 		// Log each request (default to "info" level)
 		logRequest: "info",
@@ -100,7 +91,7 @@ module.exports = {
 
 	// Service's metadata
 	metadata: {
-		$category: "api-gateway",
+		$category: "gateway",
 		$description: "Official API Gateway service",
 		$official: true,
 		$package: {
@@ -243,7 +234,28 @@ module.exports = {
 
 				return res;
 			}
-		}
+		},
+
+		addRoute: {
+			params: {
+				route: { type: "object" },
+				toBottom: { type: "boolean", optional: true, default: true }
+			},
+			visibility: "public",
+			handler(ctx) {
+				return this.addRoute(ctx.params.route, ctx.params.toBottom);
+			}
+		},
+
+		removeRoute: {
+			params: {
+				path: { type: "string" }
+			},
+			visibility: "public",
+			handler(ctx) {
+				return this.removeRoute(ctx.params.path);
+			}
+		},
 	},
 
 	methods: {
@@ -255,10 +267,10 @@ module.exports = {
 			if (this.server) return;
 
 			if (this.settings.https && this.settings.https.key && this.settings.https.cert) {
-				this.server = this.settings.http2 ? this.tryLoadHTTP2Lib().createSecureServer(this.settings.https, this.httpHandler) : https.createServer(this.settings.https, this.httpHandler);
+				this.server = this.settings.http2 ? http2.createSecureServer(this.settings.https, this.httpHandler) : https.createServer(this.settings.https, this.httpHandler);
 				this.isHTTPS = true;
 			} else {
-				this.server = this.settings.http2 ? this.tryLoadHTTP2Lib().createServer(this.httpHandler) : http.createServer(this.httpHandler);
+				this.server = this.settings.http2 ? http2.createServer(this.httpHandler) : http.createServer(this.httpHandler);
 				this.isHTTPS = false;
 			}
 
@@ -266,19 +278,6 @@ module.exports = {
 			if (this.settings.httpServerTimeout){
 				this.logger.debug("Override default http(s) server timeout:", this.settings.httpServerTimeout);
 				this.server.setTimeout(this.settings.httpServerTimeout);
-			}
-		},
-
-		/**
-		 * Try to require HTTP2 servers
-		 */
-		tryLoadHTTP2Lib() {
-			/* istanbul ignore next */
-			try {
-				return require("http2");
-			} catch (err) {
-				/* istanbul ignore next */
-				this.broker.fatal("HTTP2 server is not available. (>= Node 8.8.1)");
 			}
 		},
 
@@ -817,8 +816,22 @@ module.exports = {
 				err.name = e.name;
 			}
 
+			const ctx = req.$ctx;
+			let responseType = "application/json; charset=utf-8";
+			if (ctx.meta.$responseType) {
+				responseType = ctx.meta.$responseType;
+			}
+			if (ctx.meta.$responseHeaders) {
+				Object.keys(ctx.meta.$responseHeaders).forEach(key => {
+					if (key === "Content-Type" && !responseType)
+						responseType = ctx.meta.$responseHeaders[key];
+					else
+						res.setHeader(key, ctx.meta.$responseHeaders[key]);
+				});
+			}
+
 			// Return with the error as JSON object
-			res.setHeader("Content-type", "application/json; charset=utf-8");
+			res.setHeader("Content-type", responseType);
 
 			const code = _.isNumber(err.code) && _.inRange(err.code, 400, 599) ? err.code : 500;
 			res.writeHead(code);
@@ -1111,7 +1124,10 @@ module.exports = {
 
 				// Remote route
 				this.routes.splice(idx, 1);
+
+				return true;
 			}
+			return false;
 		},
 
 		/**
@@ -1162,6 +1178,12 @@ module.exports = {
 			route.callOptions = opts.callOptions;
 
 			// Create body parsers as middlewares
+			if (opts.bodyParsers == null) {
+				// Set default JSON body-parser
+				opts.bodyParsers = {
+					json: true
+				};
+			}
 			if (opts.bodyParsers) {
 				const bps = opts.bodyParsers;
 				Object.keys(bps).forEach(key => {
@@ -1472,6 +1494,13 @@ module.exports = {
 
 		// Alias store
 		this.aliases = [];
+
+		// Add default route
+		if (Array.isArray(this.settings.routes) && this.settings.routes.length == 0) {
+			this.settings.routes = [{
+				path: "/"
+			}];
+		}
 
 		// Process routes
 		this.routes = [];

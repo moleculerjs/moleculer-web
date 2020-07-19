@@ -250,7 +250,8 @@ broker.createService({
 					"add": "math.add",
 					"add/:a/:b": "math.add",
 					"GET sub": "math.sub",
-					"POST divide": "math.div"
+					"POST divide": "math.div",
+					"GET wrong": "test.wrong"
 				},
 
 				// Use bodyparser module
@@ -292,11 +293,11 @@ broker.createService({
 		},
 
 		// Global error handler
-		onError(req, res, err) {
+		/*onError(req, res, err) {
 			res.setHeader("Content-Type", "text/plain");
 			res.writeHead(err.code || 500);
 			res.end("Global error: " + err.message);
-		},
+		},*/
 
 		// Do not log client side errors (does not log an error respons when the error.code is 400<=X<500)
 		log4XXResponses: false,

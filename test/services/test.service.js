@@ -275,6 +275,15 @@ module.exports = {
 
 		error() {
 			throw new MoleculerServerError("I'm dangerous", 500);
-		}
+		},
+
+		errorWithHeader(ctx) {
+			ctx.meta.$responseType = "text/plain";
+			ctx.meta.$responseHeaders = {
+				"X-Custom-Header": "Custom content"
+			};
+
+			throw new MoleculerServerError("It is a wrong action! I always throw error!");
+		},
 	}
 };

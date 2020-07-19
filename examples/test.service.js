@@ -90,6 +90,11 @@ module.exports = {
 		},
 
 		wrong(ctx) {
+			ctx.meta.$responseType = "text/plain";
+			ctx.meta.$responseHeaders = {
+				"X-Custom-Header": "Custom content"
+			};
+
 			throw new MoleculerError("It is a wrong action! I always throw error!");
 		},
 

@@ -394,6 +394,18 @@ describe("Test responses", () => {
 				});
 			});
 	});
+
+	it("GET /test/errorWithHeader", () => {
+		return request(server)
+			.get("/test/errorWithHeader")
+			.then(res => {
+				expect(res.statusCode).toBe(500);
+				expect(res.headers["content-type"]).toBe("text/plain");
+				expect(res.header["x-request-id"]).toBeDefined();
+				expect(res.header["x-custom-header"]).toBe("Custom content");
+				expect(res.text).toBe("{\"name\":\"MoleculerServerError\",\"message\":\"It is a wrong action! I always throw error!\",\"code\":500}");
+			});
+	});
 });
 
 describe("Test with `path` prefix", () => {
@@ -1732,7 +1744,7 @@ describe("Test body-parsers", () => {
 	it("POST /api/test.gretter without bodyParsers", () => {
 		[ broker, service, server] = setup({
 			routes: [{
-				bodyParsers: null
+				bodyParsers: false
 			}]
 		});
 
@@ -3565,6 +3577,98 @@ describe("Test dynamic routing", () => {
 
 	it("remove route & should not find '/other/hello'", () => {
 		service.removeRoute("/other");
+
+		return request(server)
+			.get("/other/hello")
+			.then(res => {
+				expect(res.statusCode).toBe(404);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toEqual({
+					"code": 404,
+					"message": "Not found",
+					"name": "NotFoundError",
+					"type": "NOT_FOUND"
+				});
+			});
+	});
+
+	it("but should find '/my/hello'", () => {
+		return request(server)
+			.get("/my/hello")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toBe("Hello Moleculer");
+			});
+	});
+});
+
+
+describe("Test dynamic routing with actions", () => {
+	let broker;
+	let service;
+	let server;
+
+	beforeAll(() => {
+		[ broker, service, server] = setup({
+			routes: false
+		});
+		return broker.start();
+	});
+
+	afterAll(() => broker.stop());
+
+	it("should not find '/my/hello'", () => {
+		return request(server)
+			.get("/my/hello")
+			.then(res => {
+				expect(res.statusCode).toBe(404);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toEqual({
+					"code": 404,
+					"message": "Not found",
+					"name": "NotFoundError",
+					"type": "NOT_FOUND"
+				});
+			});
+	});
+
+	it("create route & should find '/my/hello'", async () => {
+		await broker.call("api.addRoute", { route: {
+			path: "/my",
+			aliases: {
+				"hello": "test.hello"
+			}
+		} });
+
+		return request(server)
+			.get("/my/hello")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toBe("Hello Moleculer");
+			});
+	});
+
+	it("change route & should find '/other/hello'", async () => {
+		await broker.call("api.addRoute", { route: {
+			path: "/other",
+			aliases: {
+				"hello": "test.hello"
+			}
+		} });
+
+		return request(server)
+			.get("/other/hello")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toBe("Hello Moleculer");
+			});
+	});
+
+	it("remove route & should not find '/other/hello'", async () => {
+		await broker.call("api.removeRoute", { path: "/other" });
 
 		return request(server)
 			.get("/other/hello")

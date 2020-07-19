@@ -18,15 +18,12 @@
  * 		GET http://localhost:3000/lang/en
  */
 
-let path				= require("path");
-let { ServiceBroker } 	= require("moleculer");
-let ApiGatewayService 	= require("../../index");
+const path				= require("path");
+const { ServiceBroker } 	= require("moleculer");
+const ApiGatewayService 	= require("../../index");
 
 // Create broker
-let broker = new ServiceBroker({
-	logger: console,
-	validation: true
-});
+const broker = new ServiceBroker();
 
 // Load other services
 broker.loadService(path.join(__dirname, "..", "post.service"));
