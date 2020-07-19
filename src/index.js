@@ -11,7 +11,7 @@ const https 					= require("https");
 const queryString 				= require("qs");
 const os 						= require("os");
 const kleur						= require("kleur");
-const { match, deprecate }		= require("moleculer").Utils;
+const { match }					= require("moleculer").Utils;
 const pkg						= require("../package.json");
 
 const _ 						= require("lodash");

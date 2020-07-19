@@ -25,10 +25,12 @@ class MemoryStore {
 		this.hits = new Map();
 		this.resetTime = Date.now() + clearPeriod;
 
-		setInterval(() => {
+		this.timer = setInterval(() => {
 			this.resetTime = Date.now() + clearPeriod;
 			this.reset();
 		}, clearPeriod);
+
+		this.timer.unref();
 	}
 
 	/**
