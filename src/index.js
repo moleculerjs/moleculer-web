@@ -1391,7 +1391,7 @@ module.exports = {
 			const services = this.broker.registry.getServiceList({ withActions: true, grouping: true });
 			services.forEach(service => {
 				const serviceName = service.fullName || getServiceFullname(service);
-				const basePath = addSlashes(_.isString(service.settings.rest) ? service.settings.rest : serviceName.replace(/\./g, "/"));
+				const basePath = addSlashes(service.settings && _.isString(service.settings.rest) ? service.settings.rest : serviceName.replace(/\./g, "/"));
 
 				// Skip multiple instances of services
 				if (processedServices.has(serviceName)) return;
