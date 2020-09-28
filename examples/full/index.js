@@ -33,13 +33,13 @@
  * 		https://localhost:4000/api/math/div?a=25      <-- Throw validation error because `b` is missing
  *
  *  - Authorization:
- * 		https://localhost:4000/api/admin/~node/health  <-- Throw `Unauthorized` because no `Authorization` header
+ * 		https://localhost:4000/api/admin/health  <-- Throw `Unauthorized` because no `Authorization` header
  *
  * 		First you have to login . You will get a token and set it to the `Authorization` key in header
  * 			https://localhost:4000/api/login?username=admin&password=admin
  *
  * 		Set the token to header and try again
- * 			https://localhost:4000/api/admin/~node/health
+ * 			https://localhost:4000/api/admin/health
  *
  *  - File upload:
  * 		Open https://localhost:4000/upload.html in the browser and upload a file. The file will be placed to the "examples/full/uploads" folder.
@@ -364,7 +364,10 @@ broker.createService({
 			// Verify JWT token
 			return ctx.call("auth.resolveToken", { token })
 				.then(user => {
-					return Promise.reject(new UnAuthorizedError(ERR_NO_TOKEN));
+					if (!user)
+						return Promise.reject(new UnAuthorizedError(ERR_INVALID_TOKEN));
+
+					ctx.meta.user = user;
 				});
 		}
 	}
