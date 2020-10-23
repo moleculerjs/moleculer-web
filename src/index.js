@@ -13,7 +13,7 @@ const queryString 				= require("qs");
 const os 						= require("os");
 
 // Disable global colors logs
-if(process.env.COLORS === false) process.env.FORCE_COLOR = 0;
+if(String(process.env.COLORS).toLowerCase() === "false") process.env.FORCE_COLOR = 0;
 
 const kleur						= require("kleur");
 const { match }					= require("moleculer").Utils;
