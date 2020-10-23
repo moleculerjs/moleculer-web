@@ -38,6 +38,9 @@ function getServiceFullname(svc) {
 	return svc.name;
 }
 
+// Disable global colors logs
+if(process.env.COLORS === false) process.env.FORCE_COLOR = 0;
+
 /**
  * Official API Gateway service for Moleculer microservices framework.
  *
