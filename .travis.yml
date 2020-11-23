@@ -5,6 +5,5 @@ cache:
 node_js:
     - "12"
     - "10"
-    - "8"
 after_success:
   - npm run coverall
