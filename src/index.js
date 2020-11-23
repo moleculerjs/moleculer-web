@@ -1001,7 +1001,7 @@ module.exports = {
 			// Access-Control-Allow-Origin
 			if (!route.cors.origin || route.cors.origin === "*") {
 				res.setHeader("Access-Control-Allow-Origin", "*");
-			} else if (this.checkOrigin(origin, route.cors.origin)) {
+			} else if (route.cors.origin === true || this.checkOrigin(origin, route.cors.origin)) {
 				res.setHeader("Access-Control-Allow-Origin", origin);
 				res.setHeader("Vary", "Origin");
 			} else {
