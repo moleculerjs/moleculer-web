@@ -3794,7 +3794,8 @@ describe("Test auto aliasing", () => {
 						"posts.*",
 						"test.hello",
 						"test.full*",
-						"test.base*"
+						"test.base*",
+						"test.update*"
 					],
 
 					autoAliases: true,
@@ -3960,6 +3961,19 @@ describe("Test auto aliasing", () => {
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
 				expect(res.body).toBe("Full path");
 			});
+	});
+
+	it("should call PUT /update and PATCH /update", () => {
+		return Promise.all([
+			request(server).put("/api/update").query({ name: "John" }),
+			request(server).patch("/api/update").query({ name: "John" })
+		]).then((results) => {
+			results.forEach(result => {
+				expect(result.statusCode).toBe(200);
+				expect(result.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(result.body).toBe("Hello John");
+			});
+		})
 	});
 });
 
@@ -4548,5 +4562,20 @@ describe("Test multi REST interfaces in service settings", () => {
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
 				expect(res.body).toBe("Hello Custom Moleculer Root Path");
 			});
+	});
+
+	it("should call multiple PUT /update and PATCH /update on /route and /route/multi base path ", () => {
+		return Promise.all([
+			request(server).put("/route/update").query({ name: "John" }),
+			request(server).put("/route/multi/update").query({ name: "John" }),
+			request(server).patch("/route/update").query({ name: "John" }),
+			request(server).patch("/route/multi/update").query({ name: "John" })
+		]).then((results) => {
+			results.forEach(result => {
+				expect(result.statusCode).toBe(200);
+				expect(result.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(result.body).toBe("Hello John");
+			});
+		})
 	});
 });

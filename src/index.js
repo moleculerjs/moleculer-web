@@ -1385,41 +1385,33 @@ module.exports = {
 
 					_.forIn(service.actions, action => {
 						if (action.rest) {
-							let alias = null;
-
 							// Check visibility
 							if (action.visibility != null && action.visibility != "published") return;
 
 							// Check whitelist
 							if (route.hasWhitelist && !this.checkWhitelist(route, action.name)) return;
 
-							if (_.isString(action.rest)) {
-								if (action.rest.indexOf(" ") !== -1) {
-									// Handle route: "POST /import"
-									const p = action.rest.split(/\s+/);
-									alias = {
-										method: p[0],
-										path: basePath + p[1]
-									};
-								} else {
-									// Handle route: "/import". In this case apply to all methods as "* /import"
-									alias = {
-										method: "*",
-										path: basePath + action.rest
-									};
-								}
-							} else if (_.isObject(action.rest)) {
-								// Handle route: { method: "POST", path: "/other", basePath: "newBasePath" }
-								alias = Object.assign({}, action.rest, {
-									method: action.rest.method || "*",
-									path: (action.rest.basePath ? action.rest.basePath : basePath) + (action.rest.path ? action.rest.path : action.rawName)
-								});
+							let restRoutes = [];
+							if (!_.isArray(action.rest)) {
+								restRoutes = [action.rest];
+							} else {
+								restRoutes = action.rest;
 							}
 
-							if (alias) {
-								alias.path = removeTrailingSlashes(normalizePath(alias.path));
-								alias._generated = true;
-								this.aliases.push(this.createAlias(route, alias, action.name));
+							for (let restRoute of restRoutes) {
+								let alias = null;
+
+								if (_.isString(restRoute)) {
+									alias = this.parseActionRestString(restRoute, basePath);
+								} else if (_.isObject(restRoute)) {
+									alias = this.parseActionRestObject(restRoute, action.rawName, basePath);
+								}
+
+								if (alias) {
+									alias.path = removeTrailingSlashes(normalizePath(alias.path));
+									alias._generated = true;
+									this.aliases.push(this.createAlias(route, alias, action.name));
+								}
 							}
 						}
 
@@ -1431,6 +1423,36 @@ module.exports = {
 			if (this.settings.optimizeOrder) {
 				this.optimizeAliasesOrder();
 			}
+		},
+
+		/**
+		 * 
+		 */
+		parseActionRestString(restRoute, basePath) {
+			if (restRoute.indexOf(" ") !== -1) {
+				// Handle route: "POST /import"
+				const p = restRoute.split(/\s+/);
+				return {
+					method: p[0],
+					path: basePath + p[1]
+				};
+			}
+			// Handle route: "/import". In this case apply to all methods as "* /import"
+			return {
+				method: "*",
+				path: basePath + restRoute
+			};
+		},
+
+		/**
+		 * 
+		 */
+		parseActionRestObject(restRoute, rawName, basePath) {
+			// Handle route: { method: "POST", path: "/other", basePath: "newBasePath" }
+			return Object.assign({}, restRoute, {
+				method: restRoute.method || "*",
+				path: (restRoute.basePath ? restRoute.basePath : basePath) + (restRoute.path ? restRoute.path : rawName)
+			});
 		},
 
 		/**

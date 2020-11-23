@@ -52,5 +52,15 @@ module.exports = {
                 return "Hello Custom Moleculer Root Path";
             }
         },
+
+        update: {
+            rest: ["PUT /update", "PATCH /update"],
+            params: {
+                name: "string"
+            },
+            handler(ctx) {
+                return `Hello ${ctx.params.name}`;
+            }
+        },
     }
 }
