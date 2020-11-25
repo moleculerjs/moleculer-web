@@ -6,37 +6,39 @@
 
 "use strict";
 
-const http 						= require("http");
-const http2 					= require("http2");
-const https 					= require("https");
-const queryString 				= require("qs");
-const os 						= require("os");
-const kleur						= require("kleur");
-const { match }					= require("moleculer").Utils;
-const pkg						= require("../package.json");
+const http = require("http");
+const http2 = require("http2");
+const https = require("https");
+const queryString = require("qs");
+const os = require("os");
+const kleur = require("kleur");
+const { match } = require("moleculer").Utils;
+const pkg = require("../package.json");
 
-const _ 						= require("lodash");
-const bodyParser 				= require("body-parser");
-const serveStatic 				= require("serve-static");
-const isReadableStream			= require("isstream").isReadable;
+const _ = require("lodash");
+const bodyParser = require("body-parser");
+const serveStatic = require("serve-static");
+const isReadableStream = require("isstream").isReadable;
 
 const { MoleculerError, MoleculerServerError, ServiceNotFoundError } = require("moleculer").Errors;
 const { ServiceUnavailableError, NotFoundError, ForbiddenError, RateLimitExceeded, ERR_ORIGIN_NOT_ALLOWED } = require("./errors");
 
-const Alias						= require("./alias");
-const MemoryStore				= require("./memory-store");
+const Alias = require("./alias");
+const MemoryStore = require("./memory-store");
 
 const { removeTrailingSlashes, addSlashes, normalizePath, composeThen, generateETag, isFresh } = require("./utils");
 
-const MAPPING_POLICY_ALL		= "all";
-const MAPPING_POLICY_RESTRICT	= "restrict";
+const MAPPING_POLICY_ALL = "all";
+const MAPPING_POLICY_RESTRICT = "restrict";
 
 function getServiceFullname(svc) {
 	if (svc.version != null && svc.settings.$noVersionPrefix !== true)
-		return (typeof(svc.version) == "number" ? "v" + svc.version : svc.version) + "." + svc.name;
+		return (typeof (svc.version) == "number" ? "v" + svc.version : svc.version) + "." + svc.name;
 
 	return svc.name;
 }
+
+const SLASH_REGEX = new RegExp(/\./g);
 
 /**
  * Official API Gateway service for Moleculer microservices framework.
@@ -163,7 +165,7 @@ module.exports = {
 				}
 
 				// Check routes
-				for(let i = 0; i < this.routes.length; i++) {
+				for (let i = 0; i < this.routes.length; i++) {
 					const route = this.routes[i];
 
 					if (url.startsWith(route.path)) {
@@ -275,7 +277,7 @@ module.exports = {
 			}
 
 			// HTTP server timeout
-			if (this.settings.httpServerTimeout){
+			if (this.settings.httpServerTimeout) {
 				this.logger.debug("Override default http(s) server timeout:", this.settings.httpServerTimeout);
 				this.server.setTimeout(this.settings.httpServerTimeout);
 			}
@@ -319,7 +321,7 @@ module.exports = {
 					// If not routed and not served static asset, send 404
 					this.send404(req, res);
 				}
-			} catch(err) {
+			} catch (err) {
 				// don't log client side errors only it's configured
 				if (this.settings.log4XXResponses || (err && !_.inRange(err.code, 400, 500))) {
 					this.logger.error("   Request error!", err.name, ":", err.message, "\n", err.stack, "\nData:", err.data);
@@ -423,7 +425,7 @@ module.exports = {
 					const result = await this.aliasHandler(req, res, { action, _notDefined: true });
 					resolve(result);
 
-				} catch(err) {
+				} catch (err) {
 					reject(err);
 				}
 			});
@@ -587,7 +589,7 @@ module.exports = {
 
 				return true;
 
-			} catch(err) {
+			} catch (err) {
 				/* istanbul ignore next */
 				if (!err)
 					return; // Cancelling promise chain, no error
@@ -721,7 +723,7 @@ module.exports = {
 			}
 
 			// Auto generate & add ETag
-			if(route.etag && chunk && !res.getHeader("ETag") && !isReadableStream(chunk)) {
+			if (route.etag && chunk && !res.getHeader("ETag") && !isReadableStream(chunk)) {
 				res.setHeader("ETag", generateETag.call(this, chunk, route.etag));
 			}
 
@@ -966,7 +968,7 @@ module.exports = {
 					return origin.match(wildcard);
 				}
 			} else if (Array.isArray(settings)) {
-				for(let i = 0; i < settings.length; i++) {
+				for (let i = 0; i < settings.length; i++) {
 					if (this.checkOrigin(origin, settings[i])) {
 						return true;
 					}
@@ -1072,7 +1074,7 @@ module.exports = {
 		 * @returns {Object} Resolved alas & params
 		 */
 		resolveAlias(url, method = "GET") {
-			for(let i = 0; i < this.aliases.length; i++) {
+			for (let i = 0; i < this.aliases.length; i++) {
 				const alias = this.aliases[i];
 				if (alias.isMethod(method)) {
 					const params = alias.match(url);
@@ -1134,7 +1136,7 @@ module.exports = {
 		 * Optimize route order by route path depth
 		 */
 		optimizeRouteOrder() {
-			this.routes.sort((a,b) => {
+			this.routes.sort((a, b) => {
 				let c = addSlashes(b.path).split("/").length - addSlashes(a.path).split("/").length;
 				if (c == 0) {
 					// Second level ordering (considering URL params)
@@ -1365,54 +1367,57 @@ module.exports = {
 			const services = this.broker.registry.getServiceList({ withActions: true, grouping: true });
 			services.forEach(service => {
 				const serviceName = service.fullName || getServiceFullname(service);
-				const basePath = addSlashes(service.settings && _.isString(service.settings.rest) ? service.settings.rest : serviceName.replace(/\./g, "/"));
+
+				let basePaths = [];
+				if (_.isString(service.settings.rest)) {
+					basePaths = [service.settings.rest];
+				} else if (_.isArray(service.settings.rest)) {
+					basePaths = service.settings.rest;
+				} else {
+					basePaths = [serviceName.replace(SLASH_REGEX, "/")];
+				}
 
 				// Skip multiple instances of services
 				if (processedServices.has(serviceName)) return;
 
-				_.forIn(service.actions, action => {
-					if (action.rest) {
-						let alias = null;
+				for (let basePath of basePaths) {
+					basePath = addSlashes(_.isString(basePath) ? basePath : serviceName.replace(SLASH_REGEX, "/"));
 
-						// Check visibility
-						if (action.visibility != null && action.visibility != "published") return;
+					_.forIn(service.actions, action => {
+						if (action.rest) {
+							// Check visibility
+							if (action.visibility != null && action.visibility != "published") return;
 
-						// Check whitelist
-						if (route.hasWhitelist && !this.checkWhitelist(route, action.name)) return;
+							// Check whitelist
+							if (route.hasWhitelist && !this.checkWhitelist(route, action.name)) return;
 
-						if (_.isString(action.rest)) {
-							if (action.rest.indexOf(" ") !== -1) {
-								// Handle route: "POST /import"
-								const p = action.rest.split(/\s+/);
-								alias = {
-									method: p[0],
-									path: basePath + p[1]
-								};
+							let restRoutes = [];
+							if (!_.isArray(action.rest)) {
+								restRoutes = [action.rest];
 							} else {
-								// Handle route: "/import". In this case apply to all methods as "* /import"
-								alias = {
-									method: "*",
-									path: basePath + action.rest
-								};
+								restRoutes = action.rest;
 							}
-						} else if (_.isObject(action.rest)) {
-							// Handle route: { method: "POST", path: "/other", basePath: "newBasePath" }
-							alias = Object.assign({}, action.rest, {
-								method: action.rest.method || "*",
-								path: (action.rest.basePath ? action.rest.basePath : basePath) + (action.rest.path ? action.rest.path : action.rawName)
-							});
+
+							for (let restRoute of restRoutes) {
+								let alias = null;
+
+								if (_.isString(restRoute)) {
+									alias = this.parseActionRestString(restRoute, basePath);
+								} else if (_.isObject(restRoute)) {
+									alias = this.parseActionRestObject(restRoute, action.rawName, basePath);
+								}
+
+								if (alias) {
+									alias.path = removeTrailingSlashes(normalizePath(alias.path));
+									alias._generated = true;
+									this.aliases.push(this.createAlias(route, alias, action.name));
+								}
+							}
 						}
 
-						if (alias) {
-							alias.path = removeTrailingSlashes(normalizePath(alias.path));
-							alias._generated = true;
-							this.aliases.push(this.createAlias(route, alias, action.name));
-						}
-					}
-
-					processedServices.add(serviceName);
-				});
-
+						processedServices.add(serviceName);
+					});
+				}
 			});
 
 			if (this.settings.optimizeOrder) {
@@ -1421,13 +1426,43 @@ module.exports = {
 		},
 
 		/**
+		 * 
+		 */
+		parseActionRestString(restRoute, basePath) {
+			if (restRoute.indexOf(" ") !== -1) {
+				// Handle route: "POST /import"
+				const p = restRoute.split(/\s+/);
+				return {
+					method: p[0],
+					path: basePath + p[1]
+				};
+			}
+			// Handle route: "/import". In this case apply to all methods as "* /import"
+			return {
+				method: "*",
+				path: basePath + restRoute
+			};
+		},
+
+		/**
+		 * 
+		 */
+		parseActionRestObject(restRoute, rawName, basePath) {
+			// Handle route: { method: "POST", path: "/other", basePath: "newBasePath" }
+			return Object.assign({}, restRoute, {
+				method: restRoute.method || "*",
+				path: (restRoute.basePath ? restRoute.basePath : basePath) + (restRoute.path ? restRoute.path : rawName)
+			});
+		},
+
+		/**
 		 * Optimize order of alias path.
 		 */
 		optimizeAliasesOrder() {
-			this.aliases.sort((a,b) => {
+			this.aliases.sort((a, b) => {
 				let c = addSlashes(b.path).split("/").length - addSlashes(a.path).split("/").length;
 				if (c == 0) {
-				// Second level ordering (considering URL params)
+					// Second level ordering (considering URL params)
 					c = a.path.split(":").length - b.path.split(":").length;
 				}
 

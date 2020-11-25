@@ -44,7 +44,7 @@ describe("Test default settings", () => {
 	let server;
 
 	beforeAll(() => {
-		[ broker, service, server] = setup();
+		[broker, service, server] = setup();
 		return broker.start();
 	});
 
@@ -164,8 +164,8 @@ describe("Test responses", () => {
 
 	beforeAll(() => {
 
-		[ broker, service, server] = setup({
-			routes:[{
+		[broker, service, server] = setup({
+			routes: [{
 				camelCaseNames: true
 			}]
 		}, { metrics: true });
@@ -414,7 +414,7 @@ describe("Test with `path` prefix", () => {
 	let server;
 
 	beforeAll(() => {
-		[ broker, service, server] = setup({
+		[broker, service, server] = setup({
 			path: "/my-api"
 		});
 		//broker.loadService("./test/services/math.service");
@@ -470,7 +470,7 @@ describe("Test with `/` path prefix", () => {
 	let server;
 
 	beforeAll(() => {
-		[ broker, service, server] = setup({
+		[broker, service, server] = setup({
 			path: "/"
 		});
 		//broker.loadService("./test/services/math.service");
@@ -511,7 +511,7 @@ describe("Test only assets", () => {
 	let server;
 
 	beforeAll(() => {
-		[ broker, service, server] = setup({
+		[broker, service, server] = setup({
 			assets: {
 				folder: path.join(__dirname, "..", "assets")
 			},
@@ -565,7 +565,7 @@ describe("Test assets & API route", () => {
 	let server;
 
 	beforeAll(() => {
-		[ broker, service, server] = setup({
+		[broker, service, server] = setup({
 			assets: {
 				folder: path.join(__dirname, "..", "assets")
 			},
@@ -625,7 +625,7 @@ describe("Test whitelist", () => {
 	let server;
 
 	beforeAll(() => {
-		[ broker, service, server] = setup({
+		[broker, service, server] = setup({
 			routes: [{
 				path: "/api",
 				whitelist: [
@@ -747,7 +747,7 @@ describe("Test aliases", () => {
 	});
 
 	beforeAll(() => {
-		[ broker, service, server] = setup({
+		[broker, service, server] = setup({
 			routes: [
 				{
 					path: "/api",
@@ -1125,7 +1125,7 @@ describe("Test un-merged params", () => {
 	let server;
 
 	beforeAll(() => {
-		[ broker, service, server] = setup({
+		[broker, service, server] = setup({
 			routes: [{
 				path: "/api",
 				mergeParams: false,
@@ -1305,7 +1305,7 @@ describe("Test REST shorthand aliases", () => {
 	let server;
 
 	beforeAll(() => {
-		[ broker, service, server] = setup({
+		[broker, service, server] = setup({
 			routes: [{
 				path: "/api",
 				aliases: {
@@ -1417,7 +1417,7 @@ describe("Test REST shorthand aliases and only filter", () => {
 	let server;
 
 	beforeAll(() => {
-		[ broker, service, server] = setup({
+		[broker, service, server] = setup({
 			routes: [{
 				path: "/api",
 				aliases: {
@@ -1492,13 +1492,13 @@ describe("Test REST shorthand aliases and only filter", () => {
 	});
 });
 
-describe("Test REST shorthand aliases and execpt filter", () => {
+describe("Test REST shorthand aliases and except filter", () => {
 	let broker;
 	let service;
 	let server;
 
 	beforeAll(() => {
-		[ broker, service, server] = setup({
+		[broker, service, server] = setup({
 			routes: [{
 				path: "/api",
 				aliases: {
@@ -1581,7 +1581,7 @@ describe("Test REST shorthand aliases and only, execpt filter", () => {
 	let server;
 
 	beforeAll(() => {
-		[ broker, service, server] = setup({
+		[broker, service, server] = setup({
 			routes: [{
 				path: "/api",
 				aliases: {
@@ -1661,7 +1661,7 @@ describe("Test alias & whitelist", () => {
 	let server;
 
 	beforeAll(() => {
-		[ broker, service, server] = setup({
+		[broker, service, server] = setup({
 			routes: [{
 				path: "/api",
 				whitelist: [
@@ -1742,7 +1742,7 @@ describe("Test body-parsers", () => {
 	});
 
 	it("POST /api/test.gretter without bodyParsers", () => {
-		[ broker, service, server] = setup({
+		[broker, service, server] = setup({
 			routes: [{
 				bodyParsers: false
 			}]
@@ -1772,7 +1772,7 @@ describe("Test body-parsers", () => {
 	});
 
 	it("POST /api/test.gretter with JSON parser", () => {
-		[ broker, service, server] = setup({
+		[broker, service, server] = setup({
 			routes: [{
 				bodyParsers: {
 					json: true
@@ -1792,7 +1792,7 @@ describe("Test body-parsers", () => {
 	});
 
 	it("POST /api/test.gretter with JSON parser & invalid JSON", () => {
-		[ broker, service, server] = setup({
+		[broker, service, server] = setup({
 			routes: [{
 				bodyParsers: {
 					json: true
@@ -1819,7 +1819,7 @@ describe("Test body-parsers", () => {
 
 
 	it("POST /api/test.gretter with JSON parser & urlEncoded body", () => {
-		[ broker, service, server] = setup({
+		[broker, service, server] = setup({
 			routes: [{
 				bodyParsers: {
 					json: true
@@ -1839,7 +1839,7 @@ describe("Test body-parsers", () => {
 	});
 
 	it("POST /api/test.gretter with urlencoder parser", () => {
-		[ broker, service, server] = setup({
+		[broker, service, server] = setup({
 			routes: [{
 				bodyParsers: {
 					urlencoded: { extended: true }
@@ -1866,7 +1866,7 @@ describe("Test multiple routes", () => {
 	let server;
 
 	beforeAll(() => {
-		[ broker, service, server] = setup({
+		[broker, service, server] = setup({
 			routes: [
 				{
 					path: "/api1",
@@ -1965,7 +1965,7 @@ describe("Test mappingPolicy route option", () => {
 
 	describe("'all' option", () => {
 		beforeAll(() => {
-			[ broker, service, server] = setup({
+			[broker, service, server] = setup({
 				routes: [
 					{
 						path: "/api",
@@ -2021,7 +2021,7 @@ describe("Test mappingPolicy route option", () => {
 
 	describe("'restrict' option", () => {
 		beforeAll(() => {
-			[ broker, service, server] = setup({
+			[broker, service, server] = setup({
 				routes: [
 					{
 						path: "/api",
@@ -2071,7 +2071,7 @@ describe("Test mappingPolicy route option", () => {
 
 	describe("'restrict' option without aliases", () => {
 		beforeAll(() => {
-			[ broker, service, server] = setup({
+			[broker, service, server] = setup({
 				routes: [
 					{
 						path: "/",
@@ -2113,7 +2113,7 @@ describe("Test CORS", () => {
 	});
 
 	it("no errors if missing origin header", () => {
-		[ broker, service, server] = setup({
+		[broker, service, server] = setup({
 			cors: {}
 		});
 		return broker.start()
@@ -2126,7 +2126,7 @@ describe("Test CORS", () => {
 	});
 
 	it("errors on mismatching origin header", () => {
-		[ broker, service, server] = setup({
+		[broker, service, server] = setup({
 			cors: {
 				origin: "a"
 			}
@@ -2141,12 +2141,13 @@ describe("Test CORS", () => {
 					"message": "Forbidden",
 					"code": 403,
 					"type": "ORIGIN_NOT_ALLOWED",
-					"name": "ForbiddenError" });
+					"name": "ForbiddenError"
+				});
 			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
 	});
 
 	it("with default settings", () => {
-		[ broker, service, server] = setup({
+		[broker, service, server] = setup({
 			cors: {}
 		});
 
@@ -2165,7 +2166,7 @@ describe("Test CORS", () => {
 	});
 
 	it("with custom global settings (string)", () => {
-		[ broker, service, server] = setup({
+		[broker, service, server] = setup({
 			cors: {
 				origin: "http://localhost:3000",
 				exposedHeaders: "X-Response-Time",
@@ -2190,7 +2191,7 @@ describe("Test CORS", () => {
 	});
 
 	it("with custom global settings (array)", () => {
-		[ broker, service, server] = setup({
+		[broker, service, server] = setup({
 			cors: {
 				origin: ["http://localhost:3000", "https://localhost:4000"],
 				exposedHeaders: ["X-Custom-Header", "X-Response-Time"],
@@ -2215,7 +2216,7 @@ describe("Test CORS", () => {
 	});
 
 	it("with custom route settings", () => {
-		[ broker, service, server] = setup({
+		[broker, service, server] = setup({
 			cors: {
 				origin: ["http://localhost:3000", "https://localhost:4000"],
 				exposedHeaders: ["X-Custom-Header", "X-Response-Time"],
@@ -2246,7 +2247,7 @@ describe("Test CORS", () => {
 	});
 
 	it("returns matching CORS origin wildcard with single origin", () => {
-		[ broker, service, server] = setup({
+		[broker, service, server] = setup({
 			cors: {
 				origin: "http://localhost:*",
 			}
@@ -2268,7 +2269,7 @@ describe("Test CORS", () => {
 	});
 
 	it("returns matching CORS origin wildcard", () => {
-		[ broker, service, server] = setup({
+		[broker, service, server] = setup({
 			cors: {
 				origin: ["http://test.example.com", "http://www.example.com", "http://*.a.com"],
 			}
@@ -2290,7 +2291,7 @@ describe("Test CORS", () => {
 	});
 
 	it("returns matching CORS origin wildcard when more than one wildcard", () => {
-		[ broker, service, server] = setup({
+		[broker, service, server] = setup({
 			cors: {
 				origin: ["http://test.example.com", "http://*.b.com", "http://*.a.com"],
 			}
@@ -2312,7 +2313,7 @@ describe("Test CORS", () => {
 	});
 
 	it("preflight request with custom route settings", () => {
-		[ broker, service, server] = setup({
+		[broker, service, server] = setup({
 			cors: {
 				origin: ["http://localhost:3000"],
 				exposedHeaders: ["X-Custom-Header", "X-Response-Time"]
@@ -2349,7 +2350,7 @@ describe("Test CORS", () => {
 	});
 
 	it("preflight request with default settings", () => {
-		[ broker, service, server] = setup({
+		[broker, service, server] = setup({
 			cors: {
 				allowedHeaders: ["X-Custom-Header", "X-Response-Time"]
 			}
@@ -2371,7 +2372,7 @@ describe("Test CORS", () => {
 	});
 
 	it("preflight request with 'Access-Control-Request-Headers'", () => {
-		[ broker, service, server] = setup({
+		[broker, service, server] = setup({
 			cors: {
 				origin: "http://localhost:3000",
 				exposedHeaders: ["X-Custom-Header", "X-Response-Time"],
@@ -2414,7 +2415,7 @@ describe("Test Rate Limiter", () => {
 	beforeAll(() => {
 		clock = lolex.install();
 
-		[ broker, service, server] = setup({
+		[broker, service, server] = setup({
 			rateLimit: {
 				window: 10000,
 				limit: 3,
@@ -2508,7 +2509,7 @@ describe("Test Rate Limiter", () => {
 
 	it("Test StoreFactory", () => {
 		let factory = jest.fn();
-		[ broker, service, server] = setup({
+		[broker, service, server] = setup({
 			rateLimit: {
 				window: 10000,
 				limit: 3,
@@ -2531,8 +2532,8 @@ describe("Test onBeforeCall & onAfterCall", () => {
 			expect(ctx.action.name).toBe("api.rest");
 
 			ctx.meta.custom = "John";
-			ctx.meta.endpoint = req.$endpoint ? req.$endpoint.name: null;
-			ctx.meta.action = req.$action ? req.$action.name: null;
+			ctx.meta.endpoint = req.$endpoint ? req.$endpoint.name : null;
+			ctx.meta.action = req.$action ? req.$action.name : null;
 		});
 		const afterCall = jest.fn((ctx, route, req, res, data) => {
 			expect(req.$service).toBeDefined();
@@ -3064,7 +3065,8 @@ describe("Test authorization", () => {
 					"message": "Unauthorized",
 					"code": 401,
 					"type": "NO_TOKEN",
-					"name": "UnAuthorizedError" });
+					"name": "UnAuthorizedError"
+				});
 				expect(authorize).toHaveBeenCalledTimes(1);
 				expect(authorize).toHaveBeenCalledWith(jasmine.any(Context), jasmine.any(Object), jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse));
 			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
@@ -3238,7 +3240,7 @@ describe("Test route.path and aliases", () => {
 							res.end("/api/te/test");
 						}
 					}
-				},{
+				}, {
 					path: "",
 					aliases: {
 						"GET test"(req, res) {
@@ -3390,7 +3392,7 @@ describe("Test file uploading", () => {
 					}
 				},
 				onAfterCall(ctx, route, req, res, data) {
-					if(ctx.meta.$multipart && "name" in ctx.meta.$multipart)
+					if (ctx.meta.$multipart && "name" in ctx.meta.$multipart)
 						data = { name: ctx.meta.$multipart.name, files: data };
 					return Promise.resolve(data);
 				},
@@ -3518,7 +3520,7 @@ describe("Test dynamic routing", () => {
 	let server;
 
 	beforeAll(() => {
-		[ broker, service, server] = setup({
+		[broker, service, server] = setup({
 			routes: false
 		});
 		return broker.start();
@@ -3610,7 +3612,7 @@ describe("Test dynamic routing with actions", () => {
 	let server;
 
 	beforeAll(() => {
-		[ broker, service, server] = setup({
+		[broker, service, server] = setup({
 			routes: false
 		});
 		return broker.start();
@@ -3634,12 +3636,14 @@ describe("Test dynamic routing with actions", () => {
 	});
 
 	it("create route & should find '/my/hello'", async () => {
-		await broker.call("api.addRoute", { route: {
-			path: "/my",
-			aliases: {
-				"hello": "test.hello"
+		await broker.call("api.addRoute", {
+			route: {
+				path: "/my",
+				aliases: {
+					"hello": "test.hello"
+				}
 			}
-		} });
+		});
 
 		return request(server)
 			.get("/my/hello")
@@ -3651,12 +3655,14 @@ describe("Test dynamic routing with actions", () => {
 	});
 
 	it("change route & should find '/other/hello'", async () => {
-		await broker.call("api.addRoute", { route: {
-			path: "/other",
-			aliases: {
-				"hello": "test.hello"
+		await broker.call("api.addRoute", {
+			route: {
+				path: "/other",
+				aliases: {
+					"hello": "test.hello"
+				}
 			}
-		} });
+		});
 
 		return request(server)
 			.get("/other/hello")
@@ -3701,15 +3707,17 @@ describe("Test route path optimization", () => {
 	let server;
 
 	beforeAll(() => {
-		[ broker, service, server] = setup({
+		[broker, service, server] = setup({
 			routes: [
 				{ path: "/", aliases: { "b": "test.hello" } },
 				{ path: "/a", aliases: { "c": "test.hello" } },
-				{ path: "/a/b", aliases: {
-					"c": "test.hello",
-					"d/:id": "test.params",
-					"d/e": "test.params",
-				} },
+				{
+					path: "/a/b", aliases: {
+						"c": "test.hello",
+						"d/:id": "test.params",
+						"d/e": "test.params",
+					}
+				},
 			]
 		});
 		return broker.start();
@@ -3786,7 +3794,8 @@ describe("Test auto aliasing", () => {
 						"posts.*",
 						"test.hello",
 						"test.full*",
-						"test.base*"
+						"test.base*",
+						"test.update*"
 					],
 
 					autoAliases: true,
@@ -3953,6 +3962,19 @@ describe("Test auto aliasing", () => {
 				expect(res.body).toBe("Full path");
 			});
 	});
+
+	it("should call PUT /update and PATCH /update", () => {
+		return Promise.all([
+			request(server).put("/api/update").query({ name: "John" }),
+			request(server).patch("/api/update").query({ name: "John" })
+		]).then((results) => {
+			results.forEach(result => {
+				expect(result.statusCode).toBe(200);
+				expect(result.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(result.body).toBe("Hello John");
+			});
+		})
+	});
 });
 
 describe("Test ETag cache control", () => {
@@ -3963,7 +3985,7 @@ describe("Test ETag cache control", () => {
 		let server;
 
 		beforeAll(() => {
-			[ broker, service, server] = setup({
+			[broker, service, server] = setup({
 				etag: false,
 				routes: [{
 					path: "/",
@@ -3975,48 +3997,48 @@ describe("Test ETag cache control", () => {
 		});
 
 		afterAll(() => broker.stop());
-		it("should add Etag to response", ()=>{
+		it("should add Etag to response", () => {
 			return request(server)
 				.get("/test/greeter")
 				.query({ name: "tiaod" })
-				.then(res=>{
+				.then(res => {
 					expect(res.statusCode).toBe(200);
 					expect(res.headers["etag"]).toBe("W/\"d-q+AO2Lbr8LT+rw9AWUCOel9HJU4\"");
 				});
 		});
 
-		it("should response status 304 when etag matched", ()=>{
+		it("should response status 304 when etag matched", () => {
 			return request(server)
 				.get("/test/greeter")
 				.query({ name: "tiaod" })
 				.set("If-None-Match", "\"d-q+AO2Lbr8LT+rw9AWUCOel9HJU4\"")
-				.then(res=>{
+				.then(res => {
 					expect(res.statusCode).toBe(304);
 					expect(res.headers["etag"]).toBe("W/\"d-q+AO2Lbr8LT+rw9AWUCOel9HJU4\"");
 				});
 		});
 
-		it("should return status 200 when response is not fresh", ()=>{
+		it("should return status 200 when response is not fresh", () => {
 			return request(server)
 				.get("/test/freshness")
 				.set("If-Modified-Since", "Thu, 31 Mar 2016 07:07:52 GMT")
-				.then(res=>{
+				.then(res => {
 					expect(res.statusCode).toBe(200);
 					expect(res.headers["last-modified"]).toBe("Mon, 06 Aug 2018 14:23:28 GMT");
 				});
 		});
 
-		it("should return status 304 when response is fresh", ()=>{
+		it("should return status 304 when response is fresh", () => {
 			return request(server)
 				.get("/test/freshness")
 				.set("If-Modified-Since", "Mon, 06 Aug 2018 14:28:00 GMT")
-				.then(res=>{
+				.then(res => {
 					expect(res.statusCode).toBe(304);
 					expect(res.headers["last-modified"]).toBe("Mon, 06 Aug 2018 14:23:28 GMT");
 				});
 		});
 
-		it("should not generate etag when streaming response", ()=>{
+		it("should not generate etag when streaming response", () => {
 			return request(server)
 				.get("/test/stream")
 				.then(res => {
@@ -4025,7 +4047,7 @@ describe("Test ETag cache control", () => {
 				});
 		});
 
-		it("should use the etag in ctx.meta.$responseHeaders['ETag']", ()=>{
+		it("should use the etag in ctx.meta.$responseHeaders['ETag']", () => {
 			return request(server)
 				.get("/test/etag")
 				.then(res => {
@@ -4034,7 +4056,7 @@ describe("Test ETag cache control", () => {
 				});
 		});
 
-		it("should skip body for HEAD", ()=>{
+		it("should skip body for HEAD", () => {
 			return request(server)
 				.head("/test/greeter")
 				.query({ name: "tiaod" })
@@ -4043,7 +4065,7 @@ describe("Test ETag cache control", () => {
 				});
 		});
 
-		it("should strip irrelevant headers when sending 304 response", ()=>{
+		it("should strip irrelevant headers when sending 304 response", () => {
 			return request(server)
 				.head("/test/greeter")
 				.query({ name: "tiaod" })
@@ -4062,7 +4084,7 @@ describe("Test ETag cache control", () => {
 		let server;
 
 		beforeAll(() => {
-			[ broker, service, server] = setup({
+			[broker, service, server] = setup({
 				etag: "weak",
 				routes: [{
 					path: "/",
@@ -4073,11 +4095,11 @@ describe("Test ETag cache control", () => {
 		});
 
 		afterAll(() => broker.stop());
-		it("should add Etag to response", ()=>{
+		it("should add Etag to response", () => {
 			return request(server)
 				.get("/test/greeter")
 				.query({ name: "tiaod" })
-				.then(res=>{
+				.then(res => {
 					expect(res.statusCode).toBe(200);
 					expect(res.headers["etag"]).toBe("W/\"d-q+AO2Lbr8LT+rw9AWUCOel9HJU4\"");
 				});
@@ -4090,7 +4112,7 @@ describe("Test ETag cache control", () => {
 		let server;
 
 		beforeAll(() => {
-			[ broker, service, server] = setup({
+			[broker, service, server] = setup({
 				etag: "strong",
 				routes: [{
 					path: "/",
@@ -4101,11 +4123,11 @@ describe("Test ETag cache control", () => {
 		});
 
 		afterAll(() => broker.stop());
-		it("should add Etag to response", ()=>{
+		it("should add Etag to response", () => {
 			return request(server)
 				.get("/test/greeter")
 				.query({ name: "tiaod" })
-				.then(res=>{
+				.then(res => {
 					expect(res.statusCode).toBe(200);
 					expect(res.headers["etag"]).toBe("\"d-q+AO2Lbr8LT+rw9AWUCOel9HJU4\"");
 				});
@@ -4120,7 +4142,7 @@ describe("Test ETag cache control", () => {
 		let custETag = jest.fn(() => "123abc");
 
 		beforeAll(() => {
-			[ broker, service, server] = setup({
+			[broker, service, server] = setup({
 				etag: true,
 				routes: [{
 					path: "/",
@@ -4133,11 +4155,11 @@ describe("Test ETag cache control", () => {
 
 		afterAll(() => broker.stop());
 
-		it("should add Etag to response", ()=>{
+		it("should add Etag to response", () => {
 			return request(server)
 				.get("/test/greeter")
 				.query({ name: "tiaod" })
-				.then(res=>{
+				.then(res => {
 					expect(res.statusCode).toBe(200);
 					expect(res.headers["etag"]).toBe("123abc");
 
@@ -4147,19 +4169,19 @@ describe("Test ETag cache control", () => {
 		});
 	});
 
-	describe("with disabled ETag", ()=>{
+	describe("with disabled ETag", () => {
 		let broker;
 		let service;
 		let server;
 
 		beforeAll(() => {
-			[ broker, service, server] = setup();
+			[broker, service, server] = setup();
 			broker.loadService("./test/services/test.service");
 			return broker.start();
 		});
 
 		afterAll(() => broker.stop());
-		it("should not add ETag to response", ()=>{
+		it("should not add ETag to response", () => {
 			return request(server)
 				.get("/test/greeter")
 				.query({ name: "tiaod" })
@@ -4177,7 +4199,7 @@ describe("Test new alias handling", () => {
 	let service;
 
 	beforeAll(() => {
-		[ broker, service, server] = setup({
+		[broker, service, server] = setup({
 			path: "/api",
 			routes: [
 				{
@@ -4272,7 +4294,7 @@ describe("Test internal service special char", () => {
 	let service;
 
 	beforeAll(() => {
-		[ broker, service, server] = setup({
+		[broker, service, server] = setup({
 			path: "/api",
 			internalServiceSpecialChar: "@",
 		});
@@ -4306,7 +4328,7 @@ describe("Test httpServerTimeout setting", () => {
 	let service;
 
 	beforeAll(() => {
-		[ broker, service, server] = setup({
+		[broker, service, server] = setup({
 			httpServerTimeout: 500
 		});
 
@@ -4318,7 +4340,7 @@ describe("Test httpServerTimeout setting", () => {
 	it("should return response", () => {
 		return request(server)
 			.post("/test/apitimeout")
-			.send({ counter:2, sleeptime: 100 })
+			.send({ counter: 2, sleeptime: 100 })
 			.then(res => {
 				expect(res.statusCode).toBe(200);
 				expect(res.body).toEqual({
@@ -4331,7 +4353,7 @@ describe("Test httpServerTimeout setting", () => {
 	it("should throw timeout error", () => {
 		return request(server)
 			.post("/test/apitimeout")
-			.send({ counter:6, sleeptime: 100 })
+			.send({ counter: 6, sleeptime: 100 })
 			.then(res => {
 				expect(true).toBe(false);
 			})
@@ -4349,7 +4371,7 @@ describe("Test listAliases action", () => {
 	let service;
 
 	beforeAll(() => {
-		[ broker, service, server] = setup({
+		[broker, service, server] = setup({
 			routes: [
 				{
 					path: "/api",
@@ -4472,5 +4494,88 @@ describe("Test listAliases action", () => {
 					}
 				]);
 			});
+	});
+});
+
+describe("Test multi REST interfaces in service settings", () => {
+	let broker;
+	let service;
+	let server;
+
+	function regenerate() {
+		service.routes.forEach(route => route.opts.autoAliases && service.regenerateAutoAliases(route));
+	}
+
+	beforeAll(() => {
+		[broker, service, server] = setup({
+			routes: [{
+				path: "/",
+				autoAliases: true
+			}]
+		});
+		broker.loadService("./test/services/multiRoute.service");
+		return broker.start().then(() => regenerate());
+	});
+	afterAll(() => broker.stop());
+
+	it("should call both 'GET /route/hello' and 'GET /route/multi/hello'", () => {
+		return Promise.all([
+			request(server).get("/route/hello"),
+			request(server).get("/route/multi/hello")
+		]).then((results) => {
+			results.forEach(result => {
+				expect(result.statusCode).toBe(200);
+				expect(result.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(result.body).toBe("Hello Moleculer");
+			});
+		})
+	});
+
+	it("should call both 'GET /route/greet' and 'GET /route/multi/greet' with parameter", () => {
+		return Promise.all([
+			request(server).get("/route/greet").query({ name: "John" }),
+			request(server).get("/route/multi/greet").query({ name: "John" })
+		]).then((results) => {
+			results.forEach(result => {
+				expect(result.statusCode).toBe(200);
+				expect(result.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(result.body).toBe("Hello John");
+			});
+		})
+	});
+
+	it("should call 'GET /fullPath'", () => {
+		return request(server)
+			.get("/fullPath")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toBe("Full path");
+			});
+	});
+
+	it("should call both 'GET /route/custom-base-path/base-path' and 'GET /route/multi/custom-base-path/base-path'", () => {
+		return request(server)
+			.get("/custom-base-path/base-path")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toBe("Hello Custom Moleculer Root Path");
+			});
+	});
+
+	it("should call multiple PUT /update and PATCH /update on /route and /route/multi base path ", () => {
+		return Promise.all([
+			request(server).put("/route/update").query({ name: "John" }),
+			request(server).put("/route/multi/update").query({ name: "John" }),
+			request(server).patch("/route/update").query({ name: "John" }),
+			request(server).patch("/route/multi/update").query({ name: "John" })
+		]).then((results) => {
+			results.forEach(result => {
+				expect(result.statusCode).toBe(200);
+				expect(result.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(result.body).toBe("Hello John");
+			});
+		})
 	});
 });

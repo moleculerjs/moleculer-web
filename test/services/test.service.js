@@ -1,9 +1,9 @@
 "use strict";
 
-const fs 		= require("fs");
-const path 		= require("path");
+const fs = require("fs");
+const path = require("path");
 
-const _ 		= require("lodash");
+const _ = require("lodash");
 
 const { MoleculerServerError } = require("moleculer").Errors;
 
@@ -85,7 +85,7 @@ module.exports = {
 				}
 				try {
 					let c = 0;
-					while(c != ctx.params.counter) {
+					while (c != ctx.params.counter) {
 						await sleep(ctx.params.sleeptime);
 						c++;
 					}
@@ -93,7 +93,7 @@ module.exports = {
 						status: 200,
 						msg: "apitimeout response"
 					};
-				} catch(e) {
+				} catch (e) {
 					return {
 						status: 500,
 						msg: "apitimeout response",
@@ -178,10 +178,10 @@ module.exports = {
 		},
 
 		function(ctx) {
-			return () => {};
+			return () => { };
 		},
 
-		nothing(ctx) {},
+		nothing(ctx) { },
 
 		null(ctx) {
 			return null;
@@ -259,14 +259,14 @@ module.exports = {
 			return stream;
 		},
 
-		freshness(ctx){
+		freshness(ctx) {
 			ctx.meta.$responseHeaders = {
 				"Last-Modified": "Mon, 06 Aug 2018 14:23:28 GMT"
 			};
 			return "fresh";
 		},
 
-		etag(ctx){
+		etag(ctx) {
 			ctx.meta.$responseHeaders = {
 				"ETag": "my custom etag"
 			};
@@ -284,6 +284,16 @@ module.exports = {
 			};
 
 			throw new MoleculerServerError("It is a wrong action! I always throw error!");
+		},
+
+		update: {
+			rest: ["PUT /update", "PATCH /update"],
+			params: {
+				name: "string"
+			},
+			handler(ctx) {
+				return `Hello ${ctx.params.name}`;
+			}
 		},
 	}
 };
