@@ -4579,3 +4579,68 @@ describe("Test multi REST interfaces in service settings", () => {
 		})
 	});
 });
+
+describe("Test REST routes with sanitized params", () => {
+	let broker;
+	let service;
+	let server;
+
+	beforeAll(() => {
+		[broker, service, server] = setup({
+			routes: [{
+				path: "/api",
+				aliases: {
+					"REST users": "users"
+				}
+			}]
+		});
+
+		broker.loadService("./test/services/user.service");
+		return broker.start();
+	});
+	afterAll(() => broker.stop());
+
+
+	it("GET /api/users", () => {
+		return request(server)
+			.get("/api/users")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+
+				const users = res.body;
+				expect(users.length).toBe(2);
+				for (let user of users) {
+					// Main user object
+					expect(_.has(user, "password")).toBe(false);
+					expect(_.has(user, "id")).toBe(false);
+					expect(_.has(user, "userId")).toBe(true);
+
+					// Nested setting object
+					expect(_.has(user, "setting.privateKey")).toBe(false);
+					expect(_.has(user, "setting.id")).toBe(false);
+					expect(_.has(user, "setting.settingId")).toBe(true);
+				}
+			});
+	});
+
+	it("GET /api/users/:id", () => {
+		return request(server)
+			.get("/api/users/unique-user-id-1")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+
+				const user = res.body;
+				// Main user object
+				expect(_.has(user, "password")).toBe(false);
+				expect(_.has(user, "id")).toBe(false);
+				expect(_.has(user, "userId")).toBe(true);
+
+				// Nested setting object
+				expect(_.has(user, "setting.privateKey")).toBe(false);
+				expect(_.has(user, "setting.id")).toBe(false);
+				expect(_.has(user, "setting.settingId")).toBe(true);
+			});
+	});
+});

@@ -621,6 +621,10 @@ module.exports = {
 			const ctx = req.$ctx;
 			const route = req.$route;
 
+			if (action.sanitize && _.isArray(action.sanitize)) {
+				data = this.sanitizeResponse(data, action.sanitize);
+			}
+
 			/* istanbul ignore next */
 			if (res.headersSent) {
 				this.logger.warn("Headers have already sent.", { url: req.url, action });
@@ -750,6 +754,43 @@ module.exports = {
 					res.end(chunk);
 				}
 			}
+		},
+
+		/**
+		 * Removes the properties from the response
+		 * Is for example used to remove sensitive data
+		 */
+		sanitizeResponse(data, sanitizedParams) {
+			data = _.cloneDeep(data);
+
+			if (!_.isArray(data) && !_.isObject(data)) {
+				return data;
+			}
+
+			if (_.isPlainObject(data)) {
+				data = [data];
+			}
+
+			for (let param of sanitizedParams) {
+				for (let d of data) {
+					if (_.isPlainObject(d)) {
+						if (_.isString(param)) {
+							_.unset(d, param);
+						}
+
+						if (_.isObject(param)) {
+							_.set(d, param.to, _.get(d, param.from));
+							_.unset(d, param.from);
+						}
+					}
+				}
+			}
+
+			if (data.length == 1) {
+				return data[0];
+			}
+
+			return data;
 		},
 
 		/**
