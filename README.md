@@ -1,6 +1,6 @@
 [![Moleculer logo](http://moleculer.services/images/banner.png)](https://github.com/moleculerjs/moleculer)
 
-[![Build Status](https://travis-ci.org/moleculerjs/moleculer-web.svg?branch=master)](https://travis-ci.org/moleculerjs/moleculer-web)
+![Node CI](https://github.com/moleculerjs/moleculer-web/workflows/Node%20CI/badge.svg)
 [![Coverage Status](https://coveralls.io/repos/github/moleculerjs/moleculer-web/badge.svg?branch=master)](https://coveralls.io/github/moleculerjs/moleculer-web?branch=master)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/5d0c3b3d03bd4e8683a19630a32ad22b)](https://www.codacy.com/app/mereg-norbert/moleculer-web?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=moleculerjs/moleculer-web&amp;utm_campaign=Badge_Grade)
 [![Maintainability](https://api.codeclimate.com/v1/badges/6d81a3b83b448bbb1f99/maintainability)](https://codeclimate.com/github/moleculerjs/moleculer-web/maintainability)
