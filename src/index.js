@@ -89,6 +89,9 @@ module.exports = {
 
 		// Optimize route order
 		optimizeOrder: true,
+
+		// CallOption for the root action `api.rest`
+		rootCallOptions: null
 	},
 
 	// Service's metadata
@@ -304,8 +307,17 @@ module.exports = {
 			if (req.headers["x-correlation-id"])
 				requestID = req.headers["x-correlation-id"];
 
+			let options = { requestID };
+			if (this.settings.rootCallOptions) {
+				if (_.isPlainObject(this.settings.rootCallOptions)) {
+					Object.assign(options, this.settings.rootCallOptions);
+				} else if (_.isFunction(this.settings.rootCallOptions)) {
+					this.settings.rootCallOptions.call(this, options, req, res);
+				}
+			}
+
 			try {
-				const result = await this.actions.rest({ req, res }, { requestID });
+				const result = await this.actions.rest({ req, res }, options);
 				if (result == null) {
 					// Not routed.
 
@@ -1426,7 +1438,7 @@ module.exports = {
 		},
 
 		/**
-		 * 
+		 *
 		 */
 		parseActionRestString(restRoute, basePath) {
 			if (restRoute.indexOf(" ") !== -1) {
@@ -1445,7 +1457,7 @@ module.exports = {
 		},
 
 		/**
-		 * 
+		 *
 		 */
 		parseActionRestObject(restRoute, rawName, basePath) {
 			// Handle route: { method: "POST", path: "/other", basePath: "newBasePath" }
