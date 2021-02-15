@@ -45,7 +45,6 @@ broker.createService({
 					},*/
 					compression(),
 					devMiddleware(compiler, {
-						noInfo: true,
 						publicPath: config.output.publicPath,
 						headers: { "Access-Control-Allow-Origin": "*" }
 					}),

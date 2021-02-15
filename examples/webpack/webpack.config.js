@@ -2,7 +2,7 @@ const path = require("path");
 
 module.exports = {
 	mode: "development",
-	devtool: "#inline-source-map",
+	devtool: "cheap-source-map",
 
 	entry: {
 		app: path.join(__dirname, "client", "main.js")
