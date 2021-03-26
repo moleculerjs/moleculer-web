@@ -1,5 +1,5 @@
 <a name="0.10.0"></a>
-# 0.10.0 (2020-??-??)
+# 0.10.0 (2021-??-??)
 
 ## Breaking changes
 
@@ -86,6 +86,85 @@ module.exports = {
         logResponse: false, // Disable logging
         //.....
     }
+};
+```
+
+### New `rootCallOptions` options
+There a new `rootCallOptions` property in the service settings. Here you can define the root `Context` calling options. It can be a static `Object` or a `Function`. It can be useful to take some data from the `req` and put them to the calling options (like tracing informations)
+
+**Example with static object**
+```js
+const ApiGateway = require("moleculer-web");
+
+module.exports = {
+    mixins: [ApiGateway],
+    settings: {
+        routes: [/*...*/],
+
+		rootCallOptions: {
+			timeout: 500
+		}
+    }
+};
+```
+
+**Example with Function which takes tracing information from the req and put them to the calling options**
+```js
+const ApiGateway = require("moleculer-web");
+
+module.exports = {
+    mixins: [ApiGateway],
+    settings: {
+        routes: [/*...*/],
+
+		rootCallOptions(options, req, res) {
+			if (req.headers["traceparent"]) {
+				// More info https://www.w3.org/TR/trace-context/#traceparent-header
+				const traceparent = req.headers["traceparent"].toLowerCase();
+				if (traceparent.match(/^([0-9a-f]{2})-([0-9a-f]{32})-([0-9a-f]{16})-([0-9a-f]{2})$/)) {
+					const [version, id, parentSpan, flags] = traceparent.split("-");
+					const sampled = (flags & FLAG_SAMPLED) == FLAG_SAMPLED;
+
+					options.parentSpan = {
+						id: parentSpan,
+						traceID: id,
+						sampled
+					};
+				}
+			} else {
+				// Look for X-B3-Traceid, X-B3-Spanid
+				options.parentSpan = {};
+
+				if (req.headers["x-b3-traceid"]) {
+					options.parentSpan.traceID = req.headers["x-b3-traceid"].toLowerCase();
+					options.parentSpan.sampled = true;
+				}
+				if (req.headers["x-b3-spanid"]) {
+					options.parentSpan.id = req.headers["x-b3-spanid"].toLowerCase();
+				}
+			}
+		}
+    }
+};
+```
+
+## Multiple route aliases
+You can define multiple REST aliases in the action definitions.
+
+```js
+module.exports = {
+    name: "posts",
+
+    settings: {
+		rest: ["/posts", "/v1/posts"]
+	},
+
+	actions: {
+		find: {
+			rest: ["GET /", "GET /all"]
+			handler(ctx) {}
+		}
+	}
 };
 ```
 
