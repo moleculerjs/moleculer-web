@@ -1309,7 +1309,7 @@ module.exports = {
 		 */
 		createRouteAliases(route, aliases) {
 			// Clean previous aliases for this route
-			this.aliases = this.aliases.filter(a => a.route != route);
+			this.aliases = this.aliases.filter(a => a.route.path != route.path);
 
 			// Process aliases definitions from route settings
 			_.forIn(aliases, (action, matchPath) => {

@@ -3603,6 +3603,38 @@ describe("Test dynamic routing", () => {
 				expect(res.body).toBe("Hello Moleculer");
 			});
 	});
+
+	it("change route should replace aliases & find '/my/helloagain'", () => {
+		service.addRoute({
+			path: "/my",
+			aliases: {
+				"helloagain": "test.hello"
+			}
+		});
+
+		return request(server)
+			.get("/my/helloagain")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toBe("Hello Moleculer");
+			});
+	});
+
+	it("but should not find '/my/hello'", () => {
+		return request(server)
+			.get("/my/hello")
+			.then(res => {
+				expect(res.statusCode).toBe(404);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toEqual({
+					"code": 404,
+					"message": "Not found",
+					"name": "NotFoundError",
+					"type": "NOT_FOUND"
+				});
+			});
+	});
 });
 
 
