@@ -81,6 +81,9 @@ module.exports = {
 		// If set to true, it will log 4xx client errors, as well
 		log4XXResponses: false,
 
+		// Log the route registration/aliases related activity
+		logRouteRegistration: "info",
+
 		// Use HTTP2 server (experimental)
 		http2: false,
 
@@ -1168,7 +1171,7 @@ module.exports = {
 		 * @returns {Object}
 		 */
 		createRoute(opts) {
-			this.logger.info(`Register route to '${opts.path}'`);
+			this.logRouteRegistration(`Register route to '${opts.path}'`);
 			let route = {
 				opts,
 				middlewares: []
@@ -1223,7 +1226,7 @@ module.exports = {
 
 			if (mw.length > 0) {
 				route.middlewares.push(...mw);
-				this.logger.info(`  Registered ${mw.length} middlewares.`);
+				this.logRouteRegistration(`  Registered ${mw.length} middlewares.`);
 			}
 
 			// CORS
@@ -1296,7 +1299,7 @@ module.exports = {
 				route.mappingPolicy = hasAliases || opts.autoAliases ? MAPPING_POLICY_RESTRICT : MAPPING_POLICY_ALL;
 			}
 
-			this.logger.info("");
+			this.logRouteRegistration("");
 
 			return route;
 		},
@@ -1369,7 +1372,7 @@ module.exports = {
 		 * @param {Route} route
 		 */
 		regenerateAutoAliases(route) {
-			this.logger.info(`♻ Generate aliases for '${route.path}' route...`);
+			this.logRouteRegistration(`♻ Generate aliases for '${route.path}' route...`);
 
 			// Clean previous aliases for this route
 			this.aliases = this.aliases.filter(alias => alias.route != route || !alias._generated);
@@ -1495,9 +1498,24 @@ module.exports = {
 		 */
 		createAlias(route, path, action) {
 			const alias = new Alias(this, route, path, action);
-			this.logger.info("  " + alias.toString());
+			this.logRouteRegistration("  " + alias.toString());
 			return alias;
-		}
+		},
+
+				
+		/**
+		 * Set log level and log registration route related activities
+		 *
+		 * @param {*} message
+		 */
+		logRouteRegistration(message) {
+			if (
+				this.settings.logRouteRegistration &&
+				this.settings.logRouteRegistration in this.logger
+			)
+				this.logger[this.settings.logRouteRegistration](message);
+		},
+		
 	},
 
 	events: {
