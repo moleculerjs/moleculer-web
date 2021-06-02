@@ -165,6 +165,7 @@ class Alias {
 				filename: filename,
 				encoding: encoding,
 				mimetype: mimetype,
+				$params: req.$params,
 			} })).catch(err => {
 				file.resume(); // Drain file stream to continue processing form
 				busboy.emit("error", err);

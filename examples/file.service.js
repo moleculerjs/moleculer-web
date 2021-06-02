@@ -46,6 +46,7 @@ module.exports = {
 
 		save: {
 			handler(ctx) {
+				this.logger.info("Received upload $params:", ctx.meta.$params);
 				return new this.Promise((resolve, reject) => {
 					//reject(new Error("Disk out of space"));
 					const filePath = path.join(uploadDir, ctx.meta.filename || this.randomName());
@@ -71,13 +72,6 @@ module.exports = {
 
 					ctx.params.pipe(f);
 				});
-			}
-		},
-
-		saveParams: {
-			handler(ctx) {
-				// get params from url
-				return ctx.params.$params;
 			}
 		}
 	},
