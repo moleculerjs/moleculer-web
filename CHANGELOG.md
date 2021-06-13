@@ -168,6 +168,13 @@ module.exports = {
 };
 ```
 
+## Multipart fields & URL Params
+Several issues has been fixed with multipart handling.
+- URL parameters (e.g. `/api/upload/:tenant/:folder`) is available via `ctx.meta.$params`
+- Multipart fields is available via `ctx.meta.$multipart`
+- `ctx.params.$params` is not available, use `ctx.meta.$params`
+- The target action is called if no uploaded files but has multipart fields. In this case `ctx.params` is `{}` and the fields are in `ctx.meta.$multipart`.
+
 ## Other changes
 - set response header from `ctx.meta` in case of errors, as well.
 - update dependencies.
