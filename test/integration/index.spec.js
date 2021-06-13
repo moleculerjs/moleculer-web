@@ -3346,15 +3346,19 @@ describe("Test file uploading", () => {
 		actions: {
 			save(ctx) {
 				return new this.Promise((resolve) => {
-					const hash = crypto.createHash("sha256");
+					if (ctx.params.pipe) {
+						const hash = crypto.createHash("sha256");
 
-					hash.on("readable", () => {
-						const data = hash.read();
-						if (data)
-							resolve({ hash: data.toString("base64") });
-					});
+						hash.on("readable", () => {
+							const data = hash.read();
+							if (data)
+								resolve({ hash: data.toString("base64"), meta: ctx.meta });
+						});
 
-					ctx.params.pipe(hash);
+						ctx.params.pipe(hash);
+					} else {
+						resolve({ params: ctx.params, meta: ctx.meta });
+					}
 				});
 			}
 		}
@@ -3378,6 +3382,9 @@ describe("Test file uploading", () => {
 					// File upload from AJAX or cURL
 					"PUT /": "stream:file.save",
 
+					// File upload from AJAX or cURL
+					"PUT /:id": "stream:file.save",
+
 					// File upload from HTML form and overwrite busboy config
 					"POST /multi": {
 						type: "multipart",
@@ -3389,12 +3396,19 @@ describe("Test file uploading", () => {
 							}
 						},
 						action: "file.save"
+					},
+
+					"POST /form/:id": {
+						type: "multipart",
+						// Action level busboy config
+						busboyConfig: {
+							empty: true,
+							limits: {
+								files: 0
+							}
+						},
+						action: "file.save"
 					}
-				},
-				onAfterCall(ctx, route, req, res, data) {
-					if (ctx.meta.$multipart && "name" in ctx.meta.$multipart)
-						data = { name: ctx.meta.$multipart.name, files: data };
-					return Promise.resolve(data);
 				},
 				// https://github.com/mscdex/busboy#busboy-methods
 				busboyConfig: {
@@ -3438,7 +3452,14 @@ describe("Test file uploading", () => {
 			.then(res => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
-				expect(res.body).toEqual({ hash: origHashes["logo.png"] });
+				expect(res.body).toEqual({ hash: origHashes["logo.png"], meta: {
+					$multipart: {},
+					$params: {},
+					encoding: "7bit",
+					fieldname: "myFile",
+					filename: "logo.png",
+					mimetype: "image/png"
+				} });
 
 				expect(onFilesLimitFn).toHaveBeenCalledTimes(0);
 			});
@@ -3452,20 +3473,36 @@ describe("Test file uploading", () => {
 			.then(res => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
-				expect(res.body).toEqual({ name: "moleculer", files: { hash: origHashes["logo.png"] } });
+				expect(res.body).toEqual({ hash: origHashes["logo.png"], meta: {
+					$multipart: {
+						name: "moleculer"
+					},
+					$params: {},
+					encoding: "7bit",
+					fieldname: "myFile",
+					filename: "logo.png",
+					mimetype: "image/png"
+				}  });
 
 				expect(onFilesLimitFn).toHaveBeenCalledTimes(0);
 			});
 	});
 
-	it("should empty file with multipart", () => {
+	it("should call service with fields only", () => {
 		return request(server)
-			.post("/upload/multi")
+			.post("/upload/form/f1234")
 			.field("name", "moleculer")
+			.field("more", "services")
 			.then(res => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
-				expect(res.body).toEqual({ name: "moleculer", files: [] });
+				expect(res.body).toEqual([{
+					meta: {
+						$multipart: { name: "moleculer", more: "services" },
+						$params: { id: "f1234" }
+					},
+					params: {}
+				}]);
 			});
 	});
 
@@ -3477,7 +3514,14 @@ describe("Test file uploading", () => {
 			.then(res => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
-				expect(res.body).toEqual({ hash: origHashes["logo.png"] });
+				expect(res.body).toEqual({ hash: origHashes["logo.png"], meta: {
+					$multipart: {},
+					$params: {},
+					encoding: "7bit",
+					fieldname: "myFile",
+					filename: "logo.png",
+					mimetype: "image/png"
+				}  });
 				expect(onFilesLimitFn).toHaveBeenCalledTimes(1);
 				expect(onFilesLimitFn).toHaveBeenCalledWith(expect.any(Busboy), expect.any(Alias), service);
 			});
@@ -3492,8 +3536,22 @@ describe("Test file uploading", () => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
 				expect(res.body).toEqual([
-					{ hash: origHashes["logo.png"] },
-					{ hash: origHashes["lorem.txt"] }
+					{ hash: origHashes["logo.png"], meta: {
+						$multipart: {},
+						$params: {},
+						encoding: "7bit",
+						fieldname: "myFile",
+						filename: "logo.png",
+						mimetype: "image/png"
+					}  },
+					{ hash: origHashes["lorem.txt"], meta: {
+						$multipart: {},
+						$params: {},
+						encoding: "7bit",
+						fieldname: "myText",
+						filename: "lorem.txt",
+						mimetype: "text/plain"
+					}  }
 				]);
 			});
 	});
@@ -3507,9 +3565,26 @@ describe("Test file uploading", () => {
 			.then(res => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
-				expect(res.body).toEqual({ hash: origHashes["logo.png"] });
+				expect(res.body).toEqual({ hash: origHashes["logo.png"], meta: {
+					$params: {},
+				}  });
 			});
 
+	});
+
+	it("should upload file as stream with url params", () => {
+		const buffer = fs.readFileSync(assetsDir + "logo.png");
+
+		return request(server)
+			.put("/upload/f1234")
+			.send(buffer)
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toEqual({ hash: origHashes["logo.png"], meta: {
+					$params: { id: "f1234" },
+				} });
+			});
 	});
 
 });
@@ -4005,7 +4080,7 @@ describe("Test auto aliasing", () => {
 				expect(result.headers["content-type"]).toBe("application/json; charset=utf-8");
 				expect(result.body).toBe("Hello John");
 			});
-		})
+		});
 	});
 });
 
@@ -4560,7 +4635,7 @@ describe("Test multi REST interfaces in service settings", () => {
 				expect(result.headers["content-type"]).toBe("application/json; charset=utf-8");
 				expect(result.body).toBe("Hello Moleculer");
 			});
-		})
+		});
 	});
 
 	it("should call both 'GET /route/greet' and 'GET /route/multi/greet' with parameter", () => {
@@ -4573,7 +4648,7 @@ describe("Test multi REST interfaces in service settings", () => {
 				expect(result.headers["content-type"]).toBe("application/json; charset=utf-8");
 				expect(result.body).toBe("Hello John");
 			});
-		})
+		});
 	});
 
 	it("should call 'GET /fullPath'", () => {
@@ -4608,6 +4683,6 @@ describe("Test multi REST interfaces in service settings", () => {
 				expect(result.headers["content-type"]).toBe("application/json; charset=utf-8");
 				expect(result.body).toBe("Hello John");
 			});
-		})
+		});
 	});
 });
