@@ -148,6 +148,7 @@ class Alias {
 		const promises = [];
 
 		let numOfFiles = 0;
+		let hasField = false;
 
 		const busboyOptions = _.defaultsDeep({ headers: req.headers }, this.busboyConfig, this.route.opts.busboyConfig);
 		const busboy = new Busboy(busboyOptions);
@@ -165,6 +166,7 @@ class Alias {
 				filename: filename,
 				encoding: encoding,
 				mimetype: mimetype,
+				$params: req.$params,
 			} })).catch(err => {
 				file.resume(); // Drain file stream to continue processing form
 				busboy.emit("error", err);
@@ -172,6 +174,7 @@ class Alias {
 			}));
 		});
 		busboy.on("field", (field, value) => {
+			hasField = true;
 			ctx.meta.$multipart[field] = value;
 		});
 
@@ -179,6 +182,13 @@ class Alias {
 			/* istanbul ignore next */
 			if (!busboyOptions.empty && numOfFiles == 0)
 				return this.service.sendError(req, res, new MoleculerClientError("File missing in the request"));
+
+			// Call the action if no files but multipart fields
+			if (numOfFiles == 0 && hasField) {
+				promises.push(ctx.call(this.action, {}, _.defaultsDeep({}, this.route.opts.callOptions, { meta: {
+					$params: req.$params,
+				} })));
+			}
 
 			try {
 				let data = await this.service.Promise.all(promises);

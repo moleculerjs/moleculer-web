@@ -22,7 +22,8 @@
 <body>
 	<fieldset>
 		<legend>Single file upload</legend>
-		<form action="/upload/single" method="post" enctype="multipart/form-data">
+		<form action="/upload/single/1234" method="post" enctype="multipart/form-data">
+			<input type="text" name="name" id="name" value="Test User">
 			<p>Select image to upload:</p>
 			<input type="file" name="myfile" id="myfile">
 			<br/>
@@ -43,7 +44,7 @@
 		<p>Select image to upload:</p>
 		<input type="file" name="myJSFile" id="myJSFile">
 		<br/>
-		<button onclick="uploadPut('/upload')">Upload one image via AJAX</button>
+		<button onclick="uploadPut('/upload/1234')">Upload one image via AJAX</button>
 		<p id="responseOK" style="color: green; font-weight: bold"></p>
 		<p id="responseError" style="color: red; font-weight: bold"></p>
 	</fieldset>
@@ -62,7 +63,7 @@
 		req.setRequestHeader("Content-type", "image/png");
 		req.onload = function(event) {
 			if (event.target.status == 200)
-				return pOK.innerHTML ="Uploaded successfully! Path: " + JSON.parse(event.target.responseText).filePath;
+				return pOK.innerHTML ="Uploaded successfully! " + event.target.responseText;
 
 			pError.innerHTML = "Upload error: " + event.target.responseText;
 		}

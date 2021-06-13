@@ -50,13 +50,14 @@ broker.createService({
 					"PUT /": "stream:file.save",
 
 					// File upload from AJAX or cURL with params
-					"PUT /:id": "stream:file.saveParams",
+					"PUT /:id": "stream:file.save",
 
 					// File upload from HTML form and overwrite busboy config
-					"POST /single": {
+					"POST /single/:id": {
 						type: "multipart",
 						// Action level busboy config
 						busboyConfig: {
+							//empty: true,
 							limits: {
 								files: 1
 							},

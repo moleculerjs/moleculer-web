@@ -587,8 +587,15 @@ module.exports = {
 					params.$res = res;
 				}
 
+				const opts = route.callOptions ? { ...route.callOptions } : {};
+				if (params && params.$params) {
+					// Transfer URL parameters via meta in case of stream
+					if (!opts.meta) opts.meta = { $params: params.$params };
+					else opts.meta.$params = params.$params;
+				}
+
 				// Call the action
-				let data = await ctx.call(req.$endpoint, params, route.callOptions);
+				let data = await ctx.call(req.$endpoint, params, opts);
 
 				// Post-process the response
 
@@ -1502,7 +1509,7 @@ module.exports = {
 			return alias;
 		},
 
-				
+
 		/**
 		 * Set log level and log registration route related activities
 		 *
@@ -1515,7 +1522,7 @@ module.exports = {
 			)
 				this.logger[this.settings.logRouteRegistration](message);
 		},
-		
+
 	},
 
 	events: {
