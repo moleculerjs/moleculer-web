@@ -998,7 +998,7 @@ describe("Test aliases", () => {
 				expect(res.statusCode).toBe(200);
 				expect(res.text).toBe("Custom Alias by Ben");
 				expect(customAlias).toHaveBeenCalledTimes(1);
-				expect(customAlias).toHaveBeenCalledWith(jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse), jasmine.any(Function));
+				expect(customAlias).toHaveBeenCalledWith(expect.any(http.IncomingMessage), expect.any(http.ServerResponse), expect.any(Function));
 			});
 	});
 
@@ -1011,10 +1011,10 @@ describe("Test aliases", () => {
 				expect(res.body).toBe("Hello Ben");
 
 				expect(customMiddlewares[0]).toHaveBeenCalledTimes(1);
-				expect(customMiddlewares[0]).toHaveBeenCalledWith(jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse), jasmine.any(Function));
+				expect(customMiddlewares[0]).toHaveBeenCalledWith(expect.any(http.IncomingMessage), expect.any(http.ServerResponse), expect.any(Function));
 
 				expect(customMiddlewares[1]).toHaveBeenCalledTimes(1);
-				expect(customMiddlewares[1]).toHaveBeenCalledWith(jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse), jasmine.any(Function));
+				expect(customMiddlewares[1]).toHaveBeenCalledWith(expect.any(http.IncomingMessage), expect.any(http.ServerResponse), expect.any(Function));
 
 				expect(customMiddlewares[0].mock.calls[0][0].url).toBe("/middleware?name=Ben");
 				expect(customMiddlewares[0].mock.calls[0][0].originalUrl).toBe("/api/middleware?name=Ben");
@@ -1045,10 +1045,10 @@ describe("Test aliases", () => {
 				});
 
 				expect(customMiddlewares[0]).toHaveBeenCalledTimes(1);
-				expect(customMiddlewares[0]).toHaveBeenCalledWith(jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse), jasmine.any(Function));
+				expect(customMiddlewares[0]).toHaveBeenCalledWith(expect.any(http.IncomingMessage), expect.any(http.ServerResponse), expect.any(Function));
 
 				expect(customMiddlewares[1]).toHaveBeenCalledTimes(1);
-				expect(customMiddlewares[1]).toHaveBeenCalledWith(jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse), jasmine.any(Function));
+				expect(customMiddlewares[1]).toHaveBeenCalledWith(expect.any(http.IncomingMessage), expect.any(http.ServerResponse), expect.any(Function));
 			});
 	});
 
@@ -1069,13 +1069,13 @@ describe("Test aliases", () => {
 				});
 
 				expect(customMiddlewares[0]).toHaveBeenCalledTimes(1);
-				expect(customMiddlewares[0]).toHaveBeenCalledWith(jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse), jasmine.any(Function));
+				expect(customMiddlewares[0]).toHaveBeenCalledWith(expect.any(http.IncomingMessage), expect.any(http.ServerResponse), expect.any(Function));
 
 				expect(customMiddlewares[1]).toHaveBeenCalledTimes(1);
-				expect(customMiddlewares[1]).toHaveBeenCalledWith(jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse), jasmine.any(Function));
+				expect(customMiddlewares[1]).toHaveBeenCalledWith(expect.any(http.IncomingMessage), expect.any(http.ServerResponse), expect.any(Function));
 
 				expect(throwMiddleware).toHaveBeenCalledTimes(1);
-				expect(throwMiddleware).toHaveBeenCalledWith(jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse), jasmine.any(Function));
+				expect(throwMiddleware).toHaveBeenCalledWith(expect.any(http.IncomingMessage), expect.any(http.ServerResponse), expect.any(Function));
 			});
 	});
 
@@ -1092,16 +1092,16 @@ describe("Test aliases", () => {
 				expect(res.text).toEqual("Error is handled");
 
 				expect(customMiddlewares[0]).toHaveBeenCalledTimes(1);
-				expect(customMiddlewares[0]).toHaveBeenCalledWith(jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse), jasmine.any(Function));
+				expect(customMiddlewares[0]).toHaveBeenCalledWith(expect.any(http.IncomingMessage), expect.any(http.ServerResponse), expect.any(Function));
 
 				expect(customMiddlewares[1]).toHaveBeenCalledTimes(1);
-				expect(customMiddlewares[1]).toHaveBeenCalledWith(jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse), jasmine.any(Function));
+				expect(customMiddlewares[1]).toHaveBeenCalledWith(expect.any(http.IncomingMessage), expect.any(http.ServerResponse), expect.any(Function));
 
 				expect(throwMiddleware).toHaveBeenCalledTimes(1);
-				expect(throwMiddleware).toHaveBeenCalledWith(jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse), jasmine.any(Function));
+				expect(throwMiddleware).toHaveBeenCalledWith(expect.any(http.IncomingMessage), expect.any(http.ServerResponse), expect.any(Function));
 
 				expect(errorHandlerMiddleware).toHaveBeenCalledTimes(1);
-				expect(errorHandlerMiddleware).toHaveBeenCalledWith(jasmine.any(MoleculerError), jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse), jasmine.any(Function));
+				expect(errorHandlerMiddleware).toHaveBeenCalledWith(expect.any(MoleculerError), expect.any(http.IncomingMessage), expect.any(http.ServerResponse), expect.any(Function));
 			});
 	});
 
@@ -2574,7 +2574,7 @@ describe("Test onBeforeCall & onAfterCall", () => {
 				expect(res.headers["x-custom-header"]).toBe("working");
 				expect(res.body).toBe("Hello Moleculer");
 				expect(beforeCall).toHaveBeenCalledTimes(1);
-				expect(beforeCall).toHaveBeenCalledWith(jasmine.any(Context), jasmine.any(Object), jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse));
+				expect(beforeCall).toHaveBeenCalledWith(expect.any(Context), expect.any(Object), expect.any(http.IncomingMessage), expect.any(http.ServerResponse));
 
 				const ctx = beforeCall.mock.calls[0][0];
 				const req = beforeCall.mock.calls[0][2];
@@ -2596,7 +2596,7 @@ describe("Test onBeforeCall & onAfterCall", () => {
 
 
 				expect(afterCall).toHaveBeenCalledTimes(1);
-				expect(afterCall).toHaveBeenCalledWith(jasmine.any(Context), jasmine.any(Object), jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse), "Hello Moleculer");
+				expect(afterCall).toHaveBeenCalledWith(expect.any(Context), expect.any(Object), expect.any(http.IncomingMessage), expect.any(http.ServerResponse), "Hello Moleculer");
 				expect(afterCall.mock.calls[0][0].meta.custom).toBe("John");
 
 				beforeCall.mockClear();
@@ -2608,7 +2608,7 @@ describe("Test onBeforeCall & onAfterCall", () => {
 				expect(res.statusCode).toBe(200);
 				expect(res.text).toBe("Hello Custom");
 				expect(beforeCall).toHaveBeenCalledTimes(1);
-				expect(beforeCall).toHaveBeenCalledWith(jasmine.any(Context), jasmine.any(Object), jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse));
+				expect(beforeCall).toHaveBeenCalledWith(expect.any(Context), expect.any(Object), expect.any(http.IncomingMessage), expect.any(http.ServerResponse));
 
 				const ctx = beforeCall.mock.calls[0][0];
 				const req = beforeCall.mock.calls[0][2];
@@ -2702,7 +2702,7 @@ describe("Test encodeResponse", () => {
 				expect(res.statusCode).toBe(200);
 				expect(res.body).toBe("some/encoding");
 				expect(encodeResponse).toHaveBeenCalledTimes(1);
-				expect(encodeResponse).toHaveBeenCalledWith(jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse), jasmine.any(String));
+				expect(encodeResponse).toHaveBeenCalledWith(expect.any(http.IncomingMessage), expect.any(http.ServerResponse), expect.any(String));
 
 				encodeResponse.mockClear();
 			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
@@ -2739,7 +2739,7 @@ describe("Test encodeResponse", () => {
 				expect(res.text).toBe("Hello Moleculer");
 				expect(res.header["content-type"]).toBe("text/html");
 				expect(encodeResponse).toHaveBeenCalledTimes(1);
-				expect(encodeResponse).toHaveBeenCalledWith(jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse), jasmine.any(String));
+				expect(encodeResponse).toHaveBeenCalledWith(expect.any(http.IncomingMessage), expect.any(http.ServerResponse), expect.any(String));
 
 				encodeResponse.mockClear();
 			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
@@ -2775,7 +2775,7 @@ describe("Test encodeResponse", () => {
 				expect(res.statusCode).toBe(500);
 				expect(res.body).toBe("some/encoding");
 				expect(encodeResponse).toHaveBeenCalledTimes(1);
-				expect(encodeResponse).toHaveBeenCalledWith(jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse), jasmine.any(Object));
+				expect(encodeResponse).toHaveBeenCalledWith(expect.any(http.IncomingMessage), expect.any(http.ServerResponse), expect.any(Object));
 
 				encodeResponse.mockClear();
 			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
@@ -2820,13 +2820,13 @@ describe("Test route middlewares", () => {
 
 				expect(res.body).toBe("Hello Moleculer");
 				expect(mwg).toHaveBeenCalledTimes(1);
-				expect(mwg).toHaveBeenCalledWith(jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse), jasmine.any(Function));
+				expect(mwg).toHaveBeenCalledWith(expect.any(http.IncomingMessage), expect.any(http.ServerResponse), expect.any(Function));
 
 				expect(mw1).toHaveBeenCalledTimes(1);
-				expect(mw1).toHaveBeenCalledWith(jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse), jasmine.any(Function));
+				expect(mw1).toHaveBeenCalledWith(expect.any(http.IncomingMessage), expect.any(http.ServerResponse), expect.any(Function));
 
 				expect(mw2).toHaveBeenCalledTimes(1);
-				expect(mw2).toHaveBeenCalledWith(jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse), jasmine.any(Function));
+				expect(mw2).toHaveBeenCalledWith(expect.any(http.IncomingMessage), expect.any(http.ServerResponse), expect.any(Function));
 			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
 	});
 
@@ -2865,7 +2865,7 @@ describe("Test route middlewares", () => {
 					name: "MoleculerError"
 				});
 				expect(mw1).toHaveBeenCalledTimes(1);
-				expect(mw1).toHaveBeenCalledWith(jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse), jasmine.any(Function));
+				expect(mw1).toHaveBeenCalledWith(expect.any(http.IncomingMessage), expect.any(http.ServerResponse), expect.any(Function));
 
 				expect(mw2).toHaveBeenCalledTimes(0);
 			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
@@ -2918,7 +2918,7 @@ describe("Test authentication", () => {
 
 				expect(res.body).toBe(`Hello ${user.username}`);
 				expect(authenticate).toHaveBeenCalledTimes(1);
-				expect(authenticate).toHaveBeenCalledWith(jasmine.any(Context), jasmine.any(Object), jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse));
+				expect(authenticate).toHaveBeenCalledWith(expect.any(Context), expect.any(Object), expect.any(http.IncomingMessage), expect.any(http.ServerResponse));
 			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
 	});
 
@@ -2950,7 +2950,7 @@ describe("Test authentication", () => {
 
 				expect(res.body).toBe("Who are you?");
 				expect(authenticate).toHaveBeenCalledTimes(1);
-				expect(authenticate).toHaveBeenCalledWith(jasmine.any(Context), jasmine.any(Object), jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse));
+				expect(authenticate).toHaveBeenCalledWith(expect.any(Context), expect.any(Object), expect.any(http.IncomingMessage), expect.any(http.ServerResponse));
 			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
 	});
 
@@ -2986,7 +2986,7 @@ describe("Test authentication", () => {
 					name: "MoleculerError"
 				});
 				expect(authenticate).toHaveBeenCalledTimes(1);
-				expect(authenticate).toHaveBeenCalledWith(jasmine.any(Context), jasmine.any(Object), jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse));
+				expect(authenticate).toHaveBeenCalledWith(expect.any(Context), expect.any(Object), expect.any(http.IncomingMessage), expect.any(http.ServerResponse));
 			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
 	});
 
@@ -3032,7 +3032,7 @@ describe("Test authorization", () => {
 
 				expect(res.body).toBe("Hello Moleculer");
 				expect(authorize).toHaveBeenCalledTimes(1);
-				expect(authorize).toHaveBeenCalledWith(jasmine.any(Context), jasmine.any(Object), jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse));
+				expect(authorize).toHaveBeenCalledWith(expect.any(Context), expect.any(Object), expect.any(http.IncomingMessage), expect.any(http.ServerResponse));
 			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
 	});
 
@@ -3068,7 +3068,7 @@ describe("Test authorization", () => {
 					"name": "UnAuthorizedError"
 				});
 				expect(authorize).toHaveBeenCalledTimes(1);
-				expect(authorize).toHaveBeenCalledWith(jasmine.any(Context), jasmine.any(Object), jasmine.any(http.IncomingMessage), jasmine.any(http.ServerResponse));
+				expect(authorize).toHaveBeenCalledWith(expect.any(Context), expect.any(Object), expect.any(http.IncomingMessage), expect.any(http.ServerResponse));
 			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
 	});
 
@@ -3199,7 +3199,7 @@ describe("Test lifecycle events", () => {
 		service.schema.started.call(service);
 
 		expect(server.listen).toHaveBeenCalledTimes(1);
-		expect(server.listen).toHaveBeenCalledWith(service.settings.port, service.settings.ip, jasmine.any(Function));
+		expect(server.listen).toHaveBeenCalledWith(service.settings.port, service.settings.ip, expect.any(Function));
 	});
 
 	it("`stopped`", () => {
@@ -3214,7 +3214,7 @@ describe("Test lifecycle events", () => {
 		service.schema.stopped.call(service);
 
 		expect(server.close).toHaveBeenCalledTimes(1);
-		expect(server.close).toHaveBeenCalledWith(jasmine.any(Function));
+		expect(server.close).toHaveBeenCalledWith(expect.any(Function));
 
 		oldClose.call(server);
 	});
