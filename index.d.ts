@@ -1,8 +1,67 @@
 declare module "moleculer-web" {
-	import { Errors, ServiceSchema, Context, ActionEndpoint, Service, ActionSchema, CallingOptions } from 'moleculer'
-	import { IncomingMessage, ServerResponse } from "http"
+	import {
+		ActionEndpoint,
+		ActionSchema,
+		CallingOptions,
+		Context,
+		Errors,
+		LogLevels,
+		Service,
+		ServiceSchema,
+	} from 'moleculer'
+	import { IncomingMessage, ServerResponse } from 'http'
 
+	// RateLimit
+	type generateRateLimitKey = (req: IncomingMessage) => string
 
+	interface RateLimit {
+		/**
+		 * How long to keep record of requests in memory (in milliseconds).
+		 * @default 60000 (1 min)
+		 */
+		window?: number,
+
+		/**
+		 * Max number of requests during window.
+		 * @default 30
+		 */
+		limit?: number,
+
+		/**
+		 * Set rate limit headers to response.
+		 * @default false
+		 */
+		headers?: boolean,
+
+		/**
+		 * Function used to generate keys.
+		 * @default req => req.headers["x-forwarded-for"] || req.connection.remoteAddress || req.socket.remoteAddress || req.connection.socket.remoteAddress
+		 */
+		key?: generateRateLimitKey,
+
+		/**
+		 * use rate limit Custom Store
+		 * @default MemoryStore
+		 * @see https://moleculer.services/docs/0.14/moleculer-web.html#Custom-Store-example
+		 */
+		StoreFactory?: MemoryStore
+	}
+
+	class MemoryStore {
+		constructor(window: number, opts: RateLimit)
+
+		/**
+		 * Increment the counter by key
+		 */
+		inc(key: string): number
+
+		/**
+		 * Reset all counters
+		 */
+		reset(): void
+	}
+
+	// bodyParserOptions
 	/**
 	 * DefinitelyTyped body-parser
 	 * @see https://github.com/DefinitelyTyped/DefinitelyTyped/blob/master/types/body-parser/index.d.ts#L24
@@ -67,6 +126,167 @@ declare module "moleculer-web" {
 		}
 	}
 
+	type bodyParserOptions = {
+		json?: BodyParser.OptionsJson | boolean
+		urlencoded?: BodyParser.OptionsUrlencoded | boolean
+		text?: BodyParser.OptionsText | boolean
+		raw?: BodyParser.Options | boolean
+	}
+
+	// BusboyConfig
+	namespace busboy {
+		interface BusboyConfig {
+			headers?: any;
+			highWaterMark?: number | undefined;
+			fileHwm?: number | undefined;
+			defCharset?: string | undefined;
+			preservePath?: boolean | undefined;
+			limits?: {
+				fieldNameSize?: number | undefined;
+				fieldSize?: number | undefined;
+				fields?: number | undefined;
+				fileSize?: number | undefined;
+				files?: number | undefined;
+				parts?: number | undefined;
+				headerPairs?: number | undefined;
+			} | undefined;
+		}
+
+		interface Busboy extends NodeJS.WritableStream {
+			on(event: 'field',
+			   listener: (
+				   fieldname: string,
+				   val: any,
+				   fieldnameTruncated: boolean,
+				   valTruncated: boolean,
+				   encoding: string,
+				   mimetype: string) => void): this;
+			on(event: 'file',
+			   listener: (
+				   fieldname: string,
+				   file: NodeJS.ReadableStream,
+				   filename: string,
+				   encoding: string,
+				   mimetype: string) => void): this;
+			on(event: 'finish', callback: () => void): this;
+			on(event: 'partsLimit', callback: () => void): this;
+			on(event: 'filesLimit', callback: () => void): this;
+			on(event: 'fieldsLimit', callback: () => void): this;
+			on(event: string, listener: Function): this;
+		}
+	}
+
+	type onEventBusboyConfig<T> = (busboy: busboy.Busboy, alias: T, service: Service) => void
+	type BusboyConfig<T> = busboy.BusboyConfig & {
+		onFieldsLimit?: T
+		onFilesLimit?: T
+		onPartsLimit?: T
+	}
+
+	// AssetsConfig
+	// From: https://github.com/DefinitelyTyped/DefinitelyTyped/blob/master/types/serve-static/index.d.ts
+	interface ServeStaticOptions {
+		/**
+		 * Enable or disable setting Cache-Control response header, defaults to true.
+		 * Disabling this will ignore the immutable and maxAge options.
+		 */
+		cacheControl?: boolean | undefined;
+
+		/**
+		 * Set how "dotfiles" are treated when encountered. A dotfile is a file or directory that begins with a dot (".").
+		 * Note this check is done on the path itself without checking if the path actually exists on the disk.
+		 * If root is specified, only the dotfiles above the root are checked (i.e. the root itself can be within a dotfile when when set to "deny").
+		 * The default value is 'ignore'.
+		 * 'allow' No special treatment for dotfiles
+		 * 'deny' Send a 403 for any request for a dotfile
+		 * 'ignore' Pretend like the dotfile does not exist and call next()
+		 */
+		dotfiles?: string | undefined;
+
+		/**
+		 * Enable or disable etag generation, defaults to true.
+		 */
+		etag?: boolean | undefined;
+
+		/**
+		 * Set file extension fallbacks. When set, if a file is not found, the given extensions will be added to the file name and search for.
+		 * The first that exists will be served. Example: ['html', 'htm'].
+		 * The default value is false.
+		 */
+		extensions?: string[] | false | undefined;
+
+		/**
+		 * Let client errors fall-through as unhandled requests, otherwise forward a client error.
+		 * The default value is true.
+		 */
+		fallthrough?: boolean | undefined;
+
+		/**
+		 * Enable or disable the immutable directive in the Cache-Control response header.
+		 * If enabled, the maxAge option should also be specified to enable caching. The immutable directive will prevent supported clients from making conditional requests during the life of the maxAge option to check if the file has changed.
+		 */
+		immutable?: boolean | undefined;
+
+		/**
+		 * By default this module will send "index.html" files in response to a request on a directory.
+		 * To disable this set false or to supply a new index pass a string or an array in preferred order.
+		 */
+		index?: boolean | string | string[] | undefined;
+
+		/**
+		 * Enable or disable Last-Modified header, defaults to true. Uses the file system's last modified value.
+		 */
+		lastModified?: boolean | undefined;
+
+		/**
+		 * Provide a max-age in milliseconds for http caching, defaults to 0. This can also be a string accepted by the ms module.
+		 */
+		maxAge?: number | string | undefined;
+
+		/**
+		 * Redirect to trailing "/" when the pathname is a dir. Defaults to true.
+		 */
+		redirect?: boolean | undefined;
+
+		/**
+		 * Function to set custom headers on response. Alterations to the headers need to occur synchronously.
+		 * The function is called as fn(res, path, stat), where the arguments are:
+		 * res the response object
+		 * path the file path that is being sent
+		 * stat the stat object of the file that is being sent
+		 */
+		setHeaders?: ((res: ServerResponse, path: string, stat: any) => any) | undefined;
+	}
+
+	type AssetsConfig = {
+		/**
+		 * Root folder of assets
+		 */
+		folder: string
+		/**
+		 * Further options to `server-static` module
+		 */
+		options?: ServeStaticOptions
+	}
+
+	// CorsOptions
+	// From: https://github.com/DefinitelyTyped/DefinitelyTyped/blob/master/types/cors/index.d.ts
+	type CustomOrigin = (
+		requestOrigin: string | undefined,
+		callback: (err: Error | null, allow?: boolean) => void
+	) => void;
+
+	export interface CorsOptions {
+		origin?: boolean | string | RegExp | (string | RegExp)[] | CustomOrigin;
+		methods?: string | string[];
+		allowedHeaders?: string | string[];
+		exposedHeaders?: string | string[];
+		credentials?: boolean;
+		maxAge?: number;
+		preflightContinue?: boolean;
+		optionsSuccessStatus?: number;
+	}
+
 	class InvalidRequestBodyError extends Errors.MoleculerError { constructor(body: any, error: any) }
 	class InvalidResponseTypeError extends Errors.MoleculerError { constructor(dataType: string) }
 	class UnAuthorizedError extends Errors.MoleculerError { constructor(type: string|null|undefined, data: any) }
@@ -103,23 +323,6 @@ declare module "moleculer-web" {
 		action: string
 	}
 
-	// From: https://github.com/DefinitelyTyped/DefinitelyTyped/blob/master/types/cors/index.d.ts
-	type CustomOrigin = (
-		requestOrigin: string | undefined,
-		callback: (err: Error | null, allow?: boolean) => void
-	) => void;
-
-	interface CorsOptions {
-		origin?: boolean | string | RegExp | (string | RegExp)[] | CustomOrigin;
-		methods?: string | string[];
-		allowedHeaders?: string | string[];
-		exposedHeaders?: string | string[];
-		credentials?: boolean;
-		maxAge?: number;
-		preflightContinue?: boolean;
-		optionsSuccessStatus?: number;
-	}
-
 	class Route {
 		callOptions: any
 		cors: CorsOptions
@@ -147,33 +350,52 @@ declare module "moleculer-web" {
 		(err?: any): void;
 		/**
 		 * "Break-out" of a router by calling {next('router')};
-		 * @see {https://expressjs.com/en/guide/using-middleware.html#middleware.router}
+		 * @see https://expressjs.com/en/guide/using-middleware.html#middleware.router
 		 */
 		(deferToNext: 'router'): void;
 		/**
 		 * "Break-out" of a route by calling {next('route')};
-		 * @see {https://expressjs.com/en/guide/using-middleware.html#middleware.application}
+		 * @see https://expressjs.com/en/guide/using-middleware.html#middleware.application
 		 */
 		(deferToNext: 'route'): void;
 	}
 
-
 	type routeMiddleware = (req: IncomingMessage, res: ServerResponse, next: NextFunction) => void
 	type routeMiddlewareError = (err: any, req: IncomingMessage, res: ServerResponse, next: NextFunction) => void
 
-	type bodyParserOptions = {
-		json?: BodyParser.OptionsJson | boolean
-		urlencoded?: BodyParser.OptionsUrlencoded | boolean
-		text?: BodyParser.OptionsText | boolean
-		raw?: BodyParser.Options | boolean
+	type ETagFunction = (body: any) => string
+
+	type CommonSettingSchema = {
+		/**
+		 * Cross-origin resource sharing configuration (using module [cors](https://www.npmjs.com/package/cors))<br>
+		 * @see https://moleculer.services/docs/0.14/moleculer-web.html#CORS-headers
+		 */
+		cors?: CorsOptions
+		/**
+		 * The etag option value can be `false`, `true`, `weak`, `strong`, or a custom `Function`
+		 * @default settings.etag (null)
+		 * @see https://moleculer.services/docs/0.14/moleculer-web.html#ETag
+		 */
+		etag?: boolean | 'weak' | 'strong' | ETagFunction
+		/**
+		 * You can add route-level & global-level custom error handlers.<br>
+		 * In handlers, you must call the `res.end`. Otherwise, the request is unhandled.
+		 * @see https://moleculer.services/docs/0.14/moleculer-web.html#Error-handlers
+		 */
+		onError?: (req: IncomingMessage, res: ServerResponse, error: Error) => void
+		/**
+		 * The Moleculer-Web has a built-in rate limiter with a memory store.
+		 * @see https://moleculer.services/docs/0.14/moleculer-web.html#Rate-limiter
+		 */
+		rateLimit?: RateLimit
 	}
-	export type RouteSchema = {
+	export type ApiRouteSchema = CommonSettingSchema & {
 		/**
 		 * You can use alias names instead of action names. You can also specify the method. Otherwise it will handle every method types.<br>
 		 * Using named parameters in aliases is possible. Named parameters are defined by prefixing a colon to the parameter name (:name).
 		 * @see https://moleculer.services/docs/0.14/moleculer-web.html#Aliases
 		 */
-		aliases: boolean
+		aliases?: boolean
 		/**
 		 * To enable the support for authentication, you need to do something similar to what is describe in the Authorization paragraph.<br>
 		 * Also in this case you have to:
@@ -182,14 +404,14 @@ declare module "moleculer-web" {
 		 * 3. The returned value will be set to the `ctx.meta.user` property. You can use it in your actions to get the logged in user entity.
 		 * @see https://moleculer.services/docs/0.14/moleculer-web.html#Authentication
 		 */
-		authentication: boolean
+		authentication?: boolean
 		/**
 		 * You can implement authorization. Do 2 things to enable it.
 		 * 1. Set authorization: true in your routes
 		 * 2. Define the authorize method in service.
 		 * @see https://moleculer.services/docs/0.14/moleculer-web.html#Authorization
 		 */
-		authorization: boolean
+		authorization?: boolean
 		/**
 		 * The auto-alias feature allows you to declare your route alias directly in your services.<br>
 		 * The gateway will dynamically build the full routes from service schema.
@@ -197,21 +419,37 @@ declare module "moleculer-web" {
 		 * Use `whitelist` parameter to specify services that the Gateway should track and build the routes.
 		 * @see https://moleculer.services/docs/0.14/moleculer-web.html#Auto-alias
 		 */
-		autoAliases: boolean
+		autoAliases?: boolean
 		/**
 		 * Parse incoming request bodies, available under the `ctx.params` property
 		 * @see https://www.npmjs.com/package/body-parser
 		 */
 		bodyParsers?: bodyParserOptions | boolean
 		/**
+		 * API Gateway has implemented file uploads.<br>
+		 * You can upload files as a multipart form data (thanks to [busboy](https://github.com/mscdex/busboy) library) or as a raw request body.<br>
+		 * In both cases, the file is transferred to an action as a Stream.<br>
+		 * In multipart form data mode you can upload multiple files, as well.<br>
+		 * `Please note`: you have to disable other body parsers in order to accept files.
+		 */
+		busboyConfig?: BusboyConfig<onEventBusboyConfig<Alias>>
+		/**
 		 * The route has a callOptions property which is passed to broker.call. So you can set timeout, retries or fallbackResponse options for routes.
 		 * @see https://moleculer.services/docs/0.14/actions.html#Call-services
 		 */
-		callingOptions: CallingOptions
+		callingOptions?: CallingOptions
+		/**
+		 * If alias handler not found, `api` will try to call service by action name<br>
+		 * This option will convert request url to camelCase before call action
+		 * @example `/math/sum-all` => `math.sumAll`
+		 * @default: null
+		 */
+		camelCaseNames?: boolean
 		/**
 		 * Enable/disable logging
+		 * @default true
 		 */
-		logging: boolean
+		logging?: boolean
 		/**
 		 * The route has a `mappingPolicy` property to handle routes without aliases.<br>
 		 * Available options:<br>
@@ -219,7 +457,7 @@ declare module "moleculer-web" {
 		 * `restrict` - enable to request only the routes with aliases.
 		 * @see https://moleculer.services/docs/0.14/moleculer-web.html#Mapping-policy
 		 */
-		mappingPolicy: 'all' | 'restrict'
+		mappingPolicy?: 'all' | 'restrict'
 		/**
 		 * To disable parameter merging set `mergeParams: false` in route settings.<br>
 		 * Default is `true`
@@ -230,21 +468,15 @@ declare module "moleculer-web" {
 		 * The route has before & after call hooks. You can use it to set `ctx.meta`, access `req.headers` or modify the response data.
 		 * @see https://moleculer.services/docs/0.14/moleculer-web.html#Route-hooks
 		 */
-		onBeforeCall: onBeforeCall
+		onBeforeCall?: onBeforeCall
 		/**
 		 * You could manipulate the data in `onAfterCall`.<br>
 		 * `Must always return the new or original data`.
 		 * @see https://moleculer.services/docs/0.14/moleculer-web.html#Route-hooks
 		 */
-		onAfterCall: onAfterCall
+		onAfterCall?: onAfterCall
 		/**
-		 * You can add route-level & global-level custom error handlers.<br>
-		 * In handlers, you must call the `res.end`. Otherwise, the request is unhandled.
-		 * @see https://moleculer.services/docs/0.14/moleculer-web.html#Error-handlers
-		 */
-		onError: (req: IncomingMessage, res: ServerResponse, error: Error) => void
-		/**
-		 * the root path that this route handles
+		 * Path prefix to this route
 		 */
 		path: string
 		/**
@@ -264,6 +496,111 @@ declare module "moleculer-web" {
 		 * @see https://moleculer.services/docs/0.14/moleculer-web.html#Middlewares
 		 */
 		use?: Array<routeMiddleware | routeMiddlewareError>
+	}
+
+	export type ApiSettingsSchema = CommonSettingSchema & {
+		/**
+		 * It serves assets with the [serve-static](https://github.com/expressjs/serve-static) module like ExpressJS.
+		 * @see https://moleculer.services/docs/0.14/moleculer-web.html#Serve-static-files
+		 */
+		assets?: AssetsConfig
+		/**
+		 * Use HTTP2 server (experimental)
+		 * @default false
+		 */
+		http2?: boolean,
+
+		/**
+		 * HTTP Server Timeout
+		 * @default null
+		 */
+		httpServerTimeout?: number,
+
+		/**
+		 * Special char for internal services<br>
+		 * Note: `RegExp` type is not official
+		 * @default "~"
+		 * @example "~" => /~node/~action => /$node/~action
+		 * @example /[0-9]+/g => /01234demo/hello2021 => /demo/hello `(not official)`
+		 */
+		internalServiceSpecialChar?: string | RegExp,
+
+		/**
+		 * Exposed IP
+		 * @default process.env.IP || "0.0.0.0"
+		 */
+		ip?: string,
+
+		/**
+		 * If set to true, it will log 4xx client errors, as well
+		 * @default false
+		 */
+		log4XXResponses?: boolean,
+
+		/**
+		 * Log each request (default to "info" level)
+		 * @default "info"
+		 */
+		logRequest?: LogLevels,
+
+		/**
+		 * Log the request ctx.params (default to "debug" level)
+		 * @default "debug"
+		 */
+		logRequestParams?: LogLevels,
+
+		/**
+		 * Log each response (default to "info" level)
+		 * @default "info"
+		 */
+		logResponse?: LogLevels,
+
+		/**
+		 * Log the response data (default to disable)
+		 * @default null
+		 */
+		logResponseData?: LogLevels,
+
+		/**
+		 * Log the route registration/aliases related activity
+		 * @default "info"
+		 */
+		logRouteRegistration?: LogLevels,
+
+		/**
+		 * Optimize route order
+		 * @default true
+		 */
+		optimizeOrder?: boolean,
+
+		/**
+		 * Global path prefix
+		 */
+		path?: string
+		/**
+		 * Exposed port
+		 * @default process.env.PORT || 3000
+		 */
+		port?: number,
+
+		/**
+		 * Gateway routes
+		 * @default []
+		 */
+		routes?: ApiRouteSchema[],
+
+		/**
+		 * CallOption for the root action `api.rest`
+		 * @default null
+		 */
+		rootCallOptions?: CallingOptions
+
+		/**
+		 * Used server instance. If null, it will create a new HTTP(s)(2) server<br>
+		 * If false, it will start without server in middleware mode
+		 * @default true
+		 */
+		server?: boolean,
 	}
 
 	class IncomingRequest extends IncomingMessage {
