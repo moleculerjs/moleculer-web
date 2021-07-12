@@ -94,7 +94,10 @@ module.exports = {
 		optimizeOrder: true,
 
 		// CallOption for the root action `api.rest`
-		rootCallOptions: null
+		rootCallOptions: null,
+
+		// Debounce wait time before call to regenerate aliases when received event "$services.changed"
+		debounceTime: 500
 	},
 
 	// Service's metadata
@@ -1580,10 +1583,11 @@ module.exports = {
 			this.settings.routes.forEach(route => this.addRoute(route));
 
 		// Regenerate all auto aliases routes
+		const debounceTime = (debounceTime => (!isNaN(debounceTime) && debounceTime >= 0) ? debounceTime : 500)(parseInt(this.settings.debounceTime));
 		this.regenerateAllAutoAliases = _.debounce(() => {
 			/* istanbul ignore next */
 			this.routes.forEach(route => route.opts.autoAliases && this.regenerateAutoAliases(route));
-		}, 500);
+		}, debounceTime);
 	},
 
 
