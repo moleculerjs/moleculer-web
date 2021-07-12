@@ -1202,7 +1202,7 @@ module.exports = {
 			route.callOptions = opts.callOptions;
 
 			// Create body parsers as middlewares
-			if (opts.bodyParsers == null) {
+			if (opts.bodyParsers == null || opts.bodyParsers === true) {
 				// Set default JSON body-parser
 				opts.bodyParsers = {
 					json: true
