@@ -1741,6 +1741,44 @@ describe("Test body-parsers", () => {
 	beforeAll(() => {
 	});
 
+	describe("JSON parser should be set to default", () => {
+		it("When its value is null / undefined", () => {
+			[broker, service, server] = setup({
+				routes: [{}]
+			});
+
+			expect(Array.isArray(service.routes) && service.routes.length === 1).toBeTruthy();
+			const middlewares = service.routes[0].middlewares;
+			expect(Array.isArray(middlewares) && middlewares.length === 1).toBeTruthy();
+			expect(typeof middlewares[0] === "function" && middlewares[0].name === "jsonParser").toBeTruthy();
+		});
+
+		it("When its value is true", () => {
+			[broker, service, server] = setup({
+				routes: [{
+					"bodyParsers": true
+				}]
+			});
+
+			expect(Array.isArray(service.routes) && service.routes.length === 1).toBeTruthy();
+			const middlewares = service.routes[0].middlewares;
+			expect(Array.isArray(middlewares) && middlewares.length === 1).toBeTruthy();
+			expect(typeof middlewares[0] === "function" && middlewares[0].name === "jsonParser").toBeTruthy();
+		});
+
+		it("But not truly", () => {
+			[broker, service, server] = setup({
+				routes: [{
+					"bodyParsers": 1
+				}]
+			});
+
+			expect(Array.isArray(service.routes) && service.routes.length === 1).toBeTruthy();
+			const middlewares = service.routes[0].middlewares;
+			expect(Array.isArray(middlewares) && middlewares.length === 0).toBeTruthy();
+		});
+	});
+
 	it("POST /api/test.gretter without bodyParsers", () => {
 		[broker, service, server] = setup({
 			routes: [{
