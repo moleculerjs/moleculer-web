@@ -369,19 +369,19 @@ declare module "moleculer-web" {
 		/**
 		 * Cross-origin resource sharing configuration (using module [cors](https://www.npmjs.com/package/cors))<br>
 		 * @example {
-            // Configures the Access-Control-Allow-Origin CORS header.
-            origin: "*", // ["http://localhost:3000", "https://localhost:4000"],
-            // Configures the Access-Control-Allow-Methods CORS header.
-            methods: ["GET", "OPTIONS", "POST", "PUT", "DELETE"],
-            // Configures the Access-Control-Allow-Headers CORS header.
-            allowedHeaders: [],
-            // Configures the Access-Control-Expose-Headers CORS header.
-            exposedHeaders: [],
-            // Configures the Access-Control-Allow-Credentials CORS header.
-            credentials: false,
-            // Configures the Access-Control-Max-Age CORS header.
-            maxAge: 3600
-        }
+			// Configures the Access-Control-Allow-Origin CORS header.
+			origin: "*", // ["http://localhost:3000", "https://localhost:4000"],
+			// Configures the Access-Control-Allow-Methods CORS header.
+			methods: ["GET", "OPTIONS", "POST", "PUT", "DELETE"],
+			// Configures the Access-Control-Allow-Headers CORS header.
+			allowedHeaders: [],
+			// Configures the Access-Control-Expose-Headers CORS header.
+			exposedHeaders: [],
+			// Configures the Access-Control-Allow-Credentials CORS header.
+			credentials: false,
+			// Configures the Access-Control-Max-Age CORS header.
+			maxAge: 3600
+		}
 		 * @see https://moleculer.services/docs/0.14/moleculer-web.html#CORS-headers
 		 */
 		cors?: CorsOptions
