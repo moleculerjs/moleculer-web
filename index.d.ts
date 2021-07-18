@@ -48,7 +48,7 @@ declare module "moleculer-web" {
 	}
 
 	class MemoryStore {
-		constructor(window: number, opts: RateLimit)
+		constructor(clearPeriod: number, opts: RateLimit)
 
 		/**
 		 * Increment the counter by key
