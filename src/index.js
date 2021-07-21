@@ -1583,7 +1583,7 @@ module.exports = {
 			this.settings.routes.forEach(route => this.addRoute(route));
 
 		// Regenerate all auto aliases routes
-		const debounceTime = this.settings.debounceTime >= 0 ? parseInt(this.settings.debounceTime) : 500;
+		const debounceTime = this.settings.debounceTime > 0 ? parseInt(this.settings.debounceTime) : 500;
 		this.regenerateAllAutoAliases = _.debounce(() => {
 			/* istanbul ignore next */
 			this.routes.forEach(route => route.opts.autoAliases && this.regenerateAutoAliases(route));
