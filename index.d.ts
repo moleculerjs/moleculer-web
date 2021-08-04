@@ -364,6 +364,7 @@ declare module "moleculer-web" {
 	type routeMiddlewareError = (err: any, req: IncomingMessage, res: ServerResponse, next: NextFunction) => void
 
 	type ETagFunction = (body: any) => string
+	type AliasFunction = (req: IncomingRequest, res: GatewayResponse) => void
 
 	type CommonSettingSchema = {
 		/**
@@ -409,7 +410,9 @@ declare module "moleculer-web" {
 		 * Using named parameters in aliases is possible. Named parameters are defined by prefixing a colon to the parameter name (:name).
 		 * @see https://moleculer.services/docs/0.14/moleculer-web.html#Aliases
 		 */
-		aliases?: boolean
+		aliases?: {
+			[k: string]: string | AliasFunction | Array<string | AliasFunction>
+		}
 		/**
 		 * To enable the support for authentication, you need to do something similar to what is describe in the Authorization paragraph.<br>
 		 * Also in this case you have to:
