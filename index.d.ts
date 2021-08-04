@@ -365,6 +365,15 @@ declare module "moleculer-web" {
 
 	type ETagFunction = (body: any) => string
 	type AliasFunction = (req: IncomingRequest, res: GatewayResponse) => void
+	type AliasRouteSchema = {
+		type?: 'call' | 'multipart' | string
+		method?: "GET" | "POST" | "PUT" | "DELETE" | "*" | "HEAD" | "OPTIONS" | "PATCH" | string
+		path?: string
+		handler?: AliasFunction
+		action?: string
+		busboyConfig?: BusboyConfig<onEventBusboyConfig<Alias>>
+		[k: string]: any
+	}
 
 	type CommonSettingSchema = {
 		/**
@@ -411,7 +420,7 @@ declare module "moleculer-web" {
 		 * @see https://moleculer.services/docs/0.14/moleculer-web.html#Aliases
 		 */
 		aliases?: {
-			[k: string]: string | AliasFunction | Array<string | AliasFunction>
+			[k: string]: string | AliasFunction | Array<AliasFunction | string> | AliasRouteSchema
 		}
 		/**
 		 * To enable the support for authentication, you need to do something similar to what is describe in the Authorization paragraph.<br>
