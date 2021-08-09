@@ -364,9 +364,9 @@ declare module "moleculer-web" {
 	type routeMiddlewareError = (err: any, req: IncomingMessage, res: ServerResponse, next: NextFunction) => void
 
 	type ETagFunction = (body: any) => string
-	type AliasFunction = (req: IncomingRequest, res: GatewayResponse) => void
+	type AliasFunction = (req: IncomingRequest, res: GatewayResponse, next?: (err?: any) => void) => void
 	type AliasRouteSchema = {
-		type?: 'call' | 'multipart' | string
+		type?: 'call' | 'multipart' | 'stream' | string
 		method?: "GET" | "POST" | "PUT" | "DELETE" | "*" | "HEAD" | "OPTIONS" | "PATCH" | string
 		path?: string
 		handler?: AliasFunction
