@@ -293,6 +293,21 @@ module.exports = {
 		},
 
 		/**
+		 * Default error handling behaviour
+		 *
+		 * @param {HttpRequest} req
+		 * @param {HttpResponse} res
+		 * @param {Error} err
+		 */
+		errorHandler(req, res, err) {
+			// don't log client side errors unless it's configured
+			if (this.settings.log4XXResponses || (err && !_.inRange(err.code, 400, 500))) {
+				this.logger.error("   Request error!", err.name, ":", err.message, "\n", err.stack, "\nData:", err.data);
+			}
+			this.sendError(req, res, err);
+		},
+
+		/**
 		 * HTTP request handler. It is called from native NodeJS HTTP server.
 		 *
 		 * @param {HttpRequest} req
@@ -340,11 +355,7 @@ module.exports = {
 					this.send404(req, res);
 				}
 			} catch (err) {
-				// don't log client side errors only it's configured
-				if (this.settings.log4XXResponses || (err && !_.inRange(err.code, 400, 500))) {
-					this.logger.error("   Request error!", err.name, ":", err.message, "\n", err.stack, "\nData:", err.data);
-				}
-				this.sendError(req, res, err);
+				this.errorHandler(req, res, err);
 			}
 		},
 
