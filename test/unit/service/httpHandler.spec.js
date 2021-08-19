@@ -13,6 +13,7 @@ const MockContext = () => Object.assign({
 		rest: jest.fn(),
 	},
 	settings: require("../../../src/index").settings,
+	errorHandler: require("../../../src/index").methods.errorHandler,
 	logger: MockLogger(),
 	sendError: jest.fn(),
 	send404: jest.fn(),
