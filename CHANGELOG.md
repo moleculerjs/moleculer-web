@@ -1,3 +1,11 @@
+<a name="0.10.1"></a>
+# 0.10.1 (2021-09-01)
+
+## Changes
+- remove empty log lines
+- add `pathToRegexpOptions` to route options to make available to pass options to `path-to-regexp` library. [#268](https://github.com/moleculerjs/moleculer-web/issues/268)
+
+-----------------------------
 <a name="0.10.0"></a>
 # 0.10.0 (2021-06-27)
 

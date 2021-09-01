@@ -4724,3 +4724,93 @@ describe("Test multi REST interfaces in service settings", () => {
 		});
 	});
 });
+
+
+describe("Test pathToRegexpOptions", () => {
+	let broker;
+	let server;
+	let service;
+
+	beforeAll(() => {
+		[broker, service, server] = setup({
+			path: "/api",
+			routes: [
+				{
+					path: "/t1",
+					aliases: {
+						"GET users": "users.create1",
+						"GET Users": "users.create2"
+					},
+				},
+				{
+					path: "/t2",
+					aliases: {
+						"GET users": "users.create1",
+						"GET Users": "users.create2"
+					},
+					pathToRegexpOptions: {
+						sensitive: true
+					}
+				},
+			],
+		});
+
+		broker.createService({
+			name: "users",
+			actions: {
+				create1() {
+					return "OK1";
+				},
+				create2() {
+					return "OK2";
+				}
+			}
+		});
+
+		return broker.start();
+	});
+
+	afterAll(() => broker.stop());
+
+	it("should find 'create1'", () => {
+		return request(server)
+			.get("/api/t1/users")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toEqual("OK1");
+			});
+	});
+
+	it("should find 'create1'", () => {
+		return request(server)
+			.get("/api/t1/Users")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toEqual("OK1");
+			});
+	});
+
+	it("should find 'create1'", () => {
+		return request(server)
+			.get("/api/t2/users")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toEqual("OK1");
+			});
+	});
+
+	it("should find 'create2'", () => {
+		return request(server)
+			.get("/api/t2/Users")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toEqual("OK2");
+			});
+	});
+
+
+});
