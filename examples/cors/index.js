@@ -1,8 +1,7 @@
 "use strict";
 
 /**
-
- *
+ * Call the endpoints from https://cors-tester.glitch.me/
  */
 
 const { ServiceBroker } = require("moleculer");

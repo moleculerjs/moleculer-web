@@ -160,8 +160,13 @@ module.exports = {
 				if (!this.routes || this.routes.length == 0)
 					return null;
 
+				let method = req.method;
+				if (method == "OPTIONS") {
+					method = req.headers["access-control-request-method"];
+				}
+
 				// Check aliases
-				const found = this.resolveAlias(url, req.method);
+				const found = this.resolveAlias(url, method);
 				if (found) {
 					const route = found.alias.route;
 					// Update URLs for middlewares
