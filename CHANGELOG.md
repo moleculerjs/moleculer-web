@@ -2,8 +2,11 @@
 # 0.10.1 (2021-09-01)
 
 ## Changes
-- remove empty log lines
+- set the default JSON bodyparser if `bodyParser: true`. [#258](https://github.com/moleculerjs/moleculer-web/issues/258)
 - add `pathToRegexpOptions` to route options to make available to pass options to `path-to-regexp` library. [#268](https://github.com/moleculerjs/moleculer-web/issues/268)
+- add `debounceTime` to route options to make available to change the debounce time at service changes. [#260](https://github.com/moleculerjs/moleculer-web/issues/260)
+- new `errorHandler` method to allow developers to change the default error handling behaviour. [#266](https://github.com/moleculerjs/moleculer-web/issues/266)
+- update dependencies
 
 -----------------------------
 <a name="0.10.0"></a>
