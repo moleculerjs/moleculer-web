@@ -1267,7 +1267,8 @@ module.exports = {
 			}
 
 			// Rate limiter (Inspired by https://github.com/dotcypress/micro-ratelimit/)
-			if (this.settings.rateLimit) {
+			const rateLimit = opts.rateLimit || this.settings.rateLimit
+			if (rateLimit) {
 				let opts = Object.assign({}, {
 					window: 60 * 1000,
 					limit: 30,
@@ -1278,7 +1279,7 @@ module.exports = {
 							req.socket.remoteAddress ||
 							req.connection.socket.remoteAddress;
 					}
-				}, this.settings.rateLimit);
+				}, rateLimit);
 
 				route.rateLimit = opts;
 
