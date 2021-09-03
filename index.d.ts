@@ -472,6 +472,11 @@ declare module "moleculer-web" {
 		 */
 		camelCaseNames?: boolean
 		/**
+		 * Debounce wait time before call to regenerated aliases when got event "$services.changed"
+		 * @default 500
+		 */
+		debounceTime?: number
+		/**
 		 * Enable/disable logging
 		 * @default true
 		 */
