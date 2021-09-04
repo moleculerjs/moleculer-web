@@ -11,7 +11,7 @@ declare module "moleculer-web" {
     class NotFoundError extends Errors.MoleculerClientError { constructor(type: string, data: any) }
     class ServiceUnavailableError extends Errors.MoleculerError { constructor(type: string, data: any) }
 
-    interface ApiGatewayErrors {
+    export interface ApiGatewayErrors {
         InvalidRequestBodyError: typeof InvalidRequestBodyError;
         InvalidResponseTypeError: typeof InvalidResponseTypeError;
         UnAuthorizedError: typeof UnAuthorizedError;
@@ -73,7 +73,7 @@ declare module "moleculer-web" {
     type onBeforeCall = (ctx: Context, route: Route, req: IncomingMessage, res: ServerResponse) => void
     type onAfterCall = (ctx: Context, route: Route, req: IncomingMessage, res: ServerResponse, data: any) => void
 
-    class IncomingRequest extends IncomingMessage {
+    export class IncomingRequest extends IncomingMessage {
         $action: ActionSchema
         $alias: Alias
         $ctx: Context
@@ -85,12 +85,12 @@ declare module "moleculer-web" {
         $startTime: Array<number>
     }
 
-    class GatewayResponse extends ServerResponse {
+    export class GatewayResponse extends ServerResponse {
         $ctx: Context
         $route: Route
         $service: Service
     }
 
     const ApiGatewayService: ServiceSchema & { Errors: ApiGatewayErrors, IncomingRequest: IncomingRequest, GatewayResponse: GatewayResponse };
-    export = ApiGatewayService;
+    export default ApiGatewayService;
 }
