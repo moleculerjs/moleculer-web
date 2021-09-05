@@ -995,35 +995,6 @@ module.exports = {
 		},
 
 		/**
-		 * Check origin(s)
-		 *
-		 * @param {String} origin
-		 * @param {String|Array<String>} settings
-		 * @returns {Boolean}
-		 */
-		checkOrigin(origin, settings) {
-			if (_.isString(settings)) {
-				if (settings.indexOf(origin) !== -1)
-					return true;
-
-				if (settings.indexOf("*") !== -1) {
-					// Based on: https://github.com/hapijs/hapi
-					// eslint-disable-next-line
-					const wildcard = new RegExp(`^${_.escapeRegExp(settings).replace(/\\\*/g, ".*").replace(/\\\?/g, ".")}$`);
-					return origin.match(wildcard);
-				}
-			} else if (Array.isArray(settings)) {
-				for (let i = 0; i < settings.length; i++) {
-					if (this.checkOrigin(origin, settings[i])) {
-						return true;
-					}
-				}
-			}
-
-			return false;
-		},
-
-		/**
 		 * Write CORS header
 		 *
 		 * Based on: https://github.com/expressjs/cors
@@ -1034,7 +1005,6 @@ module.exports = {
 		 * @param {Boolean} isPreFlight
 		 */
 		writeCorsHeaders(route, req, res, isPreFlight) {
-
 			/* istanbul ignore next */
 			if (!route.cors) return;
 
@@ -1043,15 +1013,32 @@ module.exports = {
 			if (!origin)
 				return;
 
+			let policy = null;
+			let strict = true;
+
+			const checkOrigin = (candidate) => (
+				_.isArray(candidate) ? _.find(route.cors.origin, checkOrigin) : 
+				_.isString(candidate)	? origin === candidate :
+				_.isRegExp(candidate) ? candidate.test(origin) :
+				false
+			)
+
 			// Access-Control-Allow-Origin
-			if (!route.cors.origin || route.cors.origin === "*") {
-				res.setHeader("Access-Control-Allow-Origin", "*");
-			} else if (this.checkOrigin(origin, route.cors.origin)) {
-				res.setHeader("Access-Control-Allow-Origin", origin);
-				res.setHeader("Vary", "Origin");
-			} else {
+			if (route.cors.origin === true) {
+				policy = "*";
+				strict = true;
+			}
+			else if (checkOrigin(route.cors.origin)) {
+				policy = origin;
+				strict = false;
+			}
+			
+			if (!policy) {
 				throw new ForbiddenError(ERR_ORIGIN_NOT_ALLOWED);
 			}
+
+			res.setHeader("Access-Control-Allow-Origin", policy);
+			if (!strict) res.setHeader("Vary", "Origin");
 
 			// Access-Control-Allow-Credentials
 			if (route.cors.credentials === true) {
@@ -1284,7 +1271,6 @@ module.exports = {
 			if (this.settings.cors || opts.cors) {
 				// Merge cors settings
 				route.cors = Object.assign({}, {
-					origin: "*",
 					methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE"]
 				}, this.settings.cors, opts.cors);
 			} else {

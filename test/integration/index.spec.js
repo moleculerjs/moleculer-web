@@ -2163,77 +2163,120 @@ describe("Test CORS", () => {
 			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
 	});
 
-	it("errors on mismatching origin header", () => {
-		[broker, service, server] = setup({
-			cors: {
-				origin: "a"
-			}
-		});
-		return broker.start()
-			.then(() => request(server)
-				.get("/test/hello")
-				.set("Origin", "http://localhost:3000"))
-			.then(res => {
-				expect(res.statusCode).toBe(403);
-				expect(res.body).toEqual({
-					"message": "Forbidden",
-					"code": 403,
-					"type": "ORIGIN_NOT_ALLOWED",
-					"name": "ForbiddenError"
-				});
-			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
-	});
-
+	// breaking change /!\ default is super secure now. no cors means... no cors.
 	it("with default settings", () => {
 		[broker, service, server] = setup({
-			cors: {}
+			cors: {},
 		});
 
-		return broker.start()
-			.then(() => request(server)
-				.get("/test/hello")
-				.set("Origin", "http://localhost:3000"))
-			.then(res => {
-				expect(res.statusCode).toBe(200);
-				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
-				expect(res.headers["access-control-allow-origin"]).toBe("*");
-
-				expect(res.body).toBe("Hello Moleculer");
+		return broker
+			.start()
+			.then(() =>
+				request(server)
+					.get("/test/hello")
+					.set("Origin", "http://localhost:3000")
+			)
+			.then((res) => {
+				expect(res.statusCode).toBe(403);
+				expect(res.body).toEqual({
+					message: "Forbidden",
+					code: 403,
+					type: "ORIGIN_NOT_ALLOWED",
+					name: "ForbiddenError",
+				});
 			})
-			.then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
+			.then(() => broker.stop())
+			.catch((err) =>
+				broker.stop().then(() => {
+					throw err;
+				})
+			);
+	});
+
+	it("with custom global settings (boolean)", () => {
+		[broker, service, server] = setup({
+			cors: {
+				origin: true,
+			},
+		});
+
+		return broker
+			.start()
+			.then(() =>
+				request(server)
+					.get("/test/hello")
+					.set("Origin", "http://localhost:3000")
+			)
+			.then((res) => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["access-control-allow-origin"]).toBe("*");
+			})
+			.then(() => broker.stop())
+			.catch((err) =>
+				broker.stop().then(() => {
+					throw err;
+				})
+			);
 	});
 
 	it("with custom global settings (string)", () => {
 		[broker, service, server] = setup({
 			cors: {
 				origin: "http://localhost:3000",
-				exposedHeaders: "X-Response-Time",
-				credentials: true
-			}
+			},
 		});
 
-		return broker.start()
-			.then(() => request(server)
-				.get("/test/hello")
-				.set("Origin", "http://localhost:3000"))
-			.then(res => {
+		return broker
+			.start()
+			.then(() =>
+				request(server)
+					.get("/test/hello")
+					.set("Origin", "http://localhost:3000")
+			)
+			.then((res) => {
 				expect(res.statusCode).toBe(200);
-				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
 				expect(res.headers["access-control-allow-origin"]).toBe("http://localhost:3000");
-				expect(res.headers["access-control-allow-credentials"]).toBe("true");
-				expect(res.headers["access-control-expose-headers"]).toBe("X-Response-Time");
-
-				expect(res.body).toBe("Hello Moleculer");
+				expect(res.headers["vary"]).toBe("Origin");
 			})
-			.then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
+			.then(() => broker.stop())
+			.catch((err) =>
+				broker.stop().then(() => {
+					throw err;
+				})
+			);
 	});
+
+it("with custom global settings (regexp)", () => {
+	[broker, service, server] = setup({
+		cors: {
+			origin: /localhost/,
+		},
+	});
+
+	return broker
+		.start()
+		.then(() =>
+			request(server)
+				.get("/test/hello")
+				.set("Origin", "http://localhost:3000")
+		)
+		.then((res) => {
+			expect(res.statusCode).toBe(200);
+			expect(res.headers["access-control-allow-origin"]).toBe("http://localhost:3000");
+			expect(res.headers["vary"]).toBe("Origin");
+		})
+		.then(() => broker.stop())
+		.catch((err) =>
+			broker.stop().then(() => {
+				throw err;
+			})
+		);
+	});		
 
 	it("with custom global settings (array)", () => {
 		[broker, service, server] = setup({
 			cors: {
-				origin: ["http://localhost:3000", "https://localhost:4000"],
-				exposedHeaders: ["X-Custom-Header", "X-Response-Time"],
-				credentials: true
+				origin: ["http://localhost:3000", /^https/],
 			}
 		});
 
@@ -2243,15 +2286,41 @@ describe("Test CORS", () => {
 				.set("Origin", "https://localhost:4000"))
 			.then(res => {
 				expect(res.statusCode).toBe(200);
-				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
 				expect(res.headers["access-control-allow-origin"]).toBe("https://localhost:4000");
-				expect(res.headers["access-control-allow-credentials"]).toBe("true");
-				expect(res.headers["access-control-expose-headers"]).toBe("X-Custom-Header, X-Response-Time");
-
-				expect(res.body).toBe("Hello Moleculer");
+				expect(res.headers["vary"]).toBe("Origin");
 			})
 			.then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
 	});
+
+	it("errors on mismatching origin header", () => {
+	[broker, service, server] = setup({
+		cors: {
+			origin: "a",
+		},
+	});
+	return broker
+		.start()
+		.then(() =>
+			request(server)
+				.get("/test/hello")
+				.set("Origin", "http://localhost:3000")
+		)
+		.then((res) => {
+			expect(res.statusCode).toBe(403);
+			expect(res.body).toEqual({
+				message: "Forbidden",
+				code: 403,
+				type: "ORIGIN_NOT_ALLOWED",
+				name: "ForbiddenError",
+			});
+		})
+		.then(() => broker.stop())
+		.catch((err) =>
+			broker.stop().then(() => {
+				throw err;
+			})
+		);
+	});	
 
 	it("with custom route settings", () => {
 		[broker, service, server] = setup({
@@ -2278,72 +2347,6 @@ describe("Test CORS", () => {
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
 				expect(res.headers["access-control-allow-origin"]).toBe("http://test-server");
 				expect(res.headers["access-control-expose-headers"]).toBe("X-Response-Time");
-
-				expect(res.body).toBe("Hello Moleculer");
-			})
-			.then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
-	});
-
-	it("returns matching CORS origin wildcard with single origin", () => {
-		[broker, service, server] = setup({
-			cors: {
-				origin: "http://localhost:*",
-			}
-		});
-
-		return broker.start()
-			.then(() => request(server)
-				.get("/test/hello")
-				.set("Origin", "http://localhost:4000"))
-			.then(res => {
-				expect(res.statusCode).toBe(200);
-				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
-				expect(res.headers["access-control-allow-origin"]).toBe("http://localhost:4000");
-				expect(res.headers["vary"]).toBe("Origin");
-
-				expect(res.body).toBe("Hello Moleculer");
-			})
-			.then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
-	});
-
-	it("returns matching CORS origin wildcard", () => {
-		[broker, service, server] = setup({
-			cors: {
-				origin: ["http://test.example.com", "http://www.example.com", "http://*.a.com"],
-			}
-		});
-
-		return broker.start()
-			.then(() => request(server)
-				.get("/test/hello")
-				.set("Origin", "http://www.a.com"))
-			.then(res => {
-				expect(res.statusCode).toBe(200);
-				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
-				expect(res.headers["access-control-allow-origin"]).toBe("http://www.a.com");
-				expect(res.headers["vary"]).toBe("Origin");
-
-				expect(res.body).toBe("Hello Moleculer");
-			})
-			.then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
-	});
-
-	it("returns matching CORS origin wildcard when more than one wildcard", () => {
-		[broker, service, server] = setup({
-			cors: {
-				origin: ["http://test.example.com", "http://*.b.com", "http://*.a.com"],
-			}
-		});
-
-		return broker.start()
-			.then(() => request(server)
-				.get("/test/hello")
-				.set("Origin", "http://www.a.com"))
-			.then(res => {
-				expect(res.statusCode).toBe(200);
-				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
-				expect(res.headers["access-control-allow-origin"]).toBe("http://www.a.com");
-				expect(res.headers["vary"]).toBe("Origin");
 
 				expect(res.body).toBe("Hello Moleculer");
 			})
@@ -2390,6 +2393,7 @@ describe("Test CORS", () => {
 	it("preflight request with default settings", () => {
 		[broker, service, server] = setup({
 			cors: {
+				origin: true,
 				allowedHeaders: ["X-Custom-Header", "X-Response-Time"]
 			}
 		});
