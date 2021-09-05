@@ -2227,6 +2227,39 @@ describe("Test CORS", () => {
 			})
 			.then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
 	});
+	
+	it("with custom global settings (function)", () => {
+		[broker, service, server] = setup({
+			cors: {
+				origin: (origin) => {
+					return origin === "http://localhost:3000";	
+				},
+				exposedHeaders: "X-Response-Time",
+				credentials: true
+			}
+		});
+
+		return broker.start()
+			.then(() => request(server)
+				.get("/test/hello")
+				.set("Origin", "http://localhost:3000"))
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.headers["access-control-allow-origin"]).toBe("http://localhost:3000");
+				expect(res.headers["access-control-allow-credentials"]).toBe("true");
+				expect(res.headers["access-control-expose-headers"]).toBe("X-Response-Time");
+
+				expect(res.body).toBe("Hello Moleculer");
+			})
+			.then(() => request(server)
+				.get("/test/hello")
+				.set("Origin", "http://badhost:3000"))
+			.then(res => {
+				expect(res.statusCode).toBe(403);
+			})
+			.then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
+	});
 
 	it("with custom global settings (array)", () => {
 		[broker, service, server] = setup({

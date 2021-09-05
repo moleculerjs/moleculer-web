@@ -1012,6 +1012,8 @@ module.exports = {
 					const wildcard = new RegExp(`^${_.escapeRegExp(settings).replace(/\\\*/g, ".*").replace(/\\\?/g, ".")}$`);
 					return origin.match(wildcard);
 				}
+			} else if (_.isFunction(settings)) {
+				return settings.call(this, origin);
 			} else if (Array.isArray(settings)) {
 				for (let i = 0; i < settings.length; i++) {
 					if (this.checkOrigin(origin, settings[i])) {
