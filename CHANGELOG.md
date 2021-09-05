@@ -1,3 +1,46 @@
+<a name="0.10.2"></a>
+# 0.10.2 (2021-09-05)
+
+## Named routes
+Many developers issued that version 0.10 doesn't support multiple routes with the same path. This version fixes it but you should give a unique name for the routes if they have same path.
+
+**Example**
+You can call `/api/hi` without auth, but `/api/hello` only with auth.
+
+```js
+const ApiGateway = require("moleculer-web");
+
+module.exports = {
+    mixins: [ApiGateway],
+    settings: {
+        path: "/api",
+
+        routes: [
+			{
+				name: "no-auth-route", // unique name
+				path: "/",
+				aliases: {
+					hi: "greeter.hello",
+				}
+			},
+			{
+				name: "with-auth-route", // unique name
+				path: "/",
+				aliases: {
+					"hello": "greeter.hello",
+				},
+				authorization: true
+			}
+        ]
+    }
+};
+```
+
+## Changes
+- add `removeRouteByName(name: string)` method to remove a route by its name.
+
+
+-----------------------------
 <a name="0.10.1"></a>
 # 0.10.1 (2021-09-01)
 

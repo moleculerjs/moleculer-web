@@ -3750,6 +3750,132 @@ describe("Test dynamic routing", () => {
 	});
 });
 
+describe("Test dynamic routing with name", () => {
+	let broker;
+	let service;
+	let server;
+
+	beforeAll(() => {
+		[broker, service, server] = setup({
+			routes: false
+		});
+		return broker.start();
+	});
+
+	afterAll(() => broker.stop());
+
+	it("should not find '/my/hello'", () => {
+		return request(server)
+			.get("/my/hello")
+			.then(res => {
+				expect(res.statusCode).toBe(404);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toEqual({
+					"code": 404,
+					"message": "Not found",
+					"name": "NotFoundError",
+					"type": "NOT_FOUND"
+				});
+			});
+	});
+
+	it("create route & should find '/my/hello'", () => {
+		service.addRoute({
+			name: "first",
+			path: "/my",
+			aliases: {
+				"hello": "test.hello"
+			}
+		});
+
+		return request(server)
+			.get("/my/hello")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toBe("Hello Moleculer");
+			});
+	});
+
+	it("change route & should find '/other/hello'", () => {
+		service.addRoute({
+			name: "second",
+			path: "/other",
+			aliases: {
+				"hello": "test.hello"
+			}
+		});
+
+		return request(server)
+			.get("/other/hello")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toBe("Hello Moleculer");
+			});
+	});
+
+	it("remove route & should not find '/other/hello'", () => {
+		service.removeRouteByName("second");
+
+		return request(server)
+			.get("/other/hello")
+			.then(res => {
+				expect(res.statusCode).toBe(404);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toEqual({
+					"code": 404,
+					"message": "Not found",
+					"name": "NotFoundError",
+					"type": "NOT_FOUND"
+				});
+			});
+	});
+
+	it("but should find '/my/hello'", () => {
+		return request(server)
+			.get("/my/hello")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toBe("Hello Moleculer");
+			});
+	});
+
+	it("change route should replace aliases & find '/my/helloagain'", () => {
+		service.addRoute({
+			name: "first",
+			path: "/my",
+			aliases: {
+				"helloagain": "test.hello"
+			}
+		});
+
+		return request(server)
+			.get("/my/helloagain")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toBe("Hello Moleculer");
+			});
+	});
+
+	it("but should not find '/my/hello'", () => {
+		return request(server)
+			.get("/my/hello")
+			.then(res => {
+				expect(res.statusCode).toBe(404);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toEqual({
+					"code": 404,
+					"message": "Not found",
+					"name": "NotFoundError",
+					"type": "NOT_FOUND"
+				});
+			});
+	});
+});
+
 
 describe("Test dynamic routing with actions", () => {
 	let broker;
@@ -4812,5 +4938,126 @@ describe("Test pathToRegexpOptions", () => {
 			});
 	});
 
+
+});
+
+describe("Test named routes with same path", () => {
+	let broker;
+	let service;
+	let server;
+
+	const hook1 = jest.fn();
+	const hook2 = jest.fn();
+
+	beforeAll(() => {
+		[broker, service, server] = setup({
+			routes: false
+		});
+		return broker.start();
+	});
+
+	afterAll(() => broker.stop());
+
+	beforeEach(() => {
+		hook1.mockClear();
+		hook2.mockClear();
+	});
+
+	it("should not find '/my/hi'", () => {
+		return request(server)
+			.get("/my/hello")
+			.then(res => {
+				expect(res.statusCode).toBe(404);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toEqual({
+					"code": 404,
+					"message": "Not found",
+					"name": "NotFoundError",
+					"type": "NOT_FOUND"
+				});
+			});
+	});
+
+	it("should not find '/my/hello'", () => {
+		return request(server)
+			.get("/my/hello")
+			.then(res => {
+				expect(res.statusCode).toBe(404);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toEqual({
+					"code": 404,
+					"message": "Not found",
+					"name": "NotFoundError",
+					"type": "NOT_FOUND"
+				});
+			});
+	});
+
+	it("create routes", () => {
+		service.addRoute({
+			name: "no-auth",
+			path: "/my",
+			aliases: {
+				"hello": "test.hello"
+			},
+			onBeforeCall: hook1
+		});
+
+		service.addRoute({
+			name: "with-auth",
+			path: "/my",
+			aliases: {
+				"hi": "test.hello"
+			},
+			onBeforeCall: hook2
+		});
+	});
+
+	it("should find 'hello", () => {
+		return request(server)
+			.get("/my/hello")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toBe("Hello Moleculer");
+
+				expect(hook1).toHaveBeenCalledTimes(1);
+				expect(hook2).toHaveBeenCalledTimes(0);
+			});
+	});
+
+	it("should find 'hi", () => {
+		return request(server)
+			.get("/my/hi")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toBe("Hello Moleculer");
+
+				expect(hook1).toHaveBeenCalledTimes(0);
+				expect(hook2).toHaveBeenCalledTimes(1);
+			});
+	});
+
+	it("change route & should find '/other/hello'", () => {
+		service.addRoute({
+			name: "with-auth",
+			path: "/other",
+			aliases: {
+				"hello": "test.hello"
+			}
+		});
+
+		return request(server)
+			.get("/other/hello")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toBe("Hello Moleculer");
+
+				expect(hook1).toHaveBeenCalledTimes(0);
+				expect(hook2).toHaveBeenCalledTimes(0);
+			});
+	});
 
 });

@@ -8,7 +8,7 @@
 			"type": "node",
 			"request": "launch",
 			"name": "Launch demo",
-			"program": "${file}",
+			"program": "${workspaceRoot}/examples/dev/index.js",
 			"cwd": "${workspaceRoot}",
 			"env": {
 				"PORT": "3000"
