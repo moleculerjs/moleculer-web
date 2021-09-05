@@ -265,10 +265,14 @@ module.exports = {
 
 		removeRoute: {
 			params: {
-				path: { type: "string" }
+				name: { type: "string", optional: true },
+				path: { type: "string", optional: true }
 			},
 			visibility: "public",
 			handler(ctx) {
+				if (ctx.params.name != null)
+					return this.removeRouteByName(ctx.params.name);
+
 				return this.removeRoute(ctx.params.path);
 			}
 		},
@@ -1134,7 +1138,7 @@ module.exports = {
 		 */
 		addRoute(opts, toBottom = true) {
 			const route = this.createRoute(opts);
-			const idx = this.routes.findIndex(r => r.path == route.path);
+			const idx = this.routes.findIndex(r => this.isEqualRoutes(r, route));
 			if (idx !== -1) {
 				// Replace the previous
 				this.routes[idx] = route;
@@ -1159,6 +1163,26 @@ module.exports = {
 		 */
 		removeRoute(path) {
 			const idx = this.routes.findIndex(r => r.opts.path == path);
+			if (idx !== -1) {
+				const route = this.routes[idx];
+
+				// Clean global aliases for this route
+				this.aliases = this.aliases.filter(a => a.route != route);
+
+				// Remote route
+				this.routes.splice(idx, 1);
+
+				return true;
+			}
+			return false;
+		},
+
+		/**
+		 * Remove a route by name
+		 * @param {String} name
+		 */
+		removeRouteByName(name) {
+			const idx = this.routes.findIndex(r => r.opts.name == name);
 			if (idx !== -1) {
 				const route = this.routes[idx];
 
@@ -1199,6 +1223,7 @@ module.exports = {
 		createRoute(opts) {
 			this.logRouteRegistration(`Register route to '${opts.path}'`);
 			let route = {
+				name: opts.name,
 				opts,
 				middlewares: []
 			};
@@ -1338,7 +1363,7 @@ module.exports = {
 		 */
 		createRouteAliases(route, aliases) {
 			// Clean previous aliases for this route
-			this.aliases = this.aliases.filter(a => a.route.path != route.path);
+			this.aliases = this.aliases.filter(a => !this.isEqualRoutes(a.route, route));
 
 			// Process aliases definitions from route settings
 			_.forIn(aliases, (action, matchPath) => {
@@ -1352,6 +1377,20 @@ module.exports = {
 			if (route.opts.autoAliases) {
 				this.regenerateAutoAliases(route);
 			}
+		},
+
+		/**
+		 * Checks whether the routes are same.
+		 *
+		 * @param {Object} routeA
+		 * @param {Object} routeB
+		 * @returns {Boolean}
+		 */
+		isEqualRoutes(routeA, routeB) {
+			if (routeA.name != null && routeB.name != null) {
+				return routeA.name === routeB.name;
+			}
+			return routeA.path === routeB.path;
 		},
 
 		/**
