@@ -38,11 +38,7 @@ declare module "moleculer-web" {
         action: string
     }
 
-    // From: https://github.com/DefinitelyTyped/DefinitelyTyped/blob/master/types/cors/index.d.ts
-    type CustomOrigin = (
-        requestOrigin: string | undefined,
-        callback: (err: Error | null, allow?: boolean) => void
-    ) => void;
+    type CustomOrigin = (origin: string) => boolean;
 
     interface CorsOptions {
         origin?: boolean | string | RegExp | (string | RegExp)[] | CustomOrigin;
