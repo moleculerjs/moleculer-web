@@ -16,21 +16,21 @@ module.exports = {
         path: "/api",
 
         routes: [
-			{
-				name: "no-auth-route", // unique name
-				path: "/",
-				aliases: {
-					hi: "greeter.hello",
-				}
-			},
-			{
-				name: "with-auth-route", // unique name
-				path: "/",
-				aliases: {
-					"hello": "greeter.hello",
-				},
-				authorization: true
-			}
+            {
+                name: "no-auth-route", // unique name
+                path: "/",
+                aliases: {
+                    hi: "greeter.hello",
+                }
+            },
+            {
+                name: "with-auth-route", // unique name
+                path: "/",
+                aliases: {
+                    "hello": "greeter.hello",
+                },
+                authorization: true
+            }
         ]
     }
 };
