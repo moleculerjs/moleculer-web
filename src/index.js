@@ -542,7 +542,7 @@ module.exports = {
 
 			// Authentication
 			if (route.authentication) {
-				const user = await this.authenticate(ctx, route, req, res);
+				const user = await route.authentication.call(this, ctx, route, req, res);
 				if (user) {
 					this.logger.debug("Authenticated user", user);
 					ctx.meta.user = user;
@@ -554,7 +554,7 @@ module.exports = {
 
 			// Authorization
 			if (route.authorization) {
-				await this.authorize(ctx, route, req, res);
+				await route.authorization.call(this, ctx, route, req, res);
 			}
 
 			// Call the action or alias
@@ -1230,18 +1230,24 @@ module.exports = {
 				middlewares: []
 			};
 			if (opts.authorization) {
-				if (!_.isFunction(this.authorize)) {
+				let fn = this.authorize;
+				if (_.isString(opts.authorization)) fn = this[opts.authorization];
+
+				if (!_.isFunction(fn)) {
 					this.logger.warn("Define 'authorize' method in the service to enable authorization.");
-					route.authorization = false;
+					route.authorization = null;
 				} else
-					route.authorization = true;
+					route.authorization = fn;
 			}
 			if (opts.authentication) {
-				if (!_.isFunction(this.authenticate)) {
+				let fn = this.authenticate;
+				if (_.isString(opts.authentication)) fn = this[opts.authentication];
+
+				if (!_.isFunction(fn)) {
 					this.logger.warn("Define 'authenticate' method in the service to enable authentication.");
-					route.authentication = false;
+					route.authentication = null;
 				} else
-					route.authentication = true;
+					route.authentication = fn;
 			}
 
 			// Call options
@@ -1294,7 +1300,7 @@ module.exports = {
 			}
 
 			// Rate limiter (Inspired by https://github.com/dotcypress/micro-ratelimit/)
-			const rateLimit = opts.rateLimit || this.settings.rateLimit
+			const rateLimit = opts.rateLimit || this.settings.rateLimit;
 			if (rateLimit) {
 				let opts = Object.assign({}, {
 					window: 60 * 1000,
