@@ -65,11 +65,22 @@ broker.createService({
 	},
 
 	methods: {
+		aaaAuthn() {
+			this.logger.info("Called 'aaaAuthn' method.");
+		},
 		aaaAuthz() {
 			this.logger.info("Called 'aaaAuthz' method.");
 		},
+
+		bbbAuthn() {
+			this.logger.info("Called 'bbbAuthn' method.");
+		},
 		bbbAuthz() {
 			this.logger.info("Called 'bbbAuthz' method.");
+		},
+
+		authenticate() {
+			this.logger.info("Called original 'authenticate' method.");
 		},
 		authorize() {
 			this.logger.info("Called original 'authorize' method.");
