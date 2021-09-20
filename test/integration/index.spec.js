@@ -2227,12 +2227,12 @@ describe("Test CORS", () => {
 			})
 			.then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
 	});
-	
+
 	it("with custom global settings (function)", () => {
 		[broker, service, server] = setup({
 			cors: {
 				origin: (origin) => {
-					return origin === "http://localhost:3000";	
+					return origin === "http://localhost:3000";
 				},
 				exposedHeaders: "X-Response-Time",
 				credentials: true
@@ -2953,7 +2953,7 @@ describe("Test authentication", () => {
 			}]
 		})[1];
 
-		expect(service.routes[0].authentication).toBe(false);
+		expect(service.routes[0].authentication).toBeNull();
 	});
 
 	it("authenticated user", () => {
@@ -2978,7 +2978,7 @@ describe("Test authentication", () => {
 		});
 		const server = service.server;
 
-		expect(service.routes[0].authentication).toBe(true);
+		expect(typeof service.routes[0].authentication).toBe("function");
 
 		return broker.start()
 			.then(() => request(server)
@@ -3010,7 +3010,7 @@ describe("Test authentication", () => {
 		});
 		const server = service.server;
 
-		expect(service.routes[0].authentication).toBe(true);
+		expect(typeof service.routes[0].authentication).toBe("function");
 
 		return broker.start()
 			.then(() => request(server)
@@ -3042,7 +3042,7 @@ describe("Test authentication", () => {
 		});
 		const server = service.server;
 
-		expect(service.routes[0].authentication).toBe(true);
+		expect(typeof service.routes[0].authentication).toBe("function");
 
 		return broker.start()
 			.then(() => request(server)
@@ -3072,7 +3072,7 @@ describe("Test authorization", () => {
 			}]
 		})[1];
 
-		expect(service.routes[0].authorization).toBe(false);
+		expect(service.routes[0].authorization).toBeNull();
 	});
 
 	it("should return with data", () => {
@@ -3092,7 +3092,7 @@ describe("Test authorization", () => {
 		});
 		const server = service.server;
 
-		expect(service.routes[0].authorization).toBe(true);
+		expect(typeof service.routes[0].authorization).toBe("function");
 
 		return broker.start()
 			.then(() => request(server)
@@ -3124,7 +3124,7 @@ describe("Test authorization", () => {
 		});
 		const server = service.server;
 
-		expect(service.routes[0].authorization).toBe(true);
+		expect(typeof service.routes[0].authorization).toBe("function");
 
 		return broker.start()
 			.then(() => request(server)
