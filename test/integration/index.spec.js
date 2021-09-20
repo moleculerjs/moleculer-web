@@ -2227,12 +2227,12 @@ describe("Test CORS", () => {
 			})
 			.then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
 	});
-	
+
 	it("with custom global settings (function)", () => {
 		[broker, service, server] = setup({
 			cors: {
 				origin: (origin) => {
-					return origin === "http://localhost:3000";	
+					return origin === "http://localhost:3000";
 				},
 				exposedHeaders: "X-Response-Time",
 				credentials: true
@@ -2953,7 +2953,7 @@ describe("Test authentication", () => {
 			}]
 		})[1];
 
-		expect(service.routes[0].authentication).toBe(false);
+		expect(service.routes[0].authentication).toBeNull();
 	});
 
 	it("authenticated user", () => {
@@ -2978,7 +2978,7 @@ describe("Test authentication", () => {
 		});
 		const server = service.server;
 
-		expect(service.routes[0].authentication).toBe(true);
+		expect(typeof service.routes[0].authentication).toBe("function");
 
 		return broker.start()
 			.then(() => request(server)
@@ -3010,7 +3010,7 @@ describe("Test authentication", () => {
 		});
 		const server = service.server;
 
-		expect(service.routes[0].authentication).toBe(true);
+		expect(typeof service.routes[0].authentication).toBe("function");
 
 		return broker.start()
 			.then(() => request(server)
@@ -3042,7 +3042,7 @@ describe("Test authentication", () => {
 		});
 		const server = service.server;
 
-		expect(service.routes[0].authentication).toBe(true);
+		expect(typeof service.routes[0].authentication).toBe("function");
 
 		return broker.start()
 			.then(() => request(server)
@@ -3072,7 +3072,7 @@ describe("Test authorization", () => {
 			}]
 		})[1];
 
-		expect(service.routes[0].authorization).toBe(false);
+		expect(service.routes[0].authorization).toBeNull();
 	});
 
 	it("should return with data", () => {
@@ -3092,7 +3092,7 @@ describe("Test authorization", () => {
 		});
 		const server = service.server;
 
-		expect(service.routes[0].authorization).toBe(true);
+		expect(typeof service.routes[0].authorization).toBe("function");
 
 		return broker.start()
 			.then(() => request(server)
@@ -3124,7 +3124,7 @@ describe("Test authorization", () => {
 		});
 		const server = service.server;
 
-		expect(service.routes[0].authorization).toBe(true);
+		expect(typeof service.routes[0].authorization).toBe("function");
 
 		return broker.start()
 			.then(() => request(server)
@@ -3141,6 +3141,123 @@ describe("Test authorization", () => {
 				expect(authorize).toHaveBeenCalledTimes(1);
 				expect(authorize).toHaveBeenCalledWith(expect.any(Context), expect.any(Object), expect.any(http.IncomingMessage), expect.any(http.ServerResponse));
 			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
+	});
+
+});
+
+describe("Test authentication", () => {
+	let broker, service, server;
+
+	const bAuthn = jest.fn();
+	const bAuthz = jest.fn();
+	const cAuthn = jest.fn();
+	const cAuthz = jest.fn();
+	const authenticate = jest.fn();
+	const authorize = jest.fn();
+
+	beforeAll(async () => {
+		broker = new ServiceBroker({ logger: false });
+		broker.loadService("./test/services/test.service");
+
+		service = broker.createService({
+			mixins: [ApiGateway],
+			settings: {
+				routes: [
+					{
+						path: "A",
+						authentication: true,
+						authorization: true
+					},
+					{
+						path: "B",
+						authentication: "bAuthn",
+						authorization: "bAuthz"
+					},
+					{
+						path: "C",
+						authentication: "cAuthn",
+						authorization: "cAuthz"
+					},
+				]
+			},
+			methods: {
+				bAuthn,
+				bAuthz,
+				cAuthn,
+				cAuthz,
+				authenticate,
+				authorize,
+			}
+		});
+		server = service.server;
+
+		await broker.start();
+	});
+	afterAll(() => broker.stop());
+
+	beforeEach(() => {
+		bAuthn.mockClear();
+		bAuthz.mockClear();
+
+		cAuthn.mockClear();
+		cAuthz.mockClear();
+
+		authenticate.mockClear();
+		authorize.mockClear();
+	});
+
+	it("should call original authenticate & authorize methods", () => {
+		return request(server)
+			.get("/A/test/hello")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.body).toBe("Hello Moleculer");
+
+				expect(authenticate).toHaveBeenCalledTimes(1);
+				expect(authorize).toHaveBeenCalledTimes(1);
+
+				expect(bAuthn).toHaveBeenCalledTimes(0);
+				expect(bAuthz).toHaveBeenCalledTimes(0);
+
+				expect(cAuthn).toHaveBeenCalledTimes(0);
+				expect(cAuthz).toHaveBeenCalledTimes(0);
+			});
+	});
+
+	it("should call B authenticate & authorize methods", () => {
+		return request(server)
+			.get("/B/test/hello")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.body).toBe("Hello Moleculer");
+
+				expect(authenticate).toHaveBeenCalledTimes(0);
+				expect(authorize).toHaveBeenCalledTimes(0);
+
+				expect(bAuthn).toHaveBeenCalledTimes(1);
+				expect(bAuthz).toHaveBeenCalledTimes(1);
+
+				expect(cAuthn).toHaveBeenCalledTimes(0);
+				expect(cAuthz).toHaveBeenCalledTimes(0);
+			});
+	});
+
+	it("should call C authenticate & authorize methods", () => {
+		return request(server)
+			.get("/C/test/hello")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.body).toBe("Hello Moleculer");
+
+				expect(authenticate).toHaveBeenCalledTimes(0);
+				expect(authorize).toHaveBeenCalledTimes(0);
+
+				expect(bAuthn).toHaveBeenCalledTimes(0);
+				expect(bAuthz).toHaveBeenCalledTimes(0);
+
+				expect(cAuthn).toHaveBeenCalledTimes(1);
+				expect(cAuthz).toHaveBeenCalledTimes(1);
+			});
 	});
 
 });
