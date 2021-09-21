@@ -1,3 +1,58 @@
+<a name="0.10.2"></a>
+# 0.10.2 (2021-09-05)
+
+## Named routes
+Many developers issued that version 0.10 doesn't support multiple routes with the same path. This version fixes it but you should give a unique name for the routes if they have same path.
+
+**Example**
+You can call `/api/hi` without auth, but `/api/hello` only with auth.
+
+```js
+const ApiGateway = require("moleculer-web");
+
+module.exports = {
+    mixins: [ApiGateway],
+    settings: {
+        path: "/api",
+
+        routes: [
+            {
+                name: "no-auth-route", // unique name
+                path: "/",
+                aliases: {
+                    hi: "greeter.hello",
+                }
+            },
+            {
+                name: "with-auth-route", // unique name
+                path: "/",
+                aliases: {
+                    "hello": "greeter.hello",
+                },
+                authorization: true
+            }
+        ]
+    }
+};
+```
+
+## Changes
+- add `removeRouteByName(name: string)` method to remove a route by its name.
+
+
+-----------------------------
+<a name="0.10.1"></a>
+# 0.10.1 (2021-09-01)
+
+## Changes
+- set the default JSON bodyparser if `bodyParser: true`. [#258](https://github.com/moleculerjs/moleculer-web/issues/258)
+- add `pathToRegexpOptions` to route options to make available to pass options to `path-to-regexp` library. [#268](https://github.com/moleculerjs/moleculer-web/issues/268)
+- add `debounceTime` to route options to make available to change the debounce time at service changes. [#260](https://github.com/moleculerjs/moleculer-web/issues/260)
+- new `errorHandler` method to allow developers to change the default error handling behaviour. [#266](https://github.com/moleculerjs/moleculer-web/issues/266)
+- fixes CORS preflight request handling in case of full-path aliases. [#269](https://github.com/moleculerjs/moleculer-web/issues/269)
+- update dependencies
+
+-----------------------------
 <a name="0.10.0"></a>
 # 0.10.0 (2021-06-27)
 

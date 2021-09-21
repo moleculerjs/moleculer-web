@@ -1741,6 +1741,44 @@ describe("Test body-parsers", () => {
 	beforeAll(() => {
 	});
 
+	describe("JSON parser should be set to default", () => {
+		it("When its value is null / undefined", () => {
+			[broker, service, server] = setup({
+				routes: [{}]
+			});
+
+			expect(Array.isArray(service.routes) && service.routes.length === 1).toBeTruthy();
+			const middlewares = service.routes[0].middlewares;
+			expect(Array.isArray(middlewares) && middlewares.length === 1).toBeTruthy();
+			expect(typeof middlewares[0] === "function" && middlewares[0].name === "jsonParser").toBeTruthy();
+		});
+
+		it("When its value is true", () => {
+			[broker, service, server] = setup({
+				routes: [{
+					"bodyParsers": true
+				}]
+			});
+
+			expect(Array.isArray(service.routes) && service.routes.length === 1).toBeTruthy();
+			const middlewares = service.routes[0].middlewares;
+			expect(Array.isArray(middlewares) && middlewares.length === 1).toBeTruthy();
+			expect(typeof middlewares[0] === "function" && middlewares[0].name === "jsonParser").toBeTruthy();
+		});
+
+		it("But not truly", () => {
+			[broker, service, server] = setup({
+				routes: [{
+					"bodyParsers": 1
+				}]
+			});
+
+			expect(Array.isArray(service.routes) && service.routes.length === 1).toBeTruthy();
+			const middlewares = service.routes[0].middlewares;
+			expect(Array.isArray(middlewares) && middlewares.length === 0).toBeTruthy();
+		});
+	});
+
 	it("POST /api/test.gretter without bodyParsers", () => {
 		[broker, service, server] = setup({
 			routes: [{
@@ -2186,6 +2224,39 @@ describe("Test CORS", () => {
 				expect(res.headers["access-control-expose-headers"]).toBe("X-Response-Time");
 
 				expect(res.body).toBe("Hello Moleculer");
+			})
+			.then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
+	});
+
+	it("with custom global settings (function)", () => {
+		[broker, service, server] = setup({
+			cors: {
+				origin: (origin) => {
+					return origin === "http://localhost:3000";
+				},
+				exposedHeaders: "X-Response-Time",
+				credentials: true
+			}
+		});
+
+		return broker.start()
+			.then(() => request(server)
+				.get("/test/hello")
+				.set("Origin", "http://localhost:3000"))
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.headers["access-control-allow-origin"]).toBe("http://localhost:3000");
+				expect(res.headers["access-control-allow-credentials"]).toBe("true");
+				expect(res.headers["access-control-expose-headers"]).toBe("X-Response-Time");
+
+				expect(res.body).toBe("Hello Moleculer");
+			})
+			.then(() => request(server)
+				.get("/test/hello")
+				.set("Origin", "http://badhost:3000"))
+			.then(res => {
+				expect(res.statusCode).toBe(403);
 			})
 			.then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
 	});
@@ -2882,7 +2953,7 @@ describe("Test authentication", () => {
 			}]
 		})[1];
 
-		expect(service.routes[0].authentication).toBe(false);
+		expect(service.routes[0].authentication).toBeNull();
 	});
 
 	it("authenticated user", () => {
@@ -2907,7 +2978,7 @@ describe("Test authentication", () => {
 		});
 		const server = service.server;
 
-		expect(service.routes[0].authentication).toBe(true);
+		expect(typeof service.routes[0].authentication).toBe("function");
 
 		return broker.start()
 			.then(() => request(server)
@@ -2939,7 +3010,7 @@ describe("Test authentication", () => {
 		});
 		const server = service.server;
 
-		expect(service.routes[0].authentication).toBe(true);
+		expect(typeof service.routes[0].authentication).toBe("function");
 
 		return broker.start()
 			.then(() => request(server)
@@ -2971,7 +3042,7 @@ describe("Test authentication", () => {
 		});
 		const server = service.server;
 
-		expect(service.routes[0].authentication).toBe(true);
+		expect(typeof service.routes[0].authentication).toBe("function");
 
 		return broker.start()
 			.then(() => request(server)
@@ -3001,7 +3072,7 @@ describe("Test authorization", () => {
 			}]
 		})[1];
 
-		expect(service.routes[0].authorization).toBe(false);
+		expect(service.routes[0].authorization).toBeNull();
 	});
 
 	it("should return with data", () => {
@@ -3021,7 +3092,7 @@ describe("Test authorization", () => {
 		});
 		const server = service.server;
 
-		expect(service.routes[0].authorization).toBe(true);
+		expect(typeof service.routes[0].authorization).toBe("function");
 
 		return broker.start()
 			.then(() => request(server)
@@ -3053,7 +3124,7 @@ describe("Test authorization", () => {
 		});
 		const server = service.server;
 
-		expect(service.routes[0].authorization).toBe(true);
+		expect(typeof service.routes[0].authorization).toBe("function");
 
 		return broker.start()
 			.then(() => request(server)
@@ -3070,6 +3141,123 @@ describe("Test authorization", () => {
 				expect(authorize).toHaveBeenCalledTimes(1);
 				expect(authorize).toHaveBeenCalledWith(expect.any(Context), expect.any(Object), expect.any(http.IncomingMessage), expect.any(http.ServerResponse));
 			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
+	});
+
+});
+
+describe("Test authentication", () => {
+	let broker, service, server;
+
+	const bAuthn = jest.fn();
+	const bAuthz = jest.fn();
+	const cAuthn = jest.fn();
+	const cAuthz = jest.fn();
+	const authenticate = jest.fn();
+	const authorize = jest.fn();
+
+	beforeAll(async () => {
+		broker = new ServiceBroker({ logger: false });
+		broker.loadService("./test/services/test.service");
+
+		service = broker.createService({
+			mixins: [ApiGateway],
+			settings: {
+				routes: [
+					{
+						path: "A",
+						authentication: true,
+						authorization: true
+					},
+					{
+						path: "B",
+						authentication: "bAuthn",
+						authorization: "bAuthz"
+					},
+					{
+						path: "C",
+						authentication: "cAuthn",
+						authorization: "cAuthz"
+					},
+				]
+			},
+			methods: {
+				bAuthn,
+				bAuthz,
+				cAuthn,
+				cAuthz,
+				authenticate,
+				authorize,
+			}
+		});
+		server = service.server;
+
+		await broker.start();
+	});
+	afterAll(() => broker.stop());
+
+	beforeEach(() => {
+		bAuthn.mockClear();
+		bAuthz.mockClear();
+
+		cAuthn.mockClear();
+		cAuthz.mockClear();
+
+		authenticate.mockClear();
+		authorize.mockClear();
+	});
+
+	it("should call original authenticate & authorize methods", () => {
+		return request(server)
+			.get("/A/test/hello")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.body).toBe("Hello Moleculer");
+
+				expect(authenticate).toHaveBeenCalledTimes(1);
+				expect(authorize).toHaveBeenCalledTimes(1);
+
+				expect(bAuthn).toHaveBeenCalledTimes(0);
+				expect(bAuthz).toHaveBeenCalledTimes(0);
+
+				expect(cAuthn).toHaveBeenCalledTimes(0);
+				expect(cAuthz).toHaveBeenCalledTimes(0);
+			});
+	});
+
+	it("should call B authenticate & authorize methods", () => {
+		return request(server)
+			.get("/B/test/hello")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.body).toBe("Hello Moleculer");
+
+				expect(authenticate).toHaveBeenCalledTimes(0);
+				expect(authorize).toHaveBeenCalledTimes(0);
+
+				expect(bAuthn).toHaveBeenCalledTimes(1);
+				expect(bAuthz).toHaveBeenCalledTimes(1);
+
+				expect(cAuthn).toHaveBeenCalledTimes(0);
+				expect(cAuthz).toHaveBeenCalledTimes(0);
+			});
+	});
+
+	it("should call C authenticate & authorize methods", () => {
+		return request(server)
+			.get("/C/test/hello")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.body).toBe("Hello Moleculer");
+
+				expect(authenticate).toHaveBeenCalledTimes(0);
+				expect(authorize).toHaveBeenCalledTimes(0);
+
+				expect(bAuthn).toHaveBeenCalledTimes(0);
+				expect(bAuthz).toHaveBeenCalledTimes(0);
+
+				expect(cAuthn).toHaveBeenCalledTimes(1);
+				expect(cAuthz).toHaveBeenCalledTimes(1);
+			});
 	});
 
 });
@@ -3681,6 +3869,132 @@ describe("Test dynamic routing", () => {
 
 	it("change route should replace aliases & find '/my/helloagain'", () => {
 		service.addRoute({
+			path: "/my",
+			aliases: {
+				"helloagain": "test.hello"
+			}
+		});
+
+		return request(server)
+			.get("/my/helloagain")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toBe("Hello Moleculer");
+			});
+	});
+
+	it("but should not find '/my/hello'", () => {
+		return request(server)
+			.get("/my/hello")
+			.then(res => {
+				expect(res.statusCode).toBe(404);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toEqual({
+					"code": 404,
+					"message": "Not found",
+					"name": "NotFoundError",
+					"type": "NOT_FOUND"
+				});
+			});
+	});
+});
+
+describe("Test dynamic routing with name", () => {
+	let broker;
+	let service;
+	let server;
+
+	beforeAll(() => {
+		[broker, service, server] = setup({
+			routes: false
+		});
+		return broker.start();
+	});
+
+	afterAll(() => broker.stop());
+
+	it("should not find '/my/hello'", () => {
+		return request(server)
+			.get("/my/hello")
+			.then(res => {
+				expect(res.statusCode).toBe(404);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toEqual({
+					"code": 404,
+					"message": "Not found",
+					"name": "NotFoundError",
+					"type": "NOT_FOUND"
+				});
+			});
+	});
+
+	it("create route & should find '/my/hello'", () => {
+		service.addRoute({
+			name: "first",
+			path: "/my",
+			aliases: {
+				"hello": "test.hello"
+			}
+		});
+
+		return request(server)
+			.get("/my/hello")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toBe("Hello Moleculer");
+			});
+	});
+
+	it("change route & should find '/other/hello'", () => {
+		service.addRoute({
+			name: "second",
+			path: "/other",
+			aliases: {
+				"hello": "test.hello"
+			}
+		});
+
+		return request(server)
+			.get("/other/hello")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toBe("Hello Moleculer");
+			});
+	});
+
+	it("remove route & should not find '/other/hello'", () => {
+		service.removeRouteByName("second");
+
+		return request(server)
+			.get("/other/hello")
+			.then(res => {
+				expect(res.statusCode).toBe(404);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toEqual({
+					"code": 404,
+					"message": "Not found",
+					"name": "NotFoundError",
+					"type": "NOT_FOUND"
+				});
+			});
+	});
+
+	it("but should find '/my/hello'", () => {
+		return request(server)
+			.get("/my/hello")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toBe("Hello Moleculer");
+			});
+	});
+
+	it("change route should replace aliases & find '/my/helloagain'", () => {
+		service.addRoute({
+			name: "first",
 			path: "/my",
 			aliases: {
 				"helloagain": "test.hello"
@@ -4685,4 +4999,215 @@ describe("Test multi REST interfaces in service settings", () => {
 			});
 		});
 	});
+});
+
+
+describe("Test pathToRegexpOptions", () => {
+	let broker;
+	let server;
+	let service;
+
+	beforeAll(() => {
+		[broker, service, server] = setup({
+			path: "/api",
+			routes: [
+				{
+					path: "/t1",
+					aliases: {
+						"GET users": "users.create1",
+						"GET Users": "users.create2"
+					},
+				},
+				{
+					path: "/t2",
+					aliases: {
+						"GET users": "users.create1",
+						"GET Users": "users.create2"
+					},
+					pathToRegexpOptions: {
+						sensitive: true
+					}
+				},
+			],
+		});
+
+		broker.createService({
+			name: "users",
+			actions: {
+				create1() {
+					return "OK1";
+				},
+				create2() {
+					return "OK2";
+				}
+			}
+		});
+
+		return broker.start();
+	});
+
+	afterAll(() => broker.stop());
+
+	it("should find 'create1'", () => {
+		return request(server)
+			.get("/api/t1/users")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toEqual("OK1");
+			});
+	});
+
+	it("should find 'create1'", () => {
+		return request(server)
+			.get("/api/t1/Users")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toEqual("OK1");
+			});
+	});
+
+	it("should find 'create1'", () => {
+		return request(server)
+			.get("/api/t2/users")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toEqual("OK1");
+			});
+	});
+
+	it("should find 'create2'", () => {
+		return request(server)
+			.get("/api/t2/Users")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toEqual("OK2");
+			});
+	});
+
+
+});
+
+describe("Test named routes with same path", () => {
+	let broker;
+	let service;
+	let server;
+
+	const hook1 = jest.fn();
+	const hook2 = jest.fn();
+
+	beforeAll(() => {
+		[broker, service, server] = setup({
+			routes: false
+		});
+		return broker.start();
+	});
+
+	afterAll(() => broker.stop());
+
+	beforeEach(() => {
+		hook1.mockClear();
+		hook2.mockClear();
+	});
+
+	it("should not find '/my/hi'", () => {
+		return request(server)
+			.get("/my/hello")
+			.then(res => {
+				expect(res.statusCode).toBe(404);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toEqual({
+					"code": 404,
+					"message": "Not found",
+					"name": "NotFoundError",
+					"type": "NOT_FOUND"
+				});
+			});
+	});
+
+	it("should not find '/my/hello'", () => {
+		return request(server)
+			.get("/my/hello")
+			.then(res => {
+				expect(res.statusCode).toBe(404);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toEqual({
+					"code": 404,
+					"message": "Not found",
+					"name": "NotFoundError",
+					"type": "NOT_FOUND"
+				});
+			});
+	});
+
+	it("create routes", () => {
+		service.addRoute({
+			name: "no-auth",
+			path: "/my",
+			aliases: {
+				"hello": "test.hello"
+			},
+			onBeforeCall: hook1
+		});
+
+		service.addRoute({
+			name: "with-auth",
+			path: "/my",
+			aliases: {
+				"hi": "test.hello"
+			},
+			onBeforeCall: hook2
+		});
+	});
+
+	it("should find 'hello", () => {
+		return request(server)
+			.get("/my/hello")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toBe("Hello Moleculer");
+
+				expect(hook1).toHaveBeenCalledTimes(1);
+				expect(hook2).toHaveBeenCalledTimes(0);
+			});
+	});
+
+	it("should find 'hi", () => {
+		return request(server)
+			.get("/my/hi")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toBe("Hello Moleculer");
+
+				expect(hook1).toHaveBeenCalledTimes(0);
+				expect(hook2).toHaveBeenCalledTimes(1);
+			});
+	});
+
+	it("change route & should find '/other/hello'", () => {
+		service.addRoute({
+			name: "with-auth",
+			path: "/other",
+			aliases: {
+				"hello": "test.hello"
+			}
+		});
+
+		return request(server)
+			.get("/other/hello")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
+				expect(res.body).toBe("Hello Moleculer");
+
+				expect(hook1).toHaveBeenCalledTimes(0);
+				expect(hook2).toHaveBeenCalledTimes(0);
+			});
+	});
+
 });

@@ -94,7 +94,10 @@ module.exports = {
 		optimizeOrder: true,
 
 		// CallOption for the root action `api.rest`
-		rootCallOptions: null
+		rootCallOptions: null,
+
+		// Debounce wait time before call to regenerate aliases when received event "$services.changed"
+		debounceTime: 500
 	},
 
 	// Service's metadata
@@ -157,8 +160,13 @@ module.exports = {
 				if (!this.routes || this.routes.length == 0)
 					return null;
 
+				let method = req.method;
+				if (method == "OPTIONS") {
+					method = req.headers["access-control-request-method"];
+				}
+
 				// Check aliases
-				const found = this.resolveAlias(url, req.method);
+				const found = this.resolveAlias(url, method);
 				if (found) {
 					const route = found.alias.route;
 					// Update URLs for middlewares
@@ -257,10 +265,14 @@ module.exports = {
 
 		removeRoute: {
 			params: {
-				path: { type: "string" }
+				name: { type: "string", optional: true },
+				path: { type: "string", optional: true }
 			},
 			visibility: "public",
 			handler(ctx) {
+				if (ctx.params.name != null)
+					return this.removeRouteByName(ctx.params.name);
+
 				return this.removeRoute(ctx.params.path);
 			}
 		},
@@ -287,6 +299,21 @@ module.exports = {
 				this.logger.debug("Override default http(s) server timeout:", this.settings.httpServerTimeout);
 				this.server.setTimeout(this.settings.httpServerTimeout);
 			}
+		},
+
+		/**
+		 * Default error handling behaviour
+		 *
+		 * @param {HttpRequest} req
+		 * @param {HttpResponse} res
+		 * @param {Error} err
+		 */
+		errorHandler(req, res, err) {
+			// don't log client side errors unless it's configured
+			if (this.settings.log4XXResponses || (err && !_.inRange(err.code, 400, 500))) {
+				this.logger.error("   Request error!", err.name, ":", err.message, "\n", err.stack, "\nData:", err.data);
+			}
+			this.sendError(req, res, err);
 		},
 
 		/**
@@ -337,11 +364,7 @@ module.exports = {
 					this.send404(req, res);
 				}
 			} catch (err) {
-				// don't log client side errors only it's configured
-				if (this.settings.log4XXResponses || (err && !_.inRange(err.code, 400, 500))) {
-					this.logger.error("   Request error!", err.name, ":", err.message, "\n", err.stack, "\nData:", err.data);
-				}
-				this.sendError(req, res, err);
+				this.errorHandler(req, res, err);
 			}
 		},
 
@@ -519,7 +542,7 @@ module.exports = {
 
 			// Authentication
 			if (route.authentication) {
-				const user = await this.authenticate(ctx, route, req, res);
+				const user = await route.authentication.call(this, ctx, route, req, res);
 				if (user) {
 					this.logger.debug("Authenticated user", user);
 					ctx.meta.user = user;
@@ -531,7 +554,7 @@ module.exports = {
 
 			// Authorization
 			if (route.authorization) {
-				await this.authorize(ctx, route, req, res);
+				await route.authorization.call(this, ctx, route, req, res);
 			}
 
 			// Call the action or alias
@@ -989,6 +1012,8 @@ module.exports = {
 					const wildcard = new RegExp(`^${_.escapeRegExp(settings).replace(/\\\*/g, ".*").replace(/\\\?/g, ".")}$`);
 					return origin.match(wildcard);
 				}
+			} else if (_.isFunction(settings)) {
+				return settings.call(this, origin);
 			} else if (Array.isArray(settings)) {
 				for (let i = 0; i < settings.length; i++) {
 					if (this.checkOrigin(origin, settings[i])) {
@@ -1115,7 +1140,7 @@ module.exports = {
 		 */
 		addRoute(opts, toBottom = true) {
 			const route = this.createRoute(opts);
-			const idx = this.routes.findIndex(r => r.path == route.path);
+			const idx = this.routes.findIndex(r => this.isEqualRoutes(r, route));
 			if (idx !== -1) {
 				// Replace the previous
 				this.routes[idx] = route;
@@ -1140,6 +1165,26 @@ module.exports = {
 		 */
 		removeRoute(path) {
 			const idx = this.routes.findIndex(r => r.opts.path == path);
+			if (idx !== -1) {
+				const route = this.routes[idx];
+
+				// Clean global aliases for this route
+				this.aliases = this.aliases.filter(a => a.route != route);
+
+				// Remote route
+				this.routes.splice(idx, 1);
+
+				return true;
+			}
+			return false;
+		},
+
+		/**
+		 * Remove a route by name
+		 * @param {String} name
+		 */
+		removeRouteByName(name) {
+			const idx = this.routes.findIndex(r => r.opts.name == name);
 			if (idx !== -1) {
 				const route = this.routes[idx];
 
@@ -1180,29 +1225,36 @@ module.exports = {
 		createRoute(opts) {
 			this.logRouteRegistration(`Register route to '${opts.path}'`);
 			let route = {
+				name: opts.name,
 				opts,
 				middlewares: []
 			};
 			if (opts.authorization) {
-				if (!_.isFunction(this.authorize)) {
+				let fn = this.authorize;
+				if (_.isString(opts.authorization)) fn = this[opts.authorization];
+
+				if (!_.isFunction(fn)) {
 					this.logger.warn("Define 'authorize' method in the service to enable authorization.");
-					route.authorization = false;
+					route.authorization = null;
 				} else
-					route.authorization = true;
+					route.authorization = fn;
 			}
 			if (opts.authentication) {
-				if (!_.isFunction(this.authenticate)) {
+				let fn = this.authenticate;
+				if (_.isString(opts.authentication)) fn = this[opts.authentication];
+
+				if (!_.isFunction(fn)) {
 					this.logger.warn("Define 'authenticate' method in the service to enable authentication.");
-					route.authentication = false;
+					route.authentication = null;
 				} else
-					route.authentication = true;
+					route.authentication = fn;
 			}
 
 			// Call options
 			route.callOptions = opts.callOptions;
 
 			// Create body parsers as middlewares
-			if (opts.bodyParsers == null) {
+			if (opts.bodyParsers == null || opts.bodyParsers === true) {
 				// Set default JSON body-parser
 				opts.bodyParsers = {
 					json: true
@@ -1248,7 +1300,8 @@ module.exports = {
 			}
 
 			// Rate limiter (Inspired by https://github.com/dotcypress/micro-ratelimit/)
-			if (this.settings.rateLimit) {
+			const rateLimit = opts.rateLimit || this.settings.rateLimit;
+			if (rateLimit) {
 				let opts = Object.assign({}, {
 					window: 60 * 1000,
 					limit: 30,
@@ -1259,7 +1312,7 @@ module.exports = {
 							req.socket.remoteAddress ||
 							req.connection.socket.remoteAddress;
 					}
-				}, this.settings.rateLimit);
+				}, rateLimit);
 
 				route.rateLimit = opts;
 
@@ -1319,7 +1372,7 @@ module.exports = {
 		 */
 		createRouteAliases(route, aliases) {
 			// Clean previous aliases for this route
-			this.aliases = this.aliases.filter(a => a.route.path != route.path);
+			this.aliases = this.aliases.filter(a => !this.isEqualRoutes(a.route, route));
 
 			// Process aliases definitions from route settings
 			_.forIn(aliases, (action, matchPath) => {
@@ -1333,6 +1386,20 @@ module.exports = {
 			if (route.opts.autoAliases) {
 				this.regenerateAutoAliases(route);
 			}
+		},
+
+		/**
+		 * Checks whether the routes are same.
+		 *
+		 * @param {Object} routeA
+		 * @param {Object} routeB
+		 * @returns {Boolean}
+		 */
+		isEqualRoutes(routeA, routeB) {
+			if (routeA.name != null && routeB.name != null) {
+				return routeA.name === routeB.name;
+			}
+			return routeA.path === routeB.path;
 		},
 
 		/**
@@ -1580,10 +1647,11 @@ module.exports = {
 			this.settings.routes.forEach(route => this.addRoute(route));
 
 		// Regenerate all auto aliases routes
+		const debounceTime = this.settings.debounceTime > 0 ? parseInt(this.settings.debounceTime) : 500;
 		this.regenerateAllAutoAliases = _.debounce(() => {
 			/* istanbul ignore next */
 			this.routes.forEach(route => route.opts.autoAliases && this.regenerateAutoAliases(route));
-		}, 500);
+		}, debounceTime);
 	},
 
 

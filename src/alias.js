@@ -81,7 +81,7 @@ class Alias {
 		}
 
 		this.keys = [];
-		this.re = pathToRegexp(this.fullPath, this.keys, {}); // Options: https://github.com/pillarjs/path-to-regexp#usage
+		this.re = pathToRegexp(this.fullPath, this.keys, route.opts.pathToRegexpOptions || {}); // Options: https://github.com/pillarjs/path-to-regexp#usage
 
 		if (this.type == "multipart") {
 			// Handle file upload in multipart form
