@@ -409,6 +409,14 @@ declare module "moleculer-web" {
 		 * @see https://moleculer.services/docs/0.14/moleculer-web.html#Rate-limiter
 		 */
 		rateLimit?: RateLimit
+		/**
+		 * It supports Connect-like middlewares in global-level, route-level & alias-level.<br>
+		 * Signature: function (req, res, next) {...}.<br>
+		 * Signature: function (err, req, res, next) {...}.<br>
+		 * For more info check [express middleware](https://expressjs.com/en/guide/using-middleware.html)
+		 * @see https://moleculer.services/docs/0.14/moleculer-web.html#Middlewares
+		 */
+		use?: (routeMiddleware | routeMiddlewareError)[]
 	}
 	export type ApiRouteSchema = CommonSettingSchema & {
 		/**
@@ -516,14 +524,6 @@ declare module "moleculer-web" {
 		 * @see https://moleculer.services/docs/0.14/moleculer-web.html#Whitelist
 		 */
 		whitelist?: Array<string|RegExp>
-		/**
-		 * It supports Connect-like middlewares in global-level, route-level & alias-level.<br>
-		 * Signature: function (req, res, next) {...}.<br>
-		 * Signature: function (err, req, res, next) {...}.<br>
-		 * For more info check [express middleware](https://expressjs.com/en/guide/using-middleware.html)
-		 * @see https://moleculer.services/docs/0.14/moleculer-web.html#Middlewares
-		 */
-		use?: Array<routeMiddleware | routeMiddlewareError>
 	}
 
 	export type ApiSettingsSchema = CommonSettingSchema & {
