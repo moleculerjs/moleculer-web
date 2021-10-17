@@ -1,5 +1,107 @@
+<a name="0.10.3"></a>
+# 0.10.3 (2021-10-17)
+
+## Named authenticate & authorize methods [#275](https://github.com/moleculerjs/moleculer-web/issues/275)
+
+You can define custom authentication and authorization methods for every routes. In this case you should set the method name instead of `true` value.
+
+```js
+module.exports = {
+    mixins: ApiGatewayService,
+
+    settings: {
+
+        routes: [
+            {
+                path: "/aaa",
+                authentication: "aaaAuthn",
+                authorization: "aaaAuthz",
+                aliases: {
+                    "GET hello": "test.hello"
+                }
+            },
+            {
+                path: "/bbb",
+                authentication: "bbbAuthn",
+                authorization: "bbbAuthz",
+                aliases: {
+                    "GET hello": "test.hello"
+                }
+            },
+            {
+                path: "/ccc",
+                authentication: true,
+                authorization: true,
+                aliases: {
+                    "GET hello": "test.hello"
+                }
+            }
+        ]
+    },
+
+    methods: {
+        aaaAuthn() {
+            // ... do authn
+        },
+        aaaAuthz() {
+            // ... do authz
+        },
+
+        bbbAuthn() {
+            // ... do authn
+        },
+        bbbAuthz() {
+            // ... do authz
+        },
+
+        authenticate() {
+            // ... do authn
+        },
+        authorize() {
+            // ... do authz
+        }
+    }
+}
+```
+
+## Configure rate limit options in routes level
+
+```js
+module.exports = {
+    name: 'api',
+    mixins: [ApiGateway],
+    settings: {
+        rateLimit: rateLimitGlobalConfig,
+        routes: [
+            {
+                path: '/withLocalRateLimit',
+                // now you can pass rateLimit here
+                // it will override the global rateLimit
+                rateLimit: rateLimitConfig,
+                aliases: {
+                    'GET /2': 'test.2'
+                }
+            },
+            {
+                path: '/withGlobalRateLimit',
+                aliases: {
+                    'GET /1': 'test.1'
+                }
+            }
+        ]
+    }
+}
+```
+
+## Other changes
+- update dependencies.
+- add support for custom cors origin function. [#274](https://github.com/moleculerjs/moleculer-web/issues/274)
+- typescript definition file is rewritten. [#259](https://github.com/moleculerjs/moleculer-web/issues/259)
+
+-----------------------------
 <a name="0.10.2"></a>
 # 0.10.2 (2021-09-05)
+
 
 ## Named routes
 Many developers issued that version 0.10 doesn't support multiple routes with the same path. This version fixes it but you should give a unique name for the routes if they have same path.
