@@ -32,6 +32,7 @@
   "author": "MoleculerJS",
   "license": "MIT",
   "devDependencies": {
+    "@sinonjs/fake-timers": "^8.0.1",
     "benchmarkify": "^3.0.0",
     "compression": "^1.7.4",
     "coveralls": "^3.1.1",
@@ -45,7 +46,6 @@
     "jest": "^27.2.5",
     "jest-cli": "^27.2.5",
     "jsonwebtoken": "^8.5.1",
-    "lolex": "^6.0.0",
     "mime-types": "^2.1.33",
     "mkdirp": "^1.0.4",
     "moleculer": "^0.14.17",
