@@ -29,11 +29,13 @@ const broker = new ServiceBroker();
 broker.loadService(path.join(__dirname, "..", "post.service"));
 broker.loadService(path.join(__dirname, "..", "math.service"));
 broker.loadService(path.join(__dirname, "..", "auth.service"));
+broker.loadService(path.join(__dirname, "..", "test.service"));
 
 // Load API Gateway
 broker.createService({
 	mixins: ApiGatewayService,
 	settings: {
+		optimizeOrder: false,
 		routes: [
 			{
 				path: "/defined/",
@@ -52,6 +54,10 @@ broker.createService({
 				whitelist: [
 					"auth.*"
 				],
+				autoAliases: true,
+			},
+			{
+				path: "/params",
 				autoAliases: true,
 			},
 			{

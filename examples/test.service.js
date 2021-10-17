@@ -114,6 +114,22 @@ module.exports = {
 
 		where(ctx) {
 			return `Response from ${this.broker.nodeID}`;
+		},
+
+		func2: {
+			rest : "GET /fixed/:param1/:param2",
+			visibility : "published",
+			async handler(ctx) {
+				return Promise.resolve("func2");
+			}
+		},
+
+		func1: {
+			rest : "GET /:param1/:param2/:param3/:param4?",
+			visibility : "published",
+			async handler(ctx) {
+				return Promise.resolve("func1");
+			}
 		}
 	}
 };
