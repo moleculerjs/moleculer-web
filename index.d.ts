@@ -8,8 +8,8 @@ declare module "moleculer-web" {
 		LogLevels,
 		Service,
 		ServiceSchema,
-	} from 'moleculer'
-	import { IncomingMessage, ServerResponse } from 'http'
+	} from "moleculer";
+	import { IncomingMessage, ServerResponse } from "http";
 
 	// RateLimit
 	type generateRateLimitKey = (req: IncomingMessage) => string
@@ -153,25 +153,31 @@ declare module "moleculer-web" {
 		}
 
 		interface Busboy extends NodeJS.WritableStream {
-			on(event: 'field',
-			   listener: (
-				   fieldname: string,
-				   val: any,
-				   fieldnameTruncated: boolean,
-				   valTruncated: boolean,
-				   encoding: string,
-				   mimetype: string) => void): this;
-			on(event: 'file',
-			   listener: (
-				   fieldname: string,
-				   file: NodeJS.ReadableStream,
-				   filename: string,
-				   encoding: string,
-				   mimetype: string) => void): this;
-			on(event: 'finish', callback: () => void): this;
-			on(event: 'partsLimit', callback: () => void): this;
-			on(event: 'filesLimit', callback: () => void): this;
-			on(event: 'fieldsLimit', callback: () => void): this;
+			on(
+				event: "field",
+				listener: (
+					fieldname: string,
+					val: any,
+					fieldnameTruncated: boolean,
+					valTruncated: boolean,
+					encoding: string,
+					mimetype: string
+				) => void
+			): this;
+			on(
+				event: "file",
+				listener: (
+					fieldname: string,
+					file: NodeJS.ReadableStream,
+					filename: string,
+					encoding: string,
+					mimetype: string
+				) => void
+			): this;
+			on(event: "finish", callback: () => void): this;
+			on(event: "partsLimit", callback: () => void): this;
+			on(event: "filesLimit", callback: () => void): this;
+			on(event: "fieldsLimit", callback: () => void): this;
 			on(event: string, listener: Function): this;
 		}
 	}
@@ -310,29 +316,29 @@ declare module "moleculer-web" {
 	}
 
 	class Alias {
-		_generated: boolean
-		service: Service
-		route: Route
-		type: string
-		method: string
-		path: string
-		handler: null | Array<Function>
-		action: string
+		_generated: boolean;
+		service: Service;
+		route: Route;
+		type: string;
+		method: string;
+		path: string;
+		handler: null | Array<Function>;
+		action: string;
 	}
 
 	class Route {
-		callOptions: any
-		cors: CorsOptions
-		etag: boolean | "weak" | "strong" | Function
-		hasWhitelist: boolean
-		logging: boolean
-		mappingPolicy: string
-		middlewares: Array<Function>
-		onBeforeCall?: onBeforeCall
-		onAfterCall?: onAfterCall
-		opts: any
-		path: string
-		whitelist: Array<string>
+		callOptions: any;
+		cors: CorsOptions;
+		etag: boolean | "weak" | "strong" | Function;
+		hasWhitelist: boolean;
+		logging: boolean;
+		mappingPolicy: string;
+		middlewares: Array<Function>;
+		onBeforeCall?: onBeforeCall;
+		onAfterCall?: onAfterCall;
+		opts: any;
+		path: string;
+		whitelist: Array<string>;
 	}
 
 	type onBeforeCall = (ctx: Context, route: Route, req: IncomingMessage, res: ServerResponse) => void
@@ -349,12 +355,12 @@ declare module "moleculer-web" {
 		 * "Break-out" of a router by calling {next('router')};
 		 * @see https://expressjs.com/en/guide/using-middleware.html#middleware.router
 		 */
-		(deferToNext: 'router'): void;
+		(deferToNext: "router"): void;
 		/**
 		 * "Break-out" of a route by calling {next('route')};
 		 * @see https://expressjs.com/en/guide/using-middleware.html#middleware.application
 		 */
-		(deferToNext: 'route'): void;
+		(deferToNext: "route"): void;
 	}
 
 	type routeMiddleware = (req: IncomingMessage, res: ServerResponse, next: NextFunction) => void
@@ -363,7 +369,7 @@ declare module "moleculer-web" {
 	type ETagFunction = (body: any) => string
 	type AliasFunction = (req: IncomingRequest, res: GatewayResponse, next?: (err?: any) => void) => void
 	type AliasRouteSchema = {
-		type?: 'call' | 'multipart' | 'stream' | string
+		type?: "call" | "multipart" | "stream" | string
 		method?: "GET" | "POST" | "PUT" | "DELETE" | "*" | "HEAD" | "OPTIONS" | "PATCH" | string
 		path?: string
 		handler?: AliasFunction
@@ -397,7 +403,7 @@ declare module "moleculer-web" {
 		 * @default settings.etag (null)
 		 * @see https://moleculer.services/docs/0.14/moleculer-web.html#ETag
 		 */
-		etag?: boolean | 'weak' | 'strong' | ETagFunction
+		etag?: boolean | "weak" | "strong" | ETagFunction
 		/**
 		 * You can add route-level & global-level custom error handlers.<br>
 		 * In handlers, you must call the `res.end`. Otherwise, the request is unhandled.
@@ -433,16 +439,20 @@ declare module "moleculer-web" {
 		 * 1. Set `authentication: true` in your routes
 		 * 2. Define your custom authenticate method in your service
 		 * 3. The returned value will be set to the `ctx.meta.user` property. You can use it in your actions to get the logged in user entity.
+		 * <br>`From v0.10.3`: You can define custom `authentication` and `authorization` methods for every routes.
+		 * In this case you should set `the method name` instead of `true` value.
 		 * @see https://moleculer.services/docs/0.14/moleculer-web.html#Authentication
 		 */
-		authentication?: boolean
+		authentication?: boolean | string
 		/**
 		 * You can implement authorization. Do 2 things to enable it.
-		 * 1. Set authorization: true in your routes
+		 * 1. Set authorization: true in your routes.
 		 * 2. Define the authorize method in service.
+		 * <br>`From v0.10.3`: You can define custom `authentication` and `authorization` methods for every routes.
+		 * In this case you should set `the method name` instead of `true` value.
 		 * @see https://moleculer.services/docs/0.14/moleculer-web.html#Authorization
 		 */
-		authorization?: boolean
+		authorization?: boolean | string
 		/**
 		 * The auto-alias feature allows you to declare your route alias directly in your services.<br>
 		 * The gateway will dynamically build the full routes from service schema.
@@ -493,13 +503,20 @@ declare module "moleculer-web" {
 		 * `restrict` - enable to request only the routes with aliases.
 		 * @see https://moleculer.services/docs/0.14/moleculer-web.html#Mapping-policy
 		 */
-		mappingPolicy?: 'all' | 'restrict'
+		mappingPolicy?: "all" | "restrict"
 		/**
 		 * To disable parameter merging set `mergeParams: false` in route settings.<br>
 		 * Default is `true`
 		 * @see https://moleculer.services/docs/0.14/moleculer-web.html#Disable-merging
 		 */
 		mergeParams?: boolean
+		/**
+		 * `From v0.10.2`
+		 * <br>Support multiple routes with the same path.
+		 * <br>You should give a unique name for the routes if they have same path.
+		 * @see https://github.com/moleculerjs/moleculer-web/releases/tag/v0.10.2
+		 */
+		name?: string
 		/**
 		 * The route has before & after call hooks. You can use it to set `ctx.meta`, access `req.headers` or modify the response data.
 		 * @see https://moleculer.services/docs/0.14/moleculer-web.html#Route-hooks
@@ -632,21 +649,21 @@ declare module "moleculer-web" {
 	}
 
 	class IncomingRequest extends IncomingMessage {
-		$action: ActionSchema
-		$alias: Alias
-		$ctx: Context
-		$endpoint: ActionEndpoint
-		$next: any
-		$params: any
-		$route: Route
-		$service: Service
-		$startTime: Array<number>
+		$action: ActionSchema;
+		$alias: Alias;
+		$ctx: Context;
+		$endpoint: ActionEndpoint;
+		$next: any;
+		$params: any;
+		$route: Route;
+		$service: Service;
+		$startTime: Array<number>;
 	}
 
 	class GatewayResponse extends ServerResponse {
-		$ctx: Context
-		$route: Route
-		$service: Service
+		$ctx: Context;
+		$route: Route;
+		$service: Service;
 	}
 
 	const ApiGatewayService: ServiceSchema & { Errors: ApiGatewayErrors, IncomingRequest: IncomingRequest, GatewayResponse: GatewayResponse };
