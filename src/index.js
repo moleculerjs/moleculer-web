@@ -1455,6 +1455,7 @@ module.exports = {
 
 			const services = this.broker.registry.getServiceList({ withActions: true, grouping: true });
 			services.forEach(service => {
+				if(!service.settings) return;
 				const serviceName = service.fullName || getServiceFullname(service);
 
 				let basePaths = [];
