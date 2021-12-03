@@ -12,7 +12,7 @@
  * 		http://localhost:3000/bbb/hello
  *
  *  - Try to call /ccc/hello. It will call "authenticate" and "authorize" original methods
- * 		http://localhost:3000/bbb/hello
+ * 		http://localhost:3000/ccc/hello
  *
  */
 
