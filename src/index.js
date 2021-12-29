@@ -537,12 +537,12 @@ module.exports = {
 
 			// onBeforeCall handling
 			if (route.onBeforeCall) {
-				await route.onBeforeCall.call(this, ctx, route, req, res);
+				await route.onBeforeCall.call(this, ctx, route, req, res, alias);
 			}
 
 			// Authentication
 			if (route.authentication) {
-				const user = await route.authentication.call(this, ctx, route, req, res);
+				const user = await route.authentication.call(this, ctx, route, req, res, alias);
 				if (user) {
 					this.logger.debug("Authenticated user", user);
 					ctx.meta.user = user;
@@ -554,7 +554,7 @@ module.exports = {
 
 			// Authorization
 			if (route.authorization) {
-				await route.authorization.call(this, ctx, route, req, res);
+				await route.authorization.call(this, ctx, route, req, res, alias);
 			}
 
 			// Call the action or alias
