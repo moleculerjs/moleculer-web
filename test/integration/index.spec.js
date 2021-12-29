@@ -2679,7 +2679,7 @@ describe("Test onBeforeCall & onAfterCall", () => {
 				expect(res.statusCode).toBe(200);
 				expect(res.text).toBe("Hello Custom");
 				expect(beforeCall).toHaveBeenCalledTimes(1);
-				expect(beforeCall).toHaveBeenCalledWith(expect.any(Context), expect.any(Object), expect.any(http.IncomingMessage), expect.any(http.ServerResponse));
+				expect(beforeCall).toHaveBeenCalledWith(expect.any(Context), expect.any(Object), expect.any(http.IncomingMessage), expect.any(http.ServerResponse), expect.any(Object));
 
 				const ctx = beforeCall.mock.calls[0][0];
 				const req = beforeCall.mock.calls[0][2];
