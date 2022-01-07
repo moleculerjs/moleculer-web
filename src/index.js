@@ -371,15 +371,15 @@ module.exports = {
 				}
 			}
 
-			const shouldBreak = this.corsHandler(this.settings, req, res);
-			if(shouldBreak) {
-				return;
-			}
-
 			try {
 				const result = await this.actions.rest({ req, res }, options);
 				if (result == null) {
 					// Not routed.
+
+					const shouldBreak = this.corsHandler(this.settings, req, res); // check cors settings first
+					if(shouldBreak) {
+						return;
+					}
 
 					// Serve assets static files
 					if (this.serve) {
@@ -880,16 +880,19 @@ module.exports = {
 
 			const ctx = req.$ctx;
 			let responseType = "application/json; charset=utf-8";
-			if (ctx.meta.$responseType) {
-				responseType = ctx.meta.$responseType;
-			}
-			if (ctx.meta.$responseHeaders) {
-				Object.keys(ctx.meta.$responseHeaders).forEach(key => {
-					if (key === "Content-Type" && !responseType)
-						responseType = ctx.meta.$responseHeaders[key];
-					else
-						res.setHeader(key, ctx.meta.$responseHeaders[key]);
-				});
+
+			if (ctx) {
+				if (ctx.meta.$responseType) {
+					responseType = ctx.meta.$responseType;
+				}
+				if (ctx.meta.$responseHeaders) {
+					Object.keys(ctx.meta.$responseHeaders).forEach(key => {
+						if (key === "Content-Type" && !responseType)
+							responseType = ctx.meta.$responseHeaders[key];
+						else
+							res.setHeader(key, ctx.meta.$responseHeaders[key]);
+					});
+				}
 			}
 
 			// Return with the error as JSON object
