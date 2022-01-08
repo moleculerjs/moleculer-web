@@ -559,6 +559,56 @@ describe("Test only assets", () => {
 
 });
 
+describe("Test assets with cors", () => {
+	let broker;
+	let service;
+	let server;
+
+	beforeAll(() => {
+		[broker, service, server] = setup({
+			assets: {
+				folder: path.join(__dirname, "..", "assets")
+			},
+			routes: null,
+			cors: {
+				origin: "a"
+			}
+		});
+		return broker.start();
+	});
+	afterAll(() => broker.stop());
+
+	it("pass cors and return 204", () => {
+		return request(server)
+			.options("/lorem.txt")
+			.set("Origin", "a")
+			.set("Access-Control-Request-Method", "GET")
+			.then(res => {
+				expect(res.statusCode).toBe(204);
+			});
+	});
+
+	it("pass cors (not exist file) and return 204", () => {
+		return request(server)
+			.options("/not-found.txt")
+			.set("Origin", "a")
+			.set("Access-Control-Request-Method", "GET")
+			.then(res => {
+				expect(res.statusCode).toBe(204);
+			});
+	});
+
+	it("not pass cors and return 204", () => {
+		return request(server)
+			.options("/lorem.txt")
+			.set("Origin", "b")
+			.set("Access-Control-Request-Method", "GET")
+			.then(res => {
+				expect(res.statusCode).toBe(403);
+			});
+	});
+});
+
 describe("Test assets & API route", () => {
 	let broker;
 	let service;
