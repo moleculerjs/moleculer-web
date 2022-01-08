@@ -17,6 +17,7 @@ const MockContext = () => Object.assign({
 	logger: MockLogger(),
 	sendError: jest.fn(),
 	send404: jest.fn(),
+	corsHandler: jest.fn(() => false),
 });
 
 const MockRequest = () => Object.assign(jest.fn(), { headers: {} });

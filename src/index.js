@@ -316,6 +316,31 @@ module.exports = {
 			this.sendError(req, res, err);
 		},
 
+		corsHandler(settings, req, res) {
+			// CORS headers
+			if (settings.cors) {
+				// Set CORS headers to `res`
+				this.writeCorsHeaders(settings, req, res, true);
+
+				// Is it a Preflight request?
+				if (req.method == "OPTIONS" && req.headers["access-control-request-method"]) {
+					// 204 - No content
+					res.writeHead(204, {
+						"Content-Length": "0"
+					});
+					res.end();
+
+					if (settings.logging) {
+						this.logResponse(req, res);
+					}
+
+					return true;
+				}
+			}
+
+			return false;
+		},
+
 		/**
 		 * HTTP request handler. It is called from native NodeJS HTTP server.
 		 *
@@ -350,6 +375,11 @@ module.exports = {
 				const result = await this.actions.rest({ req, res }, options);
 				if (result == null) {
 					// Not routed.
+
+					const shouldBreak = this.corsHandler(this.settings, req, res); // check cors settings first
+					if(shouldBreak) {
+						return;
+					}
 
 					// Serve assets static files
 					if (this.serve) {
@@ -391,24 +421,9 @@ module.exports = {
 					await composeThen.call(this, req, res, ...route.middlewares);
 					let params = {};
 
-					// CORS headers
-					if (route.cors) {
-						// Set CORS headers to `res`
-						this.writeCorsHeaders(route, req, res, true);
-
-						// Is it a Preflight request?
-						if (req.method == "OPTIONS" && req.headers["access-control-request-method"]) {
-							// 204 - No content
-							res.writeHead(204, {
-								"Content-Length": "0"
-							});
-							res.end();
-
-							if (route.logging)
-								this.logResponse(req, res);
-
-							return resolve(true);
-						}
+					const shouldBreak = this.corsHandler(route, req, res);
+					if(shouldBreak) {
+						return resolve(true);
 					}
 
 					// Merge params
@@ -865,16 +880,19 @@ module.exports = {
 
 			const ctx = req.$ctx;
 			let responseType = "application/json; charset=utf-8";
-			if (ctx.meta.$responseType) {
-				responseType = ctx.meta.$responseType;
-			}
-			if (ctx.meta.$responseHeaders) {
-				Object.keys(ctx.meta.$responseHeaders).forEach(key => {
-					if (key === "Content-Type" && !responseType)
-						responseType = ctx.meta.$responseHeaders[key];
-					else
-						res.setHeader(key, ctx.meta.$responseHeaders[key]);
-				});
+
+			if (ctx) {
+				if (ctx.meta.$responseType) {
+					responseType = ctx.meta.$responseType;
+				}
+				if (ctx.meta.$responseHeaders) {
+					Object.keys(ctx.meta.$responseHeaders).forEach(key => {
+						if (key === "Content-Type" && !responseType)
+							responseType = ctx.meta.$responseHeaders[key];
+						else
+							res.setHeader(key, ctx.meta.$responseHeaders[key]);
+					});
+				}
 			}
 
 			// Return with the error as JSON object
