@@ -2645,7 +2645,7 @@ describe("Test onBeforeCall & onAfterCall", () => {
 				expect(res.headers["x-custom-header"]).toBe("working");
 				expect(res.body).toBe("Hello Moleculer");
 				expect(beforeCall).toHaveBeenCalledTimes(1);
-				expect(beforeCall).toHaveBeenCalledWith(expect.any(Context), expect.any(Object), expect.any(http.IncomingMessage), expect.any(http.ServerResponse));
+				expect(beforeCall).toHaveBeenCalledWith(expect.any(Context), expect.any(Object), expect.any(http.IncomingMessage), expect.any(http.ServerResponse), expect.any(Object));
 
 				const ctx = beforeCall.mock.calls[0][0];
 				const req = beforeCall.mock.calls[0][2];
@@ -2679,7 +2679,7 @@ describe("Test onBeforeCall & onAfterCall", () => {
 				expect(res.statusCode).toBe(200);
 				expect(res.text).toBe("Hello Custom");
 				expect(beforeCall).toHaveBeenCalledTimes(1);
-				expect(beforeCall).toHaveBeenCalledWith(expect.any(Context), expect.any(Object), expect.any(http.IncomingMessage), expect.any(http.ServerResponse));
+				expect(beforeCall).toHaveBeenCalledWith(expect.any(Context), expect.any(Object), expect.any(http.IncomingMessage), expect.any(http.ServerResponse), expect.any(Object));
 
 				const ctx = beforeCall.mock.calls[0][0];
 				const req = beforeCall.mock.calls[0][2];
@@ -2989,7 +2989,7 @@ describe("Test authentication", () => {
 
 				expect(res.body).toBe(`Hello ${user.username}`);
 				expect(authenticate).toHaveBeenCalledTimes(1);
-				expect(authenticate).toHaveBeenCalledWith(expect.any(Context), expect.any(Object), expect.any(http.IncomingMessage), expect.any(http.ServerResponse));
+				expect(authenticate).toHaveBeenCalledWith(expect.any(Context), expect.any(Object), expect.any(http.IncomingMessage), expect.any(http.ServerResponse), expect.any(Object));
 			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
 	});
 
@@ -3021,7 +3021,7 @@ describe("Test authentication", () => {
 
 				expect(res.body).toBe("Who are you?");
 				expect(authenticate).toHaveBeenCalledTimes(1);
-				expect(authenticate).toHaveBeenCalledWith(expect.any(Context), expect.any(Object), expect.any(http.IncomingMessage), expect.any(http.ServerResponse));
+				expect(authenticate).toHaveBeenCalledWith(expect.any(Context), expect.any(Object), expect.any(http.IncomingMessage), expect.any(http.ServerResponse), expect.any(Object));
 			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
 	});
 
@@ -3057,7 +3057,7 @@ describe("Test authentication", () => {
 					name: "MoleculerError"
 				});
 				expect(authenticate).toHaveBeenCalledTimes(1);
-				expect(authenticate).toHaveBeenCalledWith(expect.any(Context), expect.any(Object), expect.any(http.IncomingMessage), expect.any(http.ServerResponse));
+				expect(authenticate).toHaveBeenCalledWith(expect.any(Context), expect.any(Object), expect.any(http.IncomingMessage), expect.any(http.ServerResponse), expect.any(Object));
 			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
 	});
 
@@ -3103,7 +3103,7 @@ describe("Test authorization", () => {
 
 				expect(res.body).toBe("Hello Moleculer");
 				expect(authorize).toHaveBeenCalledTimes(1);
-				expect(authorize).toHaveBeenCalledWith(expect.any(Context), expect.any(Object), expect.any(http.IncomingMessage), expect.any(http.ServerResponse));
+				expect(authorize).toHaveBeenCalledWith(expect.any(Context), expect.any(Object), expect.any(http.IncomingMessage), expect.any(http.ServerResponse), expect.any(Object));
 			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
 	});
 
@@ -3139,7 +3139,7 @@ describe("Test authorization", () => {
 					"name": "UnAuthorizedError"
 				});
 				expect(authorize).toHaveBeenCalledTimes(1);
-				expect(authorize).toHaveBeenCalledWith(expect.any(Context), expect.any(Object), expect.any(http.IncomingMessage), expect.any(http.ServerResponse));
+				expect(authorize).toHaveBeenCalledWith(expect.any(Context), expect.any(Object), expect.any(http.IncomingMessage), expect.any(http.ServerResponse), expect.any(Object));
 			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
 	});
 
