@@ -14,7 +14,7 @@ const ApiGateway = require("../../index");
 const { ServiceBroker, Context } = require("moleculer");
 const { MoleculerError } = require("moleculer").Errors;
 const { UnAuthorizedError, ERR_NO_TOKEN } = ApiGateway.Errors;
-const Busboy = require("busboy");
+const Busboy = require("@fastify/busboy");
 const Alias = require("../../src/alias");
 
 /*
