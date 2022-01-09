@@ -1670,6 +1670,8 @@ module.exports = {
 		this.regenerateAllAutoAliases = _.debounce(() => {
 			/* istanbul ignore next */
 			this.routes.forEach(route => route.opts.autoAliases && this.regenerateAutoAliases(route));
+
+			this.broker.broadcast("$api.aliases.regenerated");
 		}, debounceTime);
 	},
 

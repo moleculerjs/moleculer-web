@@ -11,6 +11,12 @@ module.exports = {
 		rest: ""
 	},
 
+	events: {
+		"$api.aliases.regenerated"() {
+			this.logger.info("Aliases regenerated!");
+		}
+	},
+
 	actions: {
 		hello: {
 			rest: "GET /hello",
