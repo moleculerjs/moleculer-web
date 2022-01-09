@@ -1,6 +1,22 @@
 <a name="0.10.3"></a>
 # 0.10.3 (2021-10-17)
 
+## What's Changed
+* d.ts for v0.10.2 v0.10.3 by @0x0a0d in https://github.com/moleculerjs/moleculer-web/pull/280
+* skip services without settings by @kechkibet in https://github.com/moleculerjs/moleculer-web/pull/283
+* Fix to comment in multi-auth example by @machinaexdeo in https://github.com/moleculerjs/moleculer-web/pull/286
+* Add alias as last parameter by @icebob in https://github.com/moleculerjs/moleculer-web/pull/290
+* Fix cors problem in assets by @moonrailgun in https://github.com/moleculerjs/moleculer-web/pull/289
+* Broadcast event after alias regeneration by @icebob in https://github.com/moleculerjs/moleculer-web/pull/292
+
+## Other changes
+- update dependencies.
+- change to @fastify/busboy implementation. [#287](https://github.com/moleculerjs/moleculer-web/issues/287)
+
+-----------------------------
+<a name="0.10.3"></a>
+# 0.10.3 (2021-10-17)
+
 ## Named authenticate & authorize methods [#275](https://github.com/moleculerjs/moleculer-web/issues/275)
 
 You can define custom authentication and authorization methods for every routes. In this case you should set the method name instead of `true` value.
