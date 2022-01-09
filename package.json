@@ -49,10 +49,9 @@
     "mime-types": "^2.1.33",
     "mkdirp": "^1.0.4",
     "moleculer": "^0.14.17",
-    "moleculer-repl": "^0.6.6",
+    "moleculer-repl": "^0.7.0",
     "nats": "^2.2.0",
     "nodemon": "^2.0.13",
-    "npm-check": "^5.9.2",
     "socket.io": "^4.3.1",
     "spdy": "^4.0.2",
     "supertest": "^6.1.6",
@@ -63,8 +62,8 @@
     "moleculer": "^0.13.0 || ^0.14.0"
   },
   "dependencies": {
+    "@fastify/busboy": "^1.0.0",
     "body-parser": "^1.19.0",
-    "busboy": "^0.3.1",
     "es6-error": "^4.1.1",
     "etag": "^1.8.1",
     "fresh": "^0.5.2",
