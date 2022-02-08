@@ -700,7 +700,7 @@ module.exports = {
 			}
 
 			// Redirect
-			if (res.statusCode >= 300 && res.statusCode < 400 && res.statusCode !== 304) {
+			if (res.statusCode==201 || (res.statusCode >= 300 && res.statusCode < 400 && res.statusCode !== 304)) {
 				const location = ctx.meta.$location;
 				/* istanbul ignore next */
 				if (!location) {
