@@ -311,6 +311,7 @@ describe("Test responses", () => {
 			.get("/test/customStatus")
 			.then(res => {
 				expect(res.statusCode).toBe(201);
+				expect(res.headers["location"]).toBe("/new/entity");
 				expect(res.res.statusMessage).toEqual("Entity created");
 				expect(res.text).toEqual("");
 			});
