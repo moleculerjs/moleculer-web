@@ -416,6 +416,8 @@ module.exports = {
 
 			return new this.Promise(async (resolve, reject) => {
 				res.once("finish", () => resolve(true));
+				res.once("close", (err) => reject(err));
+				res.once("error", (err) => reject(err));
 
 				try {
 					await composeThen.call(this, req, res, ...route.middlewares);
