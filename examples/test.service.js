@@ -118,6 +118,17 @@ module.exports = {
 			}
 		},
 
+		save: {
+			rest: {
+				method: "POST",
+				path: "/stream",
+				type: "stream"
+			},
+			handler(ctx) {
+				this.logger.info("Received stream:", ctx.params);
+			}
+		},
+
 		where(ctx) {
 			return `Response from ${this.broker.nodeID}`;
 		},
