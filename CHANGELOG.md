@@ -1,5 +1,5 @@
-<a name="0.10.3"></a>
-# 0.10.3 (2021-10-17)
+<a name="0.10.4"></a>
+# 0.10.4 (2022-01-09)
 
 ## What's Changed
 * d.ts for v0.10.2 v0.10.3 by @0x0a0d in https://github.com/moleculerjs/moleculer-web/pull/280
