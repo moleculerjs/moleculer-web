@@ -657,7 +657,7 @@ declare module "moleculer-web" {
 		$params: any;
 		$route: Route;
 		$service: Service;
-		$startTime: Array<number>;
+		$startTime: [number, number];
 		/**
 		 * Value from `IncomingMessage#url`. Includes query parameters.
 		 * `/path?id=1&example=true`
