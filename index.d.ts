@@ -681,6 +681,7 @@ declare module "moleculer-web" {
 		$ctx: Context;
 		$route: Route;
 		$service: Service;
+		locals: Record<string, unknown>;
 	}
 
 	const ApiGatewayService: ServiceSchema & { Errors: ApiGatewayErrors, IncomingRequest: IncomingRequest, GatewayResponse: GatewayResponse };
