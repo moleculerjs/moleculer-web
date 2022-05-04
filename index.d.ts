@@ -646,6 +646,11 @@ declare module "moleculer-web" {
 		 * @default true
 		 */
 		server?: boolean
+
+		/**
+		 * for extra setting's keys
+		 */
+		[k: string]: any
 	}
 
 	class IncomingRequest extends IncomingMessage {
