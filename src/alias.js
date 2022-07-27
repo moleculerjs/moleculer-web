@@ -158,7 +158,11 @@ class Alias {
 				if (_.isFunction(busboyOptions.onFileSizeLimit)) {
 					busboyOptions.onFileSizeLimit.call(this.service, file, busboy);
 				}
-				file.destroy(new PayloadTooLarge({ fieldname, filename, encoding, mimetype }));
+				file.destroy();
+				busboy.emit("error", new PayloadTooLarge({ fieldname, filename, encoding, mimetype }));
+			});
+			file.on("error", err => {
+				busboy.emit("error", err);
 			});
 			numOfFiles++;
 			promises.push(ctx.call(this.action, file, _.defaultsDeep({}, this.route.opts.callOptions, { meta: {
@@ -209,7 +213,7 @@ class Alias {
 		});
 
 		/* istanbul ignore next */
-		busboy.on("error", err => {
+		busboy.once("error", err => {
 			req.unpipe(req.busboy);
 			req.resume();
 			this.service.sendError(req, res, err);
