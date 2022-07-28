@@ -90,6 +90,9 @@ module.exports = {
 		// HTTP Server Timeout
 		httpServerTimeout: null,
 
+		// Request Timeout. More info: https://github.com/moleculerjs/moleculer-web/issues/206
+		requestTimeout: 300000, // Sets node.js v18 default timeout: https://nodejs.org/api/http.html#serverrequesttimeout
+
 		// Optimize route order
 		optimizeOrder: true,
 
@@ -299,6 +302,9 @@ module.exports = {
 				this.logger.debug("Override default http(s) server timeout:", this.settings.httpServerTimeout);
 				this.server.setTimeout(this.settings.httpServerTimeout);
 			}
+	
+			this.server.requestTimeout = this.settings.requestTimeout
+			this.logger.debug("Setting http(s) server request timeout to:", this.settings.requestTimeout);
 		},
 
 		/**
