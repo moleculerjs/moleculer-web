@@ -2639,7 +2639,7 @@ describe("Test Rate Limiter", () => {
 		});
 
 		expect(factory).toHaveBeenCalledTimes(1);
-		expect(factory).toHaveBeenCalledWith(10000, service.routes[0].rateLimit);
+		expect(factory).toHaveBeenCalledWith(10000, service.routes[0].rateLimit, expect.any(ServiceBroker));
 	});
 });
 

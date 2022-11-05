@@ -7,14 +7,15 @@ declare module "moleculer-web" {
 		Errors,
 		LogLevels,
 		Service,
+		ServiceBroker,
 		ServiceSchema,
 	} from "moleculer";
-	import { IncomingMessage, ServerResponse } from "http";
+	import {IncomingMessage, ServerResponse} from "http";
 
 	// RateLimit
-	type generateRateLimitKey = (req: IncomingMessage)=> string
+	export type generateRateLimitKey = (req: IncomingMessage)=> string
 
-	interface RateLimit {
+	export interface RateLimitSettings {
 		/**
 		 * How long to keep record of requests in memory (in milliseconds).
 		 * @default 60000 (1 min)
@@ -44,11 +45,22 @@ declare module "moleculer-web" {
 		 * @default MemoryStore
 		 * @see https://moleculer.services/docs/0.14/moleculer-web.html#Custom-Store-example
 		 */
-		StoreFactory?: MemoryStore
+		StoreFactory?: typeof RateLimitStore
 	}
 
-	class MemoryStore {
-		constructor(clearPeriod: number, opts: RateLimit)
+	export abstract class RateLimitStore {
+		public resetTime: number;
+		public constructor(clearPeriod: number, opts?: RateLimitSettings, broker?: ServiceBroker)
+		inc(key: string): number | Promise<number>
+	}
+
+	interface RateLimitStores {
+		MemoryStore: typeof MemoryStore
+	}
+
+	class MemoryStore extends RateLimitStore {
+
+		constructor(clearPeriod: number, opts?: RateLimitSettings, broker?: ServiceBroker)
 
 		/**
 		 * Increment the counter by key
@@ -414,7 +426,7 @@ declare module "moleculer-web" {
 		 * The Moleculer-Web has a built-in rate limiter with a memory store.
 		 * @see https://moleculer.services/docs/0.14/moleculer-web.html#Rate-limiter
 		 */
-		rateLimit?: RateLimit
+		rateLimit?: RateLimitSettings
 		/**
 		 * It supports Connect-like middlewares in global-level, route-level & alias-level.<br>
 		 * Signature: function (req, res, next) {...}.<br>
@@ -671,6 +683,6 @@ declare module "moleculer-web" {
 		$service: Service;
 	}
 
-	const ApiGatewayService: ServiceSchema & { Errors: ApiGatewayErrors, IncomingRequest: IncomingRequest, GatewayResponse: GatewayResponse };
+	const ApiGatewayService: ServiceSchema & { Errors: ApiGatewayErrors, IncomingRequest: IncomingRequest, GatewayResponse: GatewayResponse, RateLimitStores: RateLimitStores };
 	export default ApiGatewayService;
 }
