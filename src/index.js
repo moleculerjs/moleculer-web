@@ -302,8 +302,8 @@ module.exports = {
 				this.logger.debug("Override default http(s) server timeout:", this.settings.httpServerTimeout);
 				this.server.setTimeout(this.settings.httpServerTimeout);
 			}
-	
-			this.server.requestTimeout = this.settings.requestTimeout
+
+			this.server.requestTimeout = this.settings.requestTimeout;
 			this.logger.debug("Setting http(s) server request timeout to:", this.settings.requestTimeout);
 		},
 
@@ -526,7 +526,7 @@ module.exports = {
 
 				const key = opts.key(req);
 				if (key) {
-					const remaining = opts.limit - store.inc(key);
+					const remaining = opts.limit - await store.inc(key);
 					if (opts.headers) {
 						res.setHeader("X-Rate-Limit-Limit", opts.limit);
 						res.setHeader("X-Rate-Limit-Remaining", Math.max(0, remaining));
@@ -1343,9 +1343,9 @@ module.exports = {
 				route.rateLimit = opts;
 
 				if (opts.StoreFactory)
-					route.rateLimit.store = new opts.StoreFactory(opts.window, opts);
+					route.rateLimit.store = new opts.StoreFactory(opts.window, opts, this.broker);
 				else
-					route.rateLimit.store = new MemoryStore(opts.window, opts);
+					route.rateLimit.store = new MemoryStore(opts.window, opts, this.broker);
 
 			}
 
@@ -1729,4 +1729,7 @@ module.exports = {
 	serveStatic,
 
 	Errors: require("./errors"),
+	RateLimitStores: {
+		MemoryStore: require("./memory-store")
+	}
 };
