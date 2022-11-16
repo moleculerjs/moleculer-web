@@ -327,7 +327,7 @@ declare module "moleculer-web" {
 		ERR_ORIGIN_NOT_FOUND: "ORIGIN_NOT_FOUND"
 	}
 
-	class Alias {
+	export class Alias {
 		_generated: boolean;
 		service: Service;
 		route: Route;
@@ -338,7 +338,7 @@ declare module "moleculer-web" {
 		action: string;
 	}
 
-	class Route {
+	export class Route {
 		callOptions: any;
 		cors: CorsOptions;
 		etag: boolean | "weak" | "strong" | Function;
@@ -598,31 +598,31 @@ declare module "moleculer-web" {
 		 * Log each request (default to "info" level)
 		 * @default "info"
 		 */
-		logRequest?: LogLevels
+		logRequest?: LogLevels | null
 
 		/**
 		 * Log the request ctx.params (default to "debug" level)
 		 * @default "debug"
 		 */
-		logRequestParams?: LogLevels
+		logRequestParams?: LogLevels | null
 
 		/**
 		 * Log each response (default to "info" level)
 		 * @default "info"
 		 */
-		logResponse?: LogLevels
+		logResponse?: LogLevels | null
 
 		/**
 		 * Log the response data (default to disable)
 		 * @default null
 		 */
-		logResponseData?: LogLevels
+		logResponseData?: LogLevels | null
 
 		/**
 		 * Log the route registration/aliases related activity
 		 * @default "info"
 		 */
-		logRouteRegistration?: LogLevels
+		logRouteRegistration?: LogLevels | null
 
 		/**
 		 * Optimize route order
