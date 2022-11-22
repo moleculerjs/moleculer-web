@@ -353,8 +353,8 @@ declare module "moleculer-web" {
 		whitelist: Array<string>;
 	}
 
-	type onBeforeCall = (ctx: Context, route: Route, req: IncomingMessage, res: ServerResponse)=> void
-	type onAfterCall = (ctx: Context, route: Route, req: IncomingMessage, res: ServerResponse, data: any)=> any
+	type onBeforeCall = (ctx: Context, route: Route, req: IncomingRequest, res: GatewayResponse)=> void
+	type onAfterCall = (ctx: Context, route: Route, req: IncomingRequest, res: GatewayResponse, data: any)=> any
 
 	/**
 	 * Expressjs next function<br>
@@ -665,7 +665,7 @@ declare module "moleculer-web" {
 		[k: string]: any
 	}
 
-	class IncomingRequest extends IncomingMessage {
+	export class IncomingRequest extends IncomingMessage {
 		$action: ActionSchema;
 		$alias: Alias;
 		$ctx: Context;
@@ -677,7 +677,7 @@ declare module "moleculer-web" {
 		$startTime: Array<number>;
 	}
 
-	class GatewayResponse extends ServerResponse {
+	export class GatewayResponse extends ServerResponse {
 		$ctx: Context;
 		$route: Route;
 		$service: Service;
