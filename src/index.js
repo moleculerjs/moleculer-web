@@ -526,7 +526,7 @@ module.exports = {
 
 				const key = opts.key(req);
 				if (key) {
-					const remaining = opts.limit - store.inc(key);
+					const remaining = opts.limit - await store.inc(key);
 					if (opts.headers) {
 						res.setHeader("X-Rate-Limit-Limit", opts.limit);
 						res.setHeader("X-Rate-Limit-Remaining", Math.max(0, remaining));
