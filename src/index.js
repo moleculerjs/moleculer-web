@@ -520,13 +520,13 @@ module.exports = {
 			}
 
 			// Rate limiter
-			if (route.rateLimit) {
-				const opts = route.rateLimit;
-				const store = route.rateLimit.store;
+			if (route.opts.rateLimit) {
+				const opts = route.opts.rateLimit;
+				const store = route.opts.rateLimit.store;
 
 				const key = opts.key(req);
 				if (key) {
-					const remaining = opts.limit - await store.inc(key);
+					const remaining = opts.limit - store.inc(key);
 					if (opts.headers) {
 						res.setHeader("X-Rate-Limit-Limit", opts.limit);
 						res.setHeader("X-Rate-Limit-Remaining", Math.max(0, remaining));
