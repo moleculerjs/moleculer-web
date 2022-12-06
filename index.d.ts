@@ -668,19 +668,37 @@ declare module "moleculer-web" {
 	export class IncomingRequest extends IncomingMessage {
 		$action: ActionSchema;
 		$alias: Alias;
-		$ctx: Context;
+		$ctx: Context<{ req: IncomingMessage; res: ServerResponse; }>;
 		$endpoint: ActionEndpoint;
 		$next: any;
 		$params: any;
 		$route: Route;
 		$service: Service;
-		$startTime: Array<number>;
+		$startTime: [number, number];
+		/**
+		 * Value from `IncomingMessage#url`. Includes query parameters.
+		 * `/path?id=1&example=true`
+		 */
+		originalUrl: string;
+		/**
+		 * Value from `IncomingMessage#url`. Query parameters stripped off.
+		 * `/path`
+		 */
+		parsedUrl: string;
+		/**
+		 * Parsed query parameters as an object.
+		 * ```javascript
+		 * { id: '1', example: 'true' }
+		 * ```
+		 */ 
+		query: Record<string, string>;
 	}
 
 	export class GatewayResponse extends ServerResponse {
 		$ctx: Context;
 		$route: Route;
 		$service: Service;
+		locals: Record<string, unknown>;
 	}
 
 	const ApiGatewayService: ServiceSchema & { Errors: ApiGatewayErrors, IncomingRequest: IncomingRequest, GatewayResponse: GatewayResponse, RateLimitStores: RateLimitStores };
