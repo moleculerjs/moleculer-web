@@ -1,76 +1,75 @@
 declare module "moleculer-web" {
-	import {
+	import { IncomingMessage, ServerResponse } from "http";
+	import type {
 		ActionEndpoint,
 		ActionSchema,
 		CallingOptions,
 		Context,
-		Errors,
 		LogLevels,
 		Service,
 		ServiceBroker,
 		ServiceSchema,
 	} from "moleculer";
-	import {IncomingMessage, ServerResponse} from "http";
+	import { Errors } from "moleculer";
 
 	// RateLimit
-	export type generateRateLimitKey = (req: IncomingMessage)=> string
+	export type generateRateLimitKey = (req: IncomingMessage) => string;
 
 	export interface RateLimitSettings {
 		/**
 		 * How long to keep record of requests in memory (in milliseconds).
 		 * @default 60000 (1 min)
 		 */
-		window?: number
+		window?: number;
 
 		/**
 		 * Max number of requests during window.
 		 * @default 30
 		 */
-		limit?: number
+		limit?: number;
 
 		/**
 		 * Set rate limit headers to response.
 		 * @default false
 		 */
-		headers?: boolean
+		headers?: boolean;
 
 		/**
 		 * Function used to generate keys.
 		 * @default req => req.headers["x-forwarded-for"] || req.connection.remoteAddress || req.socket.remoteAddress || req.connection.socket.remoteAddress
 		 */
-		key?: generateRateLimitKey
+		key?: generateRateLimitKey;
 
 		/**
 		 * use rate limit Custom Store
 		 * @default MemoryStore
 		 * @see https://moleculer.services/docs/0.14/moleculer-web.html#Custom-Store-example
 		 */
-		StoreFactory?: typeof RateLimitStore
+		StoreFactory?: typeof RateLimitStore;
 	}
 
 	export abstract class RateLimitStore {
-		public resetTime: number;
-		public constructor(clearPeriod: number, opts?: RateLimitSettings, broker?: ServiceBroker)
-		inc(key: string): number | Promise<number>
+		resetTime: number;
+		constructor(clearPeriod: number, opts?: RateLimitSettings, broker?: ServiceBroker);
+		inc(key: string): number | Promise<number>;
 	}
 
 	interface RateLimitStores {
-		MemoryStore: typeof MemoryStore
+		MemoryStore: typeof MemoryStore;
 	}
 
 	class MemoryStore extends RateLimitStore {
-
-		constructor(clearPeriod: number, opts?: RateLimitSettings, broker?: ServiceBroker)
+		constructor(clearPeriod: number, opts?: RateLimitSettings, broker?: ServiceBroker);
 
 		/**
 		 * Increment the counter by key
 		 */
-		inc(key: string): number
+		inc(key: string): number;
 
 		/**
 		 * Reset all counters
 		 */
-		reset(): void
+		reset(): void;
 	}
 
 	// bodyParserOptions
@@ -81,23 +80,23 @@ declare module "moleculer-web" {
 	namespace BodyParser {
 		interface Options {
 			/** When set to true, then deflated (compressed) bodies will be inflated; when false, deflated bodies are rejected. Defaults to true. */
-			inflate?: boolean | undefined
+			inflate?: boolean | undefined;
 			/**
 			 * Controls the maximum request body size. If this is a number,
 			 * then the value specifies the number of bytes; if it is a string,
 			 * the value is passed to the bytes library for parsing. Defaults to '100kb'.
 			 */
-			limit?: number | string | undefined
+			limit?: number | string | undefined;
 			/**
 			 * The type option is used to determine what media type the middleware will parse
 			 */
-			type?: string | string[] | ((req: IncomingMessage)=> any) | undefined
+			type?: string | string[] | ((req: IncomingMessage) => any) | undefined;
 
 			/**
 			 * The verify option, if supplied, is called as verify(req, res, buf, encoding),
 			 * where buf is a Buffer of the raw request body and encoding is the encoding of the request.
 			 */
-			verify?(req: IncomingMessage, res: ServerResponse, buf: Buffer, encoding: string): void
+			verify?(req: IncomingMessage, res: ServerResponse, buf: Buffer, encoding: string): void;
 		}
 
 		interface OptionsJson extends Options {
@@ -105,13 +104,13 @@ declare module "moleculer-web" {
 			 *
 			 * The reviver option is passed directly to JSON.parse as the second argument.
 			 */
-			reviver?(key: string, value: any): any
+			reviver?(key: string, value: any): any;
 
 			/**
 			 * When set to `true`, will only accept arrays and objects;
 			 * when `false` will accept anything JSON.parse accepts. Defaults to `true`.
 			 */
-			strict?: boolean | undefined
+			strict?: boolean | undefined;
 		}
 
 		interface OptionsText extends Options {
@@ -120,7 +119,7 @@ declare module "moleculer-web" {
 			 * is not specified in the Content-Type header of the request.
 			 * Defaults to `utf-8`.
 			 */
-			defaultCharset?: string | undefined
+			defaultCharset?: string | undefined;
 		}
 
 		interface OptionsUrlencoded extends Options {
@@ -128,40 +127,42 @@ declare module "moleculer-web" {
 			 * The extended option allows to choose between parsing the URL-encoded data
 			 * with the querystring library (when `false`) or the qs library (when `true`).
 			 */
-			extended?: boolean | undefined
+			extended?: boolean | undefined;
 			/**
 			 * The parameterLimit option controls the maximum number of parameters
 			 * that are allowed in the URL-encoded data. If a request contains more parameters than this value,
 			 * a 413 will be returned to the client. Defaults to 1000.
 			 */
-			parameterLimit?: number | undefined
+			parameterLimit?: number | undefined;
 		}
 	}
 
 	type bodyParserOptions = {
-		json?: BodyParser.OptionsJson | boolean
-		urlencoded?: BodyParser.OptionsUrlencoded | boolean
-		text?: BodyParser.OptionsText | boolean
-		raw?: BodyParser.Options | boolean
-	}
+		json?: BodyParser.OptionsJson | boolean;
+		urlencoded?: BodyParser.OptionsUrlencoded | boolean;
+		text?: BodyParser.OptionsText | boolean;
+		raw?: BodyParser.Options | boolean;
+	};
 
 	// BusboyConfig
 	namespace busboy {
 		interface BusboyConfig {
-			headers?: any
-			highWaterMark?: number | undefined
-			fileHwm?: number | undefined
-			defCharset?: string | undefined
-			preservePath?: boolean | undefined
-			limits?: {
-				fieldNameSize?: number | undefined
-				fieldSize?: number | undefined
-				fields?: number | undefined
-				fileSize?: number | undefined
-				files?: number | undefined
-				parts?: number | undefined
-				headerPairs?: number | undefined
-			} | undefined
+			headers?: any;
+			highWaterMark?: number | undefined;
+			fileHwm?: number | undefined;
+			defCharset?: string | undefined;
+			preservePath?: boolean | undefined;
+			limits?:
+				| {
+						fieldNameSize?: number | undefined;
+						fieldSize?: number | undefined;
+						fields?: number | undefined;
+						fileSize?: number | undefined;
+						files?: number | undefined;
+						parts?: number | undefined;
+						headerPairs?: number | undefined;
+				  }
+				| undefined;
 		}
 
 		interface Busboy extends NodeJS.WritableStream {
@@ -173,9 +174,9 @@ declare module "moleculer-web" {
 					fieldnameTruncated: boolean,
 					valTruncated: boolean,
 					encoding: string,
-					mimetype: string
-				)=> void
-			): this
+					mimetype: string,
+				) => void,
+			): this;
 			on(
 				event: "file",
 				listener: (
@@ -183,23 +184,23 @@ declare module "moleculer-web" {
 					file: NodeJS.ReadableStream,
 					filename: string,
 					encoding: string,
-					mimetype: string
-				)=> void
-			): this
-			on(event: "finish", callback: ()=> void): this
-			on(event: "partsLimit", callback: ()=> void): this
-			on(event: "filesLimit", callback: ()=> void): this
-			on(event: "fieldsLimit", callback: ()=> void): this
-			on(event: string, listener: Function): this
+					mimetype: string,
+				) => void,
+			): this;
+			on(event: "finish", callback: () => void): this;
+			on(event: "partsLimit", callback: () => void): this;
+			on(event: "filesLimit", callback: () => void): this;
+			on(event: "fieldsLimit", callback: () => void): this;
+			on(event: string, listener: Function): this;
 		}
 	}
 
-	type onEventBusboyConfig<T> = (busboy: busboy.Busboy, alias: T, service: Service)=> void
+	type onEventBusboyConfig<T> = (busboy: busboy.Busboy, alias: T, service: Service) => void;
 	type BusboyConfig<T> = busboy.BusboyConfig & {
-		onFieldsLimit?: T
-		onFilesLimit?: T
-		onPartsLimit?: T
-	}
+		onFieldsLimit?: T;
+		onFilesLimit?: T;
+		onPartsLimit?: T;
+	};
 
 	// AssetsConfig
 	// From: https://github.com/DefinitelyTyped/DefinitelyTyped/blob/master/types/serve-static/index.d.ts
@@ -208,7 +209,7 @@ declare module "moleculer-web" {
 		 * Enable or disable setting Cache-Control response header, defaults to true.
 		 * Disabling this will ignore the immutable and maxAge options.
 		 */
-		cacheControl?: boolean | undefined
+		cacheControl?: boolean | undefined;
 
 		/**
 		 * Set how "dotfiles" are treated when encountered. A dotfile is a file or directory that begins with a dot (".").
@@ -219,52 +220,52 @@ declare module "moleculer-web" {
 		 * 'deny' Send a 403 for any request for a dotfile
 		 * 'ignore' Pretend like the dotfile does not exist and call next()
 		 */
-		dotfiles?: string | undefined
+		dotfiles?: string | undefined;
 
 		/**
 		 * Enable or disable etag generation, defaults to true.
 		 */
-		etag?: boolean | undefined
+		etag?: boolean | undefined;
 
 		/**
 		 * Set file extension fallbacks. When set, if a file is not found, the given extensions will be added to the file name and search for.
 		 * The first that exists will be served. Example: ['html', 'htm'].
 		 * The default value is false.
 		 */
-		extensions?: string[] | false | undefined
+		extensions?: string[] | false | undefined;
 
 		/**
 		 * Let client errors fall-through as unhandled requests, otherwise forward a client error.
 		 * The default value is true.
 		 */
-		fallthrough?: boolean | undefined
+		fallthrough?: boolean | undefined;
 
 		/**
 		 * Enable or disable the immutable directive in the Cache-Control response header.
 		 * If enabled, the maxAge option should also be specified to enable caching. The immutable directive will prevent supported clients from making conditional requests during the life of the maxAge option to check if the file has changed.
 		 */
-		immutable?: boolean | undefined
+		immutable?: boolean | undefined;
 
 		/**
 		 * By default this module will send "index.html" files in response to a request on a directory.
 		 * To disable this set false or to supply a new index pass a string or an array in preferred order.
 		 */
-		index?: boolean | string | string[] | undefined
+		index?: boolean | string | string[] | undefined;
 
 		/**
 		 * Enable or disable Last-Modified header, defaults to true. Uses the file system's last modified value.
 		 */
-		lastModified?: boolean | undefined
+		lastModified?: boolean | undefined;
 
 		/**
 		 * Provide a max-age in milliseconds for http caching, defaults to 0. This can also be a string accepted by the ms module.
 		 */
-		maxAge?: number | string | undefined
+		maxAge?: number | string | undefined;
 
 		/**
 		 * Redirect to trailing "/" when the pathname is a dir. Defaults to true.
 		 */
-		redirect?: boolean | undefined
+		redirect?: boolean | undefined;
 
 		/**
 		 * Function to set custom headers on response. Alterations to the headers need to occur synchronously.
@@ -273,58 +274,74 @@ declare module "moleculer-web" {
 		 * path the file path that is being sent
 		 * stat the stat object of the file that is being sent
 		 */
-		setHeaders?: ((res: ServerResponse, path: string, stat: any)=> any) | undefined
+		setHeaders?: ((res: ServerResponse, path: string, stat: any) => any) | undefined;
 	}
 
 	type AssetsConfig = {
 		/**
 		 * Root folder of assets
 		 */
-		folder: string
+		folder: string;
 		/**
 		 * Further options to `server-static` module
 		 */
-		options?: ServeStaticOptions
-	}
+		options?: ServeStaticOptions;
+	};
 
 	// CorsOptions
 	// From: https://github.com/DefinitelyTyped/DefinitelyTyped/blob/master/types/cors/index.d.ts
-	type CustomOrigin = (origin: string)=> boolean;
+	type CustomOrigin = (origin: string) => boolean;
 
 	export interface CorsOptions {
-		origin?: boolean | string | RegExp | (string | RegExp)[] | CustomOrigin
-		methods?: string | string[]
-		allowedHeaders?: string | string[]
-		exposedHeaders?: string | string[]
-		credentials?: boolean
-		maxAge?: number
-		preflightContinue?: boolean
-		optionsSuccessStatus?: number
+		origin?: boolean | string | RegExp | (string | RegExp)[] | CustomOrigin;
+		methods?: string | string[];
+		allowedHeaders?: string | string[];
+		exposedHeaders?: string | string[];
+		credentials?: boolean;
+		maxAge?: number;
+		preflightContinue?: boolean;
+		optionsSuccessStatus?: number;
 	}
 
-	class InvalidRequestBodyError extends Errors.MoleculerError { constructor(body: any, error: any) }
-	class InvalidResponseTypeError extends Errors.MoleculerError { constructor(dataType: string) }
-	class UnAuthorizedError extends Errors.MoleculerError { constructor(type: string|null|undefined, data: any) }
-	class ForbiddenError extends Errors.MoleculerError { constructor(type: string, data: any) }
-	class BadRequestError extends Errors.MoleculerError { constructor(type: string, data: any) }
-	class RateLimitExceeded extends Errors.MoleculerClientError { constructor(type: string, data: any) }
-	class NotFoundError extends Errors.MoleculerClientError { constructor(type: string, data: any) }
-	class ServiceUnavailableError extends Errors.MoleculerError { constructor(type: string, data: any) }
+	class InvalidRequestBodyError extends Errors.MoleculerError {
+		constructor(body: any, error: any);
+	}
+	class InvalidResponseTypeError extends Errors.MoleculerError {
+		constructor(dataType: string);
+	}
+	class UnAuthorizedError extends Errors.MoleculerError {
+		constructor(type: string | null | undefined, data: any);
+	}
+	class ForbiddenError extends Errors.MoleculerError {
+		constructor(type: string, data: any);
+	}
+	class BadRequestError extends Errors.MoleculerError {
+		constructor(type: string, data: any);
+	}
+	class RateLimitExceeded extends Errors.MoleculerClientError {
+		constructor(type: string, data: any);
+	}
+	class NotFoundError extends Errors.MoleculerClientError {
+		constructor(type: string, data: any);
+	}
+	class ServiceUnavailableError extends Errors.MoleculerError {
+		constructor(type: string, data: any);
+	}
 
 	interface ApiGatewayErrors {
-		InvalidRequestBodyError: typeof InvalidRequestBodyError
-		InvalidResponseTypeError: typeof InvalidResponseTypeError
-		UnAuthorizedError: typeof UnAuthorizedError
-		ForbiddenError: typeof ForbiddenError
-		BadRequestError: typeof BadRequestError
-		RateLimitExceeded: typeof RateLimitExceeded
-		NotFoundError: typeof NotFoundError
-		ServiceUnavailableError: typeof ServiceUnavailableError
+		InvalidRequestBodyError: typeof InvalidRequestBodyError;
+		InvalidResponseTypeError: typeof InvalidResponseTypeError;
+		UnAuthorizedError: typeof UnAuthorizedError;
+		ForbiddenError: typeof ForbiddenError;
+		BadRequestError: typeof BadRequestError;
+		RateLimitExceeded: typeof RateLimitExceeded;
+		NotFoundError: typeof NotFoundError;
+		ServiceUnavailableError: typeof ServiceUnavailableError;
 
-		ERR_NO_TOKEN: "ERR_NO_TOKEN"
-		ERR_INVALID_TOKEN: "ERR_INVALID_TOKEN"
-		ERR_UNABLE_DECODE_PARAM: "ERR_UNABLE_DECODE_PARAM"
-		ERR_ORIGIN_NOT_FOUND: "ORIGIN_NOT_FOUND"
+		ERR_NO_TOKEN: "ERR_NO_TOKEN";
+		ERR_INVALID_TOKEN: "ERR_INVALID_TOKEN";
+		ERR_UNABLE_DECODE_PARAM: "ERR_UNABLE_DECODE_PARAM";
+		ERR_ORIGIN_NOT_FOUND: "ORIGIN_NOT_FOUND";
 	}
 
 	export class Alias {
@@ -334,7 +351,7 @@ declare module "moleculer-web" {
 		type: string;
 		method: string;
 		path: string;
-		handler: null | Array<Function>;
+		handler: null | Function[];
 		action: string;
 	}
 
@@ -345,16 +362,27 @@ declare module "moleculer-web" {
 		hasWhitelist: boolean;
 		logging: boolean;
 		mappingPolicy: string;
-		middlewares: Array<Function>;
+		middlewares: Function[];
 		onBeforeCall?: onBeforeCall;
 		onAfterCall?: onAfterCall;
 		opts: any;
 		path: string;
-		whitelist: Array<string>;
+		whitelist: string[];
 	}
 
-	type onBeforeCall = (ctx: Context, route: Route, req: IncomingRequest, res: GatewayResponse)=> void
-	type onAfterCall = (ctx: Context, route: Route, req: IncomingRequest, res: GatewayResponse, data: any)=> any
+	type onBeforeCall = (
+		ctx: Context,
+		route: Route,
+		req: IncomingRequest,
+		res: GatewayResponse,
+	) => void;
+	type onAfterCall = (
+		ctx: Context,
+		route: Route,
+		req: IncomingRequest,
+		res: GatewayResponse,
+		data: any,
+	) => any;
 
 	/**
 	 * Expressjs next function<br>
@@ -362,33 +390,42 @@ declare module "moleculer-web" {
 	 * @see https://www.npmjs.com/package/@types/express-serve-static-core
 	 */
 	interface NextFunction {
-		(err?: any): void
+		(err?: any): void;
 		/**
 		 * "Break-out" of a router by calling {next('router')};
 		 * @see https://expressjs.com/en/guide/using-middleware.html#middleware.router
 		 */
-		(deferToNext: "router"): void
+		(deferToNext: "router"): void;
 		/**
 		 * "Break-out" of a route by calling {next('route')};
 		 * @see https://expressjs.com/en/guide/using-middleware.html#middleware.application
 		 */
-		(deferToNext: "route"): void
+		(deferToNext: "route"): void;
 	}
 
-	type routeMiddleware = (req: IncomingMessage, res: ServerResponse, next: NextFunction)=> void
-	type routeMiddlewareError = (err: any, req: IncomingMessage, res: ServerResponse, next: NextFunction)=> void
+	type routeMiddleware = (req: IncomingMessage, res: ServerResponse, next: NextFunction) => void;
+	type routeMiddlewareError = (
+		err: any,
+		req: IncomingMessage,
+		res: ServerResponse,
+		next: NextFunction,
+	) => void;
 
-	type ETagFunction = (body: any)=> string
-	type AliasFunction = (req: IncomingRequest, res: GatewayResponse, next?: (err?: any)=> void)=> void
+	type ETagFunction = (body: any) => string;
+	type AliasFunction = (
+		req: IncomingRequest,
+		res: GatewayResponse,
+		next?: (err?: any) => void,
+	) => void;
 	type AliasRouteSchema = {
-		type?: "call" | "multipart" | "stream" | string
-		method?: "GET" | "POST" | "PUT" | "DELETE" | "*" | "HEAD" | "OPTIONS" | "PATCH" | string
-		path?: string
-		handler?: AliasFunction
-		action?: string
-		busboyConfig?: BusboyConfig<onEventBusboyConfig<Alias>>
-		[k: string]: any
-	}
+		type?: "call" | "multipart" | "stream" | string;
+		method?: "GET" | "POST" | "PUT" | "DELETE" | "*" | "HEAD" | "OPTIONS" | "PATCH" | string;
+		path?: string;
+		handler?: AliasFunction;
+		action?: string;
+		busboyConfig?: BusboyConfig<onEventBusboyConfig<Alias>>;
+		[k: string]: any;
+	};
 
 	type CommonSettingSchema = {
 		/**
@@ -409,24 +446,24 @@ declare module "moleculer-web" {
 		}
 		 * @see https://moleculer.services/docs/0.14/moleculer-web.html#CORS-headers
 		 */
-		cors?: CorsOptions
+		cors?: CorsOptions;
 		/**
 		 * The etag option value can be `false`, `true`, `weak`, `strong`, or a custom `Function`
 		 * @default settings.etag (null)
 		 * @see https://moleculer.services/docs/0.14/moleculer-web.html#ETag
 		 */
-		etag?: boolean | "weak" | "strong" | ETagFunction
+		etag?: boolean | "weak" | "strong" | ETagFunction;
 		/**
 		 * You can add route-level & global-level custom error handlers.<br>
 		 * In handlers, you must call the `res.end`. Otherwise, the request is unhandled.
 		 * @see https://moleculer.services/docs/0.14/moleculer-web.html#Error-handlers
 		 */
-		onError?: (req: IncomingMessage, res: ServerResponse, error: Error)=> void
+		onError?: (req: IncomingMessage, res: ServerResponse, error: Error) => void;
 		/**
 		 * The Moleculer-Web has a built-in rate limiter with a memory store.
 		 * @see https://moleculer.services/docs/0.14/moleculer-web.html#Rate-limiter
 		 */
-		rateLimit?: RateLimitSettings
+		rateLimit?: RateLimitSettings;
 		/**
 		 * It supports Connect-like middlewares in global-level, route-level & alias-level.<br>
 		 * Signature: function (req, res, next) {...}.<br>
@@ -434,8 +471,8 @@ declare module "moleculer-web" {
 		 * For more info check [express middleware](https://expressjs.com/en/guide/using-middleware.html)
 		 * @see https://moleculer.services/docs/0.14/moleculer-web.html#Middlewares
 		 */
-		use?: (routeMiddleware | routeMiddlewareError)[]
-	}
+		use?: (routeMiddleware | routeMiddlewareError)[];
+	};
 	export type ApiRouteSchema = CommonSettingSchema & {
 		/**
 		 * You can use alias names instead of action names. You can also specify the method. Otherwise it will handle every method types.<br>
@@ -443,8 +480,8 @@ declare module "moleculer-web" {
 		 * @see https://moleculer.services/docs/0.14/moleculer-web.html#Aliases
 		 */
 		aliases?: {
-			[k: string]: string | AliasFunction | Array<AliasFunction | string> | AliasRouteSchema
-		}
+			[k: string]: string | AliasFunction | (AliasFunction | string)[] | AliasRouteSchema;
+		};
 		/**
 		 * To enable the support for authentication, you need to do something similar to what is describe in the Authorization paragraph.<br>
 		 * Also in this case you have to:
@@ -455,7 +492,7 @@ declare module "moleculer-web" {
 		 * In this case you should set `the method name` instead of `true` value.
 		 * @see https://moleculer.services/docs/0.14/moleculer-web.html#Authentication
 		 */
-		authentication?: boolean | string
+		authentication?: boolean | string;
 		/**
 		 * You can implement authorization. Do 2 things to enable it.
 		 * 1. Set authorization: true in your routes.
@@ -464,7 +501,7 @@ declare module "moleculer-web" {
 		 * In this case you should set `the method name` instead of `true` value.
 		 * @see https://moleculer.services/docs/0.14/moleculer-web.html#Authorization
 		 */
-		authorization?: boolean | string
+		authorization?: boolean | string;
 		/**
 		 * The auto-alias feature allows you to declare your route alias directly in your services.<br>
 		 * The gateway will dynamically build the full routes from service schema.
@@ -472,12 +509,12 @@ declare module "moleculer-web" {
 		 * Use `whitelist` parameter to specify services that the Gateway should track and build the routes.
 		 * @see https://moleculer.services/docs/0.14/moleculer-web.html#Auto-alias
 		 */
-		autoAliases?: boolean
+		autoAliases?: boolean;
 		/**
 		 * Parse incoming request bodies, available under the `ctx.params` property
 		 * @see https://www.npmjs.com/package/body-parser
 		 */
-		bodyParsers?: bodyParserOptions | boolean
+		bodyParsers?: bodyParserOptions | boolean;
 		/**
 		 * API Gateway has implemented file uploads.<br>
 		 * You can upload files as a multipart form data (thanks to [busboy](https://github.com/mscdex/busboy) library) or as a raw request body.<br>
@@ -485,29 +522,29 @@ declare module "moleculer-web" {
 		 * In multipart form data mode you can upload multiple files, as well.<br>
 		 * `Please note`: you have to disable other body parsers in order to accept files.
 		 */
-		busboyConfig?: BusboyConfig<onEventBusboyConfig<Alias>>
+		busboyConfig?: BusboyConfig<onEventBusboyConfig<Alias>>;
 		/**
 		 * The route has a callOptions property which is passed to broker.call. So you can set timeout, retries or fallbackResponse options for routes.
 		 * @see https://moleculer.services/docs/0.14/actions.html#Call-services
 		 */
-		callingOptions?: CallingOptions
+		callingOptions?: CallingOptions;
 		/**
 		 * If alias handler not found, `api` will try to call service by action name<br>
 		 * This option will convert request url to camelCase before call action
 		 * @example `/math/sum-all` => `math.sumAll`
 		 * @default: null
 		 */
-		camelCaseNames?: boolean
+		camelCaseNames?: boolean;
 		/**
 		 * Debounce wait time before call to regenerated aliases when got event "$services.changed"
 		 * @default 500
 		 */
-		debounceTime?: number
+		debounceTime?: number;
 		/**
 		 * Enable/disable logging
 		 * @default true
 		 */
-		logging?: boolean
+		logging?: boolean;
 		/**
 		 * The route has a `mappingPolicy` property to handle routes without aliases.<br>
 		 * Available options:<br>
@@ -515,35 +552,35 @@ declare module "moleculer-web" {
 		 * `restrict` - enable to request only the routes with aliases.
 		 * @see https://moleculer.services/docs/0.14/moleculer-web.html#Mapping-policy
 		 */
-		mappingPolicy?: "all" | "restrict"
+		mappingPolicy?: "all" | "restrict";
 		/**
 		 * To disable parameter merging set `mergeParams: false` in route settings.<br>
 		 * Default is `true`
 		 * @see https://moleculer.services/docs/0.14/moleculer-web.html#Disable-merging
 		 */
-		mergeParams?: boolean
+		mergeParams?: boolean;
 		/**
 		 * `From v0.10.2`
 		 * <br>Support multiple routes with the same path.
 		 * <br>You should give a unique name for the routes if they have same path.
 		 * @see https://github.com/moleculerjs/moleculer-web/releases/tag/v0.10.2
 		 */
-		name?: string
+		name?: string;
 		/**
 		 * The route has before & after call hooks. You can use it to set `ctx.meta`, access `req.headers` or modify the response data.
 		 * @see https://moleculer.services/docs/0.14/moleculer-web.html#Route-hooks
 		 */
-		onBeforeCall?: onBeforeCall
+		onBeforeCall?: onBeforeCall;
 		/**
 		 * You could manipulate the data in `onAfterCall`.<br>
 		 * `Must always return the new or original data`.
 		 * @see https://moleculer.services/docs/0.14/moleculer-web.html#Route-hooks
 		 */
-		onAfterCall?: onAfterCall
+		onAfterCall?: onAfterCall;
 		/**
 		 * Path prefix to this route
 		 */
-		path: string
+		path: string;
 		/**
 		 * If you don’t want to publish all actions, you can filter them with whitelist option.<br>
 		 * Use match strings or regexp in list. To enable all actions, use "**" item.<br>
@@ -552,26 +589,26 @@ declare module "moleculer-web" {
 		 * /^math\.\w+$/: `Access any actions in 'math' service`<br>
 		 * @see https://moleculer.services/docs/0.14/moleculer-web.html#Whitelist
 		 */
-		whitelist?: Array<string|RegExp>
-	}
+		whitelist?: (string | RegExp)[];
+	};
 
 	export type ApiSettingsSchema = CommonSettingSchema & {
 		/**
 		 * It serves assets with the [serve-static](https://github.com/expressjs/serve-static) module like ExpressJS.
 		 * @see https://moleculer.services/docs/0.14/moleculer-web.html#Serve-static-files
 		 */
-		assets?: AssetsConfig
+		assets?: AssetsConfig;
 		/**
 		 * Use HTTP2 server (experimental)
 		 * @default false
 		 */
-		http2?: boolean
+		http2?: boolean;
 
 		/**
 		 * HTTP Server Timeout
 		 * @default null
 		 */
-		httpServerTimeout?: number
+		httpServerTimeout?: number;
 
 		/**
 		 * Special char for internal services<br>
@@ -580,90 +617,90 @@ declare module "moleculer-web" {
 		 * @example "~" => /~node/~action => /$node/~action
 		 * @example /[0-9]+/g => /01234demo/hello2021 => /demo/hello `(not official)`
 		 */
-		internalServiceSpecialChar?: string | RegExp
+		internalServiceSpecialChar?: string | RegExp;
 
 		/**
 		 * Exposed IP
 		 * @default process.env.IP || "0.0.0.0"
 		 */
-		ip?: string
+		ip?: string;
 
 		/**
 		 * If set to true, it will log 4xx client errors, as well
 		 * @default false
 		 */
-		log4XXResponses?: boolean
+		log4XXResponses?: boolean;
 
 		/**
 		 * Log each request (default to "info" level)
 		 * @default "info"
 		 */
-		logRequest?: LogLevels | null
+		logRequest?: LogLevels | null;
 
 		/**
 		 * Log the request ctx.params (default to "debug" level)
 		 * @default "debug"
 		 */
-		logRequestParams?: LogLevels | null
+		logRequestParams?: LogLevels | null;
 
 		/**
 		 * Log each response (default to "info" level)
 		 * @default "info"
 		 */
-		logResponse?: LogLevels | null
+		logResponse?: LogLevels | null;
 
 		/**
 		 * Log the response data (default to disable)
 		 * @default null
 		 */
-		logResponseData?: LogLevels | null
+		logResponseData?: LogLevels | null;
 
 		/**
 		 * Log the route registration/aliases related activity
 		 * @default "info"
 		 */
-		logRouteRegistration?: LogLevels | null
+		logRouteRegistration?: LogLevels | null;
 
 		/**
 		 * Optimize route order
 		 * @default true
 		 */
-		optimizeOrder?: boolean
+		optimizeOrder?: boolean;
 
 		/**
 		 * Global path prefix
 		 */
-		path?: string
+		path?: string;
 		/**
 		 * Exposed port
 		 * @default process.env.PORT || 3000
 		 */
-		port?: number
+		port?: number;
 
 		/**
 		 * Gateway routes
 		 * @default []
 		 */
-		routes?: ApiRouteSchema[]
+		routes?: ApiRouteSchema[];
 
 		/**
 		 * CallOption for the root action `api.rest`
 		 * @default null
 		 */
-		rootCallOptions?: CallingOptions
+		rootCallOptions?: CallingOptions;
 
 		/**
 		 * Used server instance. If null, it will create a new HTTP(s)(2) server<br>
 		 * If false, it will start without server in middleware mode
 		 * @default true
 		 */
-		server?: boolean
+		server?: boolean;
 
 		/**
 		 * for extra setting's keys
 		 */
-		[k: string]: any
-	}
+		[k: string]: any;
+	};
 
 	export class IncomingRequest extends IncomingMessage {
 		$action: ActionSchema;
@@ -674,23 +711,9 @@ declare module "moleculer-web" {
 		$params: any;
 		$route: Route;
 		$service: Service;
-		$startTime: [number, number];
-		/**
-		 * Value from `IncomingMessage#url`. Includes query parameters.
-		 * `/path?id=1&example=true`
-		 */
+		$startTime: number[];
 		originalUrl: string;
-		/**
-		 * Value from `IncomingMessage#url`. Query parameters stripped off.
-		 * `/path`
-		 */
 		parsedUrl: string;
-		/**
-		 * Parsed query parameters as an object.
-		 * ```javascript
-		 * { id: '1', example: 'true' }
-		 * ```
-		 */ 
 		query: Record<string, string>;
 	}
 
@@ -701,6 +724,11 @@ declare module "moleculer-web" {
 		locals: Record<string, unknown>;
 	}
 
-	const ApiGatewayService: ServiceSchema & { Errors: ApiGatewayErrors, IncomingRequest: IncomingRequest, GatewayResponse: GatewayResponse, RateLimitStores: RateLimitStores };
+	const ApiGatewayService: ServiceSchema & {
+		Errors: ApiGatewayErrors;
+		IncomingRequest: IncomingRequest;
+		GatewayResponse: GatewayResponse;
+		RateLimitStores: RateLimitStores;
+	};
 	export default ApiGatewayService;
 }
