@@ -1,3 +1,15 @@
+<a name="0.10.5"></a>
+# 0.10.5 (2022-12-17)
+
+## Changes
+- improving d.ts
+- register on close and error event on response. [#299](https://github.com/moleculerjs/moleculer-web/pull/299)
+- resolve promise when close event is fired for res. [#301](https://github.com/moleculerjs/moleculer-web/pull/301)
+- add default reqTimeout. [#312](https://github.com/moleculerjs/moleculer-web/pull/312)
+- improve rate limiter. [#317](https://github.com/moleculerjs/moleculer-web/pull/317)
+- add 201 Created to status codes. [#297](https://github.com/moleculerjs/moleculer-web/pull/297)
+
+-----------------------------
 <a name="0.10.4"></a>
 # 0.10.4 (2022-01-09)
 
