@@ -71,7 +71,7 @@
     "kleur": "^4.1.4",
     "lodash": "^4.17.21",
     "path-to-regexp": "^3.1.0",
-    "qs": "^6.10.1",
+    "qs": "^6.11.0",
     "serve-static": "^1.14.1"
   },
   "engines": {
