@@ -953,7 +953,7 @@ module.exports = {
 			let query = {};
 			const questionIdx = req.url.indexOf("?", 1);
 			if (questionIdx !== -1) {
-				query = queryString.parse(req.url.substring(questionIdx + 1));
+				query = queryString.parse(req.url.substring(questionIdx + 1), this.settings.qsOptions);
 				url = req.url.substring(0, questionIdx);
 			}
 			return { query, url };

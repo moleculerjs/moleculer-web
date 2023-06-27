@@ -296,5 +296,18 @@ module.exports = {
 				return `Hello ${ctx.params.name}`;
 			}
 		},
+
+		queryParamsArray: {
+			rest: {
+				method: "GET",
+				path: "/queryParamsArray"
+			},
+			params: {
+				names: "array"
+			},
+			handler(ctx) {
+				return ctx.params.names;
+			}
+		},
 	}
 };
