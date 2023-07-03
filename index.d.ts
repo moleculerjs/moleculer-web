@@ -403,11 +403,11 @@ declare module "moleculer-web" {
 		(deferToNext: "route"): void;
 	}
 
-	type routeMiddleware = (req: IncomingMessage, res: ServerResponse, next: NextFunction) => void;
+	type routeMiddleware = (req: IncomingRequest, res: GatewayResponse, next: NextFunction) => void;
 	type routeMiddlewareError = (
 		err: any,
-		req: IncomingMessage,
-		res: ServerResponse,
+		req: IncomingRequest,
+		res: GatewayResponse,
 		next: NextFunction,
 	) => void;
 
