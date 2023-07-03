@@ -527,7 +527,7 @@ declare module "moleculer-web" {
 		 * The route has a callOptions property which is passed to broker.call. So you can set timeout, retries or fallbackResponse options for routes.
 		 * @see https://moleculer.services/docs/0.14/actions.html#Call-services
 		 */
-		callingOptions?: CallingOptions;
+		callOptions?: CallingOptions;
 		/**
 		 * If alias handler not found, `api` will try to call service by action name<br>
 		 * This option will convert request url to camelCase before call action
