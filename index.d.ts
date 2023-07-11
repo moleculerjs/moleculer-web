@@ -11,6 +11,7 @@ declare module "moleculer-web" {
 		ServiceSchema,
 	} from "moleculer";
 	import { Errors } from "moleculer";
+	import { IParseOptions } from 'qs';
 
 	// RateLimit
 	export type generateRateLimitKey = (req: IncomingMessage) => string;
@@ -695,6 +696,12 @@ declare module "moleculer-web" {
 		 * @default true
 		 */
 		server?: boolean;
+
+		/**
+		 * Options passed on to qs
+		 * @see https://moleculer.services/docs/0.14/moleculer-web.html#Query-string-parameters
+		 */
+		qsOptions?: IParseOptions;
 
 		/**
 		 * for extra setting's keys
