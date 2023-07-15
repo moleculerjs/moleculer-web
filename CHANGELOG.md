@@ -1,3 +1,13 @@
+<a name="0.10.6"></a>
+# 0.10.6 (2023-07-15)
+
+## Changes
+- update qs package to mitigate CVE-2022-24999. [#320](https://github.com/moleculerjs/moleculer-web/pull/320)
+- correct types for route middleware functions. [#327](https://github.com/moleculerjs/moleculer-web/pull/327)
+- incorrect key for calloptions type. [#328](https://github.com/moleculerjs/moleculer-web/pull/328)
+- add support for qs options. [#326](https://github.com/moleculerjs/moleculer-web/pull/326)
+
+-----------------------------
 <a name="0.10.5"></a>
 # 0.10.5 (2022-12-17)
 
