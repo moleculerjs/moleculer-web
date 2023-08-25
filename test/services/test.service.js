@@ -281,10 +281,22 @@ module.exports = {
 		errorWithHeader(ctx) {
 			ctx.meta.$responseType = "text/plain";
 			ctx.meta.$responseHeaders = {
-				"X-Custom-Header": "Custom content"
+				"X-Custom-Header": "Custom content",
+				"x-invalid-header": "\r\nBOOM"
 			};
 
 			throw new MoleculerServerError("It is a wrong action! I always throw error!");
+		},
+
+		invalidResponseHeaders(ctx) {
+			ctx.meta.$responseHeaders = {
+				"x-valid-header": "valid header",
+				"x-invalid-header": "\r\nBOOM"
+			};
+
+			return {
+				"x-invalid-header": "\r\nBOOM"
+			};
 		},
 
 		update: {

@@ -746,7 +746,12 @@ module.exports = {
 					if (key == "Content-Type" && !responseType)
 						responseType = ctx.meta.$responseHeaders[key];
 					else
-						res.setHeader(key, ctx.meta.$responseHeaders[key]);
+						try {
+							res.setHeader(key, ctx.meta.$responseHeaders[key]);
+						} catch (error) {
+							this.logger.warn("Invalid header value", req.url, error);
+							res.setHeader(key, encodeURI(ctx.meta.$responseHeaders[key]));
+						}
 				});
 			}
 			if (data == null)
@@ -898,7 +903,12 @@ module.exports = {
 						if (key === "Content-Type" && !responseType)
 							responseType = ctx.meta.$responseHeaders[key];
 						else
-							res.setHeader(key, ctx.meta.$responseHeaders[key]);
+							try {
+								res.setHeader(key, ctx.meta.$responseHeaders[key]);
+							} catch (error) {
+								this.logger.warn("Invalid header value", req.url, error);
+								res.setHeader(key, encodeURI(ctx.meta.$responseHeaders[key]));
+							}
 					});
 				}
 			}
