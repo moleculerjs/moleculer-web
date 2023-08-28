@@ -452,6 +452,11 @@ module.exports = {
 					urlPath = urlPath.replace(this._isscRe, "$");
 					let action = urlPath;
 
+					// #331 Always merge parameters for internal services
+					if (urlPath.indexOf("$") !== -1) {
+						route.opts.mergeParams = true;
+					}
+
 					// Resolve aliases
 					if (foundAlias) {
 						const alias = foundAlias.alias;
