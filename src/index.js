@@ -453,7 +453,7 @@ module.exports = {
 					let action = urlPath;
 
 					// #331 Always merge parameters for internal services
-					if (urlPath.indexOf("$") !== -1) {
+					if (action.startsWith("$")) {
 						route.opts.mergeParams = true;
 					}
 
