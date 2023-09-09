@@ -8,7 +8,7 @@ module.exports = {
 			},
 			handler(context) {
 				const { params } = context;
-				context.emit("chat.message", params);
+				context.emit("chat.sse.message", params);
 			},
 		},
 	},

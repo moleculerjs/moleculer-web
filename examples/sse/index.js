@@ -1,6 +1,6 @@
 "use strict";
 
-const path = require("node:path");
+const path = require("path");
 const { ServiceBroker, Errors } = require("moleculer");
 const ApiGatewayService = require("../../index");
 const ChatService = require("./chat.service");
@@ -56,20 +56,25 @@ broker.createService({
 	},
 
 	events: {
-		"**"(context) {
-			const { eventName, params } = context;
-			if (!this.sseListeners.has(eventName)) return;
-			const listeners = this.sseListeners.get(eventName);
-			for (const listener of listeners.values()) {
-				const id = this.sseIds.get(listener) || 0;
-				const message = this.createSSEMessage(params, eventName, id);
-				listener.write(message);
-				this.sseIds.set(listener, id + 1);
-			}
+		"chat.sse*"(context) {
+			this.handleSSE(context);
 		},
 	},
 
 	methods: {
+		handleSSE(context) {
+			const { eventName, params } = context;
+			const event = eventName.replace("sse.", "");
+			if (!this.sseListeners.has(event)) return;
+			const listeners = this.sseListeners.get(event);
+			for (const listener of listeners.values()) {
+				const id = this.sseIds.get(listener) || 0;
+				const message = this.createSSEMessage(params, event, id);
+				listener.write(message);
+				this.sseIds.set(listener, id + 1);
+			}
+		},
+
 		addSSEListener(stream, event) {
 			if (!stream.write)
 				throw new MoleculerError("Only writable can listen to SSE.");
