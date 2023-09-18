@@ -387,7 +387,7 @@ describe("Test responses", () => {
 			.then(res => {
 				expect(res.statusCode).toBe(500);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
-				expect(res.header["x-request-id"]).toBeDefined();
+				expect(res.headers["x-request-id"]).toBeDefined();
 				expect(res.body).toEqual({
 					"code": 500,
 					"message": "I'm dangerous",
@@ -402,9 +402,20 @@ describe("Test responses", () => {
 			.then(res => {
 				expect(res.statusCode).toBe(500);
 				expect(res.headers["content-type"]).toBe("text/plain");
-				expect(res.header["x-request-id"]).toBeDefined();
-				expect(res.header["x-custom-header"]).toBe("Custom content");
+				expect(res.headers["x-invalid-header"]).toBe(encodeURI("\r\nBOOM"));
+				expect(res.headers["x-request-id"]).toBeDefined();
+				expect(res.headers["x-custom-header"]).toBe("Custom content");
 				expect(res.text).toBe("{\"name\":\"MoleculerServerError\",\"message\":\"It is a wrong action! I always throw error!\",\"code\":500}");
+			});
+	});
+
+	it("GET /test/invalidResponseHeaders", () => {
+		return request(server)
+			.get("/test/invalidResponseHeaders")
+			.then(res => {
+				expect(res.headers["x-valid-header"]).toBe("valid header");
+				expect(res.headers["x-invalid-header"]).toBe(encodeURI("\r\nBOOM"));
+				expect(res.text).toBe("{\"x-invalid-header\":\"\\r\\nBOOM\"}");
 			});
 	});
 });
@@ -1626,7 +1637,7 @@ describe("Test REST shorthand aliases and except filter", () => {
 	});
 });
 
-describe("Test REST shorthand aliases and only, execpt filter", () => {
+describe("Test REST shorthand aliases and only, except filter", () => {
 	let broker;
 	let service;
 	let server;
