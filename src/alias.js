@@ -12,7 +12,7 @@ const kleur 					= require("kleur");
 const _ 						= require("lodash");
 
 const { PayloadTooLarge } = require("./errors");
-const { MoleculerClientError } = require("moleculer").Errors;
+const { MoleculerClientError, MoleculerError } = require("moleculer").Errors;
 const { removeTrailingSlashes, addSlashes, decodeParam, compose } = require("./utils");
 
 class Alias {
@@ -87,6 +87,25 @@ class Alias {
 			// Handle file upload in multipart form
 			this.handler = this.multipartHandler.bind(this);
 		}
+	}
+
+
+	/**
+	 * Compiles a path using the given path parameters and returns the compiled string.
+	 *
+	 * @param {Object} pathParameters - The path parameters to be replaced in the path.
+	 * @return {string} - The compiled path with replaced path parameters.
+	 */
+	compile(pathParameters) {
+		const missingParameters = this.keys.filter((key) => !key.optional && (!pathParameters || !pathParameters.hasOwnProperty(key.name)));
+		const missingParametersNames = missingParameters.map(param => param.name);
+		if(missingParametersNames.length > 0) {
+			throw new MoleculerError(`parameters are missing : ${missingParametersNames.join(", ")}`, 400, "MISSING_PARAMETERS", {
+				parameters: missingParametersNames
+			});
+		}
+
+		return pathToRegexp.compile(this.fullPath, this.route.opts.pathToRegexpOptions || {})(pathParameters, { validate: false });
 	}
 
 	/**
