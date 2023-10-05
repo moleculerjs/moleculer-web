@@ -19,6 +19,7 @@ const _ = require("lodash");
 const bodyParser = require("body-parser");
 const serveStatic = require("serve-static");
 const isReadableStream = require("isstream").isReadable;
+const { pipeline } = require('stream');
 
 const { MoleculerError, MoleculerServerError, ServiceNotFoundError } = require("moleculer").Errors;
 const { ServiceUnavailableError, NotFoundError, ForbiddenError, RateLimitExceeded, ERR_ORIGIN_NOT_ALLOWED } = require("./errors");
@@ -818,7 +819,11 @@ module.exports = {
 			} else {
 				// respond
 				if (isReadableStream(data)) { //Stream response
-					data.pipe(res);
+					pipeline(data, res, err => {
+						if (err) {
+							this.logger.warn("Stream got an error.", { err, url: req.url, actionName: action.name })
+						}
+					})
 				} else {
 					res.end(chunk);
 				}
