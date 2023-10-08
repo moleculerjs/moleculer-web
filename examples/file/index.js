@@ -1,12 +1,12 @@
 "use strict";
 
 /**
- * This example demonstrates how to upload files to API Gateway
+ * This example demonstrates how to upload files to API Gateway with built-in busboy
  *
  * Example:
  *
  *  - File upload:
- * 		Open https://localhost:4000/upload.html in the browser and upload a file. The file will be placed to the "examples/__uploads" folder.
+ * 		Open http://localhost:3000/ in the browser and upload a file. The file will be placed to the "examples/__uploads" folder.
  *
  *  - or upload file with cURL
  * 		curl -X PUT -H "Content-Type: image/png" --data-binary @test.png http://localhost:3000/upload
