@@ -12,6 +12,12 @@ declare module "moleculer-web" {
 	} from "moleculer";
 	import { Errors } from "moleculer";
 	import { IParseOptions } from 'qs';
+	import type { Server as NetServer } from 'net';
+	import type { Server as TLSServer } from 'tls';
+	import type { Server as HttpServer } from 'http';
+	import type { Server as HttpsServer } from 'https';
+	import type { Http2SecureServer, Http2Server } from 'http2';
+
 
 	// RateLimit
 	export type generateRateLimitKey = (req: IncomingMessage) => string;
@@ -593,6 +599,15 @@ declare module "moleculer-web" {
 		whitelist?: (string | RegExp)[];
 	};
 
+	type APISettingServer =
+		| boolean
+		| HttpServer
+		| HttpsServer
+		| Http2Server
+		| Http2SecureServer
+		| NetServer
+		| TLSServer;
+
 	export type ApiSettingsSchema = CommonSettingSchema & {
 		/**
 		 * It serves assets with the [serve-static](https://github.com/expressjs/serve-static) module like ExpressJS.
@@ -695,7 +710,7 @@ declare module "moleculer-web" {
 		 * If false, it will start without server in middleware mode
 		 * @default true
 		 */
-		server?: boolean;
+		server?: APISettingServer;
 
 		/**
 		 * Options passed on to qs
