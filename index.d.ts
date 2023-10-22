@@ -480,7 +480,7 @@ declare module "moleculer-web" {
 		 */
 		use?: (routeMiddleware | routeMiddlewareError)[];
 	};
-	export type ApiRouteSchema = CommonSettingSchema & {
+	export interface ApiRouteSchema extends CommonSettingSchema {
 		/**
 		 * You can use alias names instead of action names. You can also specify the method. Otherwise it will handle every method types.<br>
 		 * Using named parameters in aliases is possible. Named parameters are defined by prefixing a colon to the parameter name (:name).
@@ -597,7 +597,7 @@ declare module "moleculer-web" {
 		 * @see https://moleculer.services/docs/0.14/moleculer-web.html#Whitelist
 		 */
 		whitelist?: (string | RegExp)[];
-	};
+	}
 
 	type APISettingServer =
 		| boolean
@@ -608,7 +608,7 @@ declare module "moleculer-web" {
 		| NetServer
 		| TLSServer;
 
-	export type ApiSettingsSchema = CommonSettingSchema & {
+	export interface ApiSettingsSchema extends CommonSettingSchema {
 		/**
 		 * It serves assets with the [serve-static](https://github.com/expressjs/serve-static) module like ExpressJS.
 		 * @see https://moleculer.services/docs/0.14/moleculer-web.html#Serve-static-files
@@ -722,7 +722,7 @@ declare module "moleculer-web" {
 		 * for extra setting's keys
 		 */
 		[k: string]: any;
-	};
+	}
 
 	export class IncomingRequest extends IncomingMessage {
 		$action: ActionSchema;
@@ -748,8 +748,6 @@ declare module "moleculer-web" {
 
 	const ApiGatewayService: ServiceSchema & {
 		Errors: ApiGatewayErrors;
-		IncomingRequest: IncomingRequest;
-		GatewayResponse: GatewayResponse;
 		RateLimitStores: RateLimitStores;
 	};
 	export default ApiGatewayService;
