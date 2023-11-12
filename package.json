@@ -1,6 +1,6 @@
 {
   "name": "moleculer-web",
-  "version": "0.10.6",
+  "version": "0.10.7",
   "description": "Official API Gateway service for Moleculer framework",
   "main": "index.js",
   "scripts": {
