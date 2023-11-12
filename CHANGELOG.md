@@ -1,3 +1,15 @@
+<a name="0.10.7"></a>
+# 0.10.7 (2023-11-12)
+
+## Changes
+- add SSE Example with simple chat [#329](https://github.com/moleculerjs/moleculer-web/pull/329)
+- fix: secure header assignment to avoid process crash. [#330](https://github.com/moleculerjs/moleculer-web/pull/330)
+- avoid stream hanging on error. [#337](https://github.com/moleculerjs/moleculer-web/pull/337)
+- fix: request url not logged correctly. [#341](https://github.com/moleculerjs/moleculer-web/pull/341)
+- refactor tests. [#342](https://github.com/moleculerjs/moleculer-web/pull/342)
+- update index.d.ts [#338](https://github.com/moleculerjs/moleculer-web/pull/338), [#340](https://github.com/moleculerjs/moleculer-web/pull/340)
+
+-----------------------------
 <a name="0.10.6"></a>
 # 0.10.6 (2023-07-15)
 
