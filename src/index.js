@@ -983,7 +983,7 @@ module.exports = {
 			if (req.$route && !req.$route.logging) return;
 
 			if (this.settings.logRequest && this.settings.logRequest in this.logger)
-				this.logger[this.settings.logRequest](`=> ${req.method} ${req.url}`);
+				this.logger[this.settings.logRequest](`=> ${req.method} ${req.originalUrl}`);
 		},
 
 		/**
