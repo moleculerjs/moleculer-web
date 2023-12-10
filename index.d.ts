@@ -19,6 +19,7 @@ interface RestSchema {
 	basePath?: string;
 }
 
+import "moleculer";
 declare module "moleculer" {
 	interface ActionSchema {
 		rest?: RestSchema | RestSchema[] | string | string[] | null;
