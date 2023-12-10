@@ -1,23 +1,42 @@
-declare module "moleculer-web" {
-	import { IncomingMessage, ServerResponse } from "http";
-	import type {
-		ActionEndpoint,
-		ActionSchema,
-		CallingOptions,
-		Context,
-		LogLevels,
-		Service,
-		ServiceBroker,
-		ServiceSchema,
-	} from "moleculer";
-	import { Errors } from "moleculer";
-	import { IParseOptions } from 'qs';
-	import type { Server as NetServer } from 'net';
-	import type { Server as TLSServer } from 'tls';
-	import type { Server as HttpServer } from 'http';
-	import type { Server as HttpsServer } from 'https';
-	import type { Http2SecureServer, Http2Server } from 'http2';
+import { IParseOptions } from "qs";
 
+import type {
+	ActionEndpoint,
+	ActionSchema,
+	CallingOptions,
+	Context,
+	LogLevels,
+	Service,
+	ServiceBroker,
+	ServiceSchema,
+} from "moleculer";
+import { Errors } from "moleculer";
+
+interface RestSchema {
+	path?: string;
+	method?: "GET" | "POST" | "DELETE" | "PUT" | "PATCH";
+	fullPath?: string;
+	basePath?: string;
+}
+
+declare module "moleculer" {
+	interface ActionSchema {
+		rest?: RestSchema | RestSchema[] | string | string[] | null;
+	}
+
+	interface ServiceSettingSchema {
+		rest?: string | string[] | null;
+	}
+}
+
+import { IncomingMessage, ServerResponse } from "http";
+import type { Server as NetServer } from 'net';
+import type { Server as TLSServer } from 'tls';
+import type { Server as HttpServer } from 'http';
+import type { Server as HttpsServer } from 'https';
+import type { Http2SecureServer, Http2Server } from 'http2';
+
+declare module "moleculer-web" {
 
 	// RateLimit
 	export type generateRateLimitKey = (req: IncomingMessage) => string;

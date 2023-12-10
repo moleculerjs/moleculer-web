@@ -49,7 +49,7 @@
     "jsonwebtoken": "^8.5.1",
     "mime-types": "^2.1.33",
     "mkdirp": "^1.0.4",
-    "moleculer": "^0.14.17",
+    "moleculer": "github:moleculerjs/moleculer#next",
     "moleculer-repl": "^0.7.0",
     "nats": "^2.2.0",
     "nodemon": "^2.0.13",
@@ -64,6 +64,7 @@
   },
   "dependencies": {
     "@fastify/busboy": "^1.0.0",
+    "@types/qs": "^6.9.10",
     "body-parser": "^1.19.0",
     "es6-error": "^4.1.1",
     "etag": "^1.8.1",
