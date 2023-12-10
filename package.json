@@ -49,7 +49,7 @@
     "jsonwebtoken": "^8.5.1",
     "mime-types": "^2.1.33",
     "mkdirp": "^1.0.4",
-    "moleculer": "github:moleculerjs/moleculer#next",
+    "moleculer": "github:moleculerjs/moleculer",
     "moleculer-repl": "^0.7.0",
     "nats": "^2.2.0",
     "nodemon": "^2.0.13",
