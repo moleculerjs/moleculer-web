@@ -8,7 +8,7 @@ import type {
 	LogLevels,
 	Service,
 	ServiceBroker,
-	ServiceSchema,
+	ServiceSchema
 } from "moleculer";
 import { Errors } from "moleculer";
 
