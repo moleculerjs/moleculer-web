@@ -70,7 +70,7 @@ broker.loadServices(path.join(__dirname, ".."), "*.service.js");
 
 // Load API Gateway
 broker.createService({
-	mixins: ApiGatewayService,
+	mixins: [ApiGatewayService],
 
 	settings: {
 		// Exposed port

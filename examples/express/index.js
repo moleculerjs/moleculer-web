@@ -27,7 +27,7 @@ broker.loadService(path.join(__dirname, "..", "test.service"));
 
 // Load API Gateway
 const svc = broker.createService({
-	mixins: ApiGatewayService,
+	mixins: [ApiGatewayService],
 
 	settings: {
 		server: false,

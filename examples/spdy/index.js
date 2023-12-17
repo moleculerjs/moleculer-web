@@ -28,7 +28,7 @@ broker.loadService(path.join(__dirname, "..", "test.service"));
 
 // Load API Gateway
 broker.createService({
-	mixins: ApiGatewayService,
+	mixins: [ApiGatewayService],
 
 	settings: {
 		key: fs.readFileSync(path.join(__dirname, "../ssl/key.pem")),

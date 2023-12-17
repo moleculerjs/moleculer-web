@@ -26,7 +26,7 @@ const broker = new ServiceBroker({});
 
 // Load API Gateway
 broker.createService({
-	mixins: ApiGatewayService,
+	mixins: [ApiGatewayService],
 	settings: {
 		path: "/api",
 

@@ -29,7 +29,8 @@ broker.loadService(path.join(__dirname, "..", "post.service"));
 broker.loadService(path.join(__dirname, "..", "auth.service"));
 
 // Load API Gateway
-broker.createService(ApiService, {
+broker.createService({
+	mixins: [ApiService],
 	settings: {
 		routes: [
 			{

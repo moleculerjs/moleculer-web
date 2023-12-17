@@ -2,21 +2,21 @@
 
 /**
  * This example demonstrates how to use API Gateway as HTTPS server with whitelist.
- * 
+ *
  * You can access only to math.add, math.div & file.* actions via https://localhost:3000
- * 
+ *
  * Example:
- * 	
+ *
  *  - Add two numbers
  * 		https://localhost:3000/math/add?a=25&b=13
- * 
+ *
  *  - Divide two numbers
  * 		https://localhost:3000/math/add?a=25&b=13
- * 
+ *
  *  - Get the logo image (Content-Type: image/png)
  * 		https://localhost:3000/file/image
- * 
- * 
+ *
+ *
  */
 
 let fs	 				= require("fs");
@@ -35,7 +35,7 @@ broker.loadService(path.join(__dirname, "..", "file.service"));
 
 // Load API Gateway
 broker.createService({
-	mixins: ApiService,
+	mixins: [ApiService],
 
 	// Override default settings
 	settings: {
@@ -57,7 +57,7 @@ broker.createService({
 				// Use JSON body-parser module
 				bodyParsers: {
 					json: true
-				}			
+				}
 			}
 		]
 	}

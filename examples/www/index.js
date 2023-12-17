@@ -43,7 +43,7 @@ broker.loadService(path.join(__dirname, "..", "file.service"));
 
 // Load API Gateway
 broker.createService({
-	mixins: ApiGatewayService,
+	mixins: [ApiGatewayService],
 
 	settings: {
 

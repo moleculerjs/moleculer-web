@@ -28,7 +28,7 @@ broker.loadService("./examples/file.service.js");
 
 // Load API Gateway
 broker.createService({
-	mixins: ApiGatewayService,
+	mixins: [ApiGatewayService],
 	settings: {
 		path: "/upload",
 

@@ -30,7 +30,8 @@ function setup(settings, brokerSettings = {}) {
 	const broker = new ServiceBroker(Object.assign({}, { nodeID: undefined, logger: false }, brokerSettings));
 	broker.loadService("./test/services/test.service");
 
-	const service = broker.createService(_.cloneDeep(ApiGateway), {
+	const service = broker.createService({
+		mixins: [ApiGateway],
 		settings
 	});
 	const server = service.server;
@@ -2681,7 +2682,8 @@ describe("Test onBeforeCall & onAfterCall", () => {
 			return data;
 		});
 
-		const service = broker.createService(ApiGateway, {
+		const service = broker.createService({
+			mixins: [ApiGateway],
 			settings: {
 				routes: [{
 					aliases: {
@@ -2775,7 +2777,8 @@ describe("Test onBeforeCall & onAfterCall", () => {
 			};
 		});
 
-		const service = broker.createService(ApiGateway, {
+		const service = broker.createService({
+			mixins: [ApiGateway],
 			settings: {
 				routes: [{
 					onAfterCall: afterCall,
@@ -2813,7 +2816,8 @@ describe("Test encodeResponse", () => {
 			return JSON.stringify(req.headers["accept"]);
 		});
 
-		const service = broker.createService(ApiGateway, {
+		const service = broker.createService({
+			mixins: [ApiGateway],
 			settings: {
 				routes: [{
 					aliases: {
@@ -2850,7 +2854,8 @@ describe("Test encodeResponse", () => {
 			return data;
 		});
 
-		const service = broker.createService(ApiGateway, {
+		const service = broker.createService({
+			mixins: [ApiGateway],
 			settings: {
 				routes: [{
 					aliases: {
@@ -2886,7 +2891,8 @@ describe("Test encodeResponse", () => {
 			return JSON.stringify(req.headers["accept"]);
 		});
 
-		const service = broker.createService(ApiGateway, {
+		const service = broker.createService({
+			mixins: [ApiGateway],
 			settings: {
 				routes: [{
 					aliases: {
@@ -2932,7 +2938,8 @@ describe("Test route middlewares", () => {
 			next();
 		});
 
-		const service = broker.createService(ApiGateway, {
+		const service = broker.createService({
+			mixins: [ApiGateway],
 			settings: {
 				use: [mwg],
 				routes: [{
@@ -2975,7 +2982,8 @@ describe("Test route middlewares", () => {
 			next();
 		});
 
-		const service = broker.createService(ApiGateway, {
+		const service = broker.createService({
+			mixins: [ApiGateway],
 			settings: {
 				routes: [{
 					path: "/",
@@ -3028,7 +3036,8 @@ describe("Test authentication", () => {
 			email: "my@user.mail"
 		};
 		const authenticate = jest.fn(() => Promise.resolve(user));
-		const service = broker.createService(ApiGateway, {
+		const service = broker.createService({
+			mixins: [ApiGateway],
 			settings: {
 				routes: [{
 					authentication: true
@@ -3060,7 +3069,8 @@ describe("Test authentication", () => {
 		broker.loadService("./test/services/test.service");
 
 		const authenticate = jest.fn(() => Promise.resolve(null));
-		const service = broker.createService(ApiGateway, {
+		const service = broker.createService({
+			mixins: [ApiGateway],
 			settings: {
 				routes: [{
 					authentication: true
@@ -3092,7 +3102,8 @@ describe("Test authentication", () => {
 		broker.loadService("./test/services/test.service");
 
 		const authenticate = jest.fn(() => Promise.reject(new MoleculerError("Not available", 400)));
-		const service = broker.createService(ApiGateway, {
+		const service = broker.createService({
+			mixins: [ApiGateway],
 			settings: {
 				routes: [{
 					authentication: true
@@ -3142,7 +3153,8 @@ describe("Test authorization", () => {
 		broker.loadService("./test/services/test.service");
 
 		const authorize = jest.fn(() => Promise.resolve());
-		const service = broker.createService(ApiGateway, {
+		const service = broker.createService({
+			mixins: [ApiGateway],
 			settings: {
 				routes: [{
 					authorization: true
@@ -3174,7 +3186,8 @@ describe("Test authorization", () => {
 		broker.loadService("./test/services/test.service");
 
 		const authorize = jest.fn(() => Promise.reject(new UnAuthorizedError(ERR_NO_TOKEN)));
-		const service = broker.createService(ApiGateway, {
+		const service = broker.createService({
+			mixins: [ApiGateway],
 			settings: {
 				routes: [{
 					authorization: true
@@ -3328,7 +3341,8 @@ describe("Test onError handlers", () => {
 
 	it("should return with JSON error object", () => {
 		const broker = new ServiceBroker({ logger: false });
-		const service = broker.createService(ApiGateway, {
+		const service = broker.createService({
+			mixins: [ApiGateway],
 			settings: {
 				routes: [{
 					path: "/api"
@@ -3357,7 +3371,8 @@ describe("Test onError handlers", () => {
 
 	it("should return with global error handler response", () => {
 		const broker = new ServiceBroker({ logger: false });
-		const service = broker.createService(ApiGateway, {
+		const service = broker.createService({
+			mixins: [ApiGateway],
 			settings: {
 				routes: [{
 					path: "/api",
@@ -3384,7 +3399,8 @@ describe("Test onError handlers", () => {
 
 	it("should return with route error handler response", () => {
 		const broker = new ServiceBroker({ logger: false });
-		const service = broker.createService(ApiGateway, {
+		const service = broker.createService({
+			mixins: [ApiGateway],
 			settings: {
 				routes: [{
 					path: "/api",
@@ -3428,7 +3444,8 @@ describe("Test lifecycle events", () => {
 	it("`created` with HTTPS", () => {
 		const broker = new ServiceBroker({ logger: false });
 
-		const service = broker.createService(ApiGateway, {
+		const service = broker.createService({
+			mixins: [ApiGateway],
 			settings: {
 				https: {
 					key: fs.readFileSync(path.join(__dirname, "..", "..", "examples", "ssl", "key.pem")),
@@ -3479,7 +3496,8 @@ describe("Test route.path and aliases", () => {
 
 		broker = new ServiceBroker({ logger: false });
 
-		service = broker.createService(ApiGateway, {
+		service = broker.createService({
+			mixins: [ApiGateway],
 			settings: {
 				path: "/api",
 				autoAliases: true,
@@ -3543,7 +3561,8 @@ describe("Test middleware mode", () => {
 		broker = new ServiceBroker({ logger: false });
 		broker.loadService("./test/services/test.service");
 
-		service = broker.createService(ApiGateway, {
+		service = broker.createService({
+			mixins: [ApiGateway],
 			settings: {
 				server: false,
 				path: "/api"
@@ -3616,7 +3635,8 @@ describe("Test file uploading", () => {
 
 	const onFilesLimitFn = jest.fn();
 
-	const service = broker.createService(ApiGateway, {
+	const service = broker.createService({
+		mixins: [ApiGateway],
 		settings: {
 			routes: [{
 				path: "/upload",

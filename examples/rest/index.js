@@ -49,7 +49,7 @@ broker.loadService(path.join(__dirname, "..", "post.service"));
 
 // Load API Gateway
 broker.createService({
-	mixins: ApiGatewayService,
+	mixins: [ApiGatewayService],
 	settings: {
 		routes: [{
 			// RESTful aliases
