@@ -60,7 +60,7 @@
     "webpack-dev-middleware": "^5.2.1"
   },
   "peerDependencies": {
-    "moleculer": "^0.13.0 || ^0.14.0"
+    "moleculer": "^0.13.0 || ^0.14.0 || ^0.15.0"
   },
   "dependencies": {
     "@fastify/busboy": "^1.0.0",
@@ -77,7 +77,7 @@
     "serve-static": "^1.14.1"
   },
   "engines": {
-    "node": ">= 10.x.x"
+    "node": ">= 18.x.x"
   },
   "typings": "./index.d.ts",
   "jest": {
