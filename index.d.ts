@@ -465,7 +465,7 @@ declare module "moleculer-web" {
 		 * In handlers, you must call the `res.end`. Otherwise, the request is unhandled.
 		 * @see https://moleculer.services/docs/0.14/moleculer-web.html#Error-handlers
 		 */
-		onError?: (req: IncomingMessage, res: ServerResponse, error: Error) => void;
+		onError?: (req: IncomingRequest, res: ServerResponse, error: Error) => void;
 		/**
 		 * The Moleculer-Web has a built-in rate limiter with a memory store.
 		 * @see https://moleculer.services/docs/0.14/moleculer-web.html#Rate-limiter
