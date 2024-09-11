@@ -538,7 +538,7 @@ describe("Test only assets", () => {
 			.get("/")
 			.then(res => {
 				expect(res.statusCode).toBe(200);
-				expect(res.headers["content-type"]).toBe("text/html; charset=UTF-8");
+				expect(res.headers["content-type"]).toBe("text/html; charset=utf-8");
 				expect(res.text).toBe(fs.readFileSync(path.join(__dirname, "..", "assets", "index.html"), "utf8"));
 			});
 	});
@@ -548,7 +548,7 @@ describe("Test only assets", () => {
 			.get("/lorem.txt")
 			.then(res => {
 				expect(res.statusCode).toBe(200);
-				expect(res.headers["content-type"]).toBe("text/plain; charset=UTF-8");
+				expect(res.headers["content-type"]).toBe("text/plain; charset=utf-8");
 				expect(res.text).toBe("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis in faucibus sapien, vitae aliquet nisi. Vivamus quis finibus tortor.");
 			});
 	});
@@ -644,7 +644,7 @@ describe("Test assets & API route", () => {
 			.get("/")
 			.then(res => {
 				expect(res.statusCode).toBe(200);
-				expect(res.headers["content-type"]).toBe("text/html; charset=UTF-8");
+				expect(res.headers["content-type"]).toBe("text/html; charset=utf-8");
 				expect(res.text).toBe(fs.readFileSync(path.join(__dirname, "..", "assets", "index.html"), "utf8"));
 			});
 	});
@@ -654,7 +654,7 @@ describe("Test assets & API route", () => {
 			.get("/lorem.txt")
 			.then(res => {
 				expect(res.statusCode).toBe(200);
-				expect(res.headers["content-type"]).toBe("text/plain; charset=UTF-8");
+				expect(res.headers["content-type"]).toBe("text/plain; charset=utf-8");
 				expect(res.text).toBe("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis in faucibus sapien, vitae aliquet nisi. Vivamus quis finibus tortor.");
 			});
 	});
@@ -819,8 +819,8 @@ describe("Test aliases", () => {
 						"POST   /hello": "test.greeter",
 						"GET 	greeter/:name": "test.greeter",
 						"POST 	greeting/:name": "test.greeter",
-						"opt-test/:name?": "test.echo",
-						"/repeat-test/:args*": "test.echo",
+						"opt-test{/:name}": "test.echo",
+						"/repeat-test{/*args}": "test.echo",
 						"GET /": "test.hello",
 						"GET custom": customAlias,
 						"GET /middleware": customMiddlewares,
@@ -1030,14 +1030,14 @@ describe("Test aliases", () => {
 			});
 	});
 
-	it("GET repeat-test/:args?", () => {
+	it("GET repeat-test{/*args}", () => {
 		return request(server)
 			.get("/api/repeat-test/John/Jane/Adam/Walter")
 			.then(res => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
 				expect(res.body.params).toEqual({
-					args: ["John", "Jane", "Adam", "Walter"]
+					args: "John/Jane/Adam/Walter"
 				});
 			});
 	});
@@ -1195,8 +1195,8 @@ describe("Test un-merged params", () => {
 					"GET echo": "test.echo",
 					"POST /echo": "test.echo",
 					"param-test/:name": "test.echo",
-					"opt-test/:name?": "test.echo",
-					"repeat-test/:args*": "test.echo",
+					"opt-test{/:name}": "test.echo",
+					"repeat-test{/*args}": "test.echo",
 				}
 			}]
 		});
@@ -1277,7 +1277,7 @@ describe("Test un-merged params", () => {
 			});
 	});
 
-	it("GET opt-test/:name? with name", () => {
+	it("GET opt-test/{:name} with name", () => {
 		return request(server)
 			.get("/api/opt-test/John")
 			.then(res => {
@@ -1327,7 +1327,7 @@ describe("Test un-merged params", () => {
 			});
 	});
 
-	it("GET opt-test/:name? without name", () => {
+	it("GET opt-test/{:name} without name", () => {
 		return request(server)
 			.get("/api/opt-test")
 			.then(res => {
@@ -1351,7 +1351,7 @@ describe("Test un-merged params", () => {
 				expect(res.body.params).toEqual({
 					body: {},
 					params: {
-						args: ["John", "Jane", "Adam", "Walter"]
+						args: "John/Jane/Adam/Walter"
 					},
 					query: {
 						foo: { bar: ["a", "b"], baz: "c" }
@@ -1911,7 +1911,7 @@ describe("Test body-parsers", () => {
 				expect(res.body).toEqual({
 					"code": 400,
 					"type": "entity.parse.failed",
-					"message": process.version.startsWith("v20")? "Unexpected token 'i', \"#\" is not valid JSON": "Unexpected token i in JSON at position 0",
+					"message": process.version.startsWith("v20")? "Unexpected token 'i', \"invalid\" is not valid JSON": "Unexpected token i in JSON at position 0",
 					"name": "MoleculerError"
 				});
 			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));

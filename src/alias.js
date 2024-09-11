@@ -6,7 +6,7 @@
 
 "use strict";
 
-const pathToRegexp 				= require("path-to-regexp");
+const { pathToRegexp }		= require("path-to-regexp");
 const Busboy 					= require("@fastify/busboy");
 const kleur 					= require("kleur");
 const _ 						= require("lodash");
@@ -80,8 +80,9 @@ class Alias {
 			this.fullPath = this.fullPath.slice(0, -1);
 		}
 
-		this.keys = [];
-		this.re = pathToRegexp(this.fullPath, this.keys, route.opts.pathToRegexpOptions || {}); // Options: https://github.com/pillarjs/path-to-regexp#usage
+		const data = pathToRegexp(this.fullPath, route.opts.pathToRegexpOptions || {}); // Options: https://github.com/pillarjs/path-to-regexp#usage
+		this.re = data.regexp
+		this.keys = data.keys
 
 		if (this.type == "multipart") {
 			// Handle file upload in multipart form
