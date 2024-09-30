@@ -1,7 +1,16 @@
+<a name="next"></a>
+
+# Unreleased
+
+Updating `ApiSettingsSchema` to correctly inherit from `ServiceSettings` schema allowing
+strong typing.
+
 <a name="0.10.7"></a>
+
 # 0.10.7 (2023-11-12)
 
 ## Changes
+
 - add SSE Example with simple chat [#329](https://github.com/moleculerjs/moleculer-web/pull/329)
 - fix: secure header assignment to avoid process crash. [#330](https://github.com/moleculerjs/moleculer-web/pull/330)
 - avoid stream hanging on error. [#337](https://github.com/moleculerjs/moleculer-web/pull/337)
@@ -11,9 +20,11 @@
 
 -----------------------------
 <a name="0.10.6"></a>
+
 # 0.10.6 (2023-07-15)
 
 ## Changes
+
 - update qs package to mitigate CVE-2022-24999. [#320](https://github.com/moleculerjs/moleculer-web/pull/320)
 - correct types for route middleware functions. [#327](https://github.com/moleculerjs/moleculer-web/pull/327)
 - incorrect key for calloptions type. [#328](https://github.com/moleculerjs/moleculer-web/pull/328)
@@ -21,9 +32,11 @@
 
 -----------------------------
 <a name="0.10.5"></a>
+
 # 0.10.5 (2022-12-17)
 
 ## Changes
+
 - improving d.ts
 - register on close and error event on response. [#299](https://github.com/moleculerjs/moleculer-web/pull/299)
 - resolve promise when close event is fired for res. [#301](https://github.com/moleculerjs/moleculer-web/pull/301)
@@ -33,22 +46,26 @@
 
 -----------------------------
 <a name="0.10.4"></a>
+
 # 0.10.4 (2022-01-09)
 
 ## What's Changed
-* d.ts for v0.10.2 v0.10.3 by @0x0a0d in https://github.com/moleculerjs/moleculer-web/pull/280
-* skip services without settings by @kechkibet in https://github.com/moleculerjs/moleculer-web/pull/283
-* Fix to comment in multi-auth example by @machinaexdeo in https://github.com/moleculerjs/moleculer-web/pull/286
-* Add alias as last parameter by @icebob in https://github.com/moleculerjs/moleculer-web/pull/290
-* Fix cors problem in assets by @moonrailgun in https://github.com/moleculerjs/moleculer-web/pull/289
-* Broadcast event after alias regeneration by @icebob in https://github.com/moleculerjs/moleculer-web/pull/292
+
+- d.ts for v0.10.2 v0.10.3 by @0x0a0d in <https://github.com/moleculerjs/moleculer-web/pull/280>
+- skip services without settings by @kechkibet in <https://github.com/moleculerjs/moleculer-web/pull/283>
+- Fix to comment in multi-auth example by @machinaexdeo in <https://github.com/moleculerjs/moleculer-web/pull/286>
+- Add alias as last parameter by @icebob in <https://github.com/moleculerjs/moleculer-web/pull/290>
+- Fix cors problem in assets by @moonrailgun in <https://github.com/moleculerjs/moleculer-web/pull/289>
+- Broadcast event after alias regeneration by @icebob in <https://github.com/moleculerjs/moleculer-web/pull/292>
 
 ## Other changes
+
 - update dependencies.
 - change to @fastify/busboy implementation. [#287](https://github.com/moleculerjs/moleculer-web/issues/287)
 
 -----------------------------
 <a name="0.10.3"></a>
+
 # 0.10.3 (2021-10-17)
 
 ## Named authenticate & authorize methods [#275](https://github.com/moleculerjs/moleculer-web/issues/275)
@@ -144,16 +161,18 @@ module.exports = {
 ```
 
 ## Other changes
+
 - update dependencies.
 - add support for custom cors origin function. [#274](https://github.com/moleculerjs/moleculer-web/issues/274)
 - typescript definition file is rewritten. [#259](https://github.com/moleculerjs/moleculer-web/issues/259)
 
 -----------------------------
 <a name="0.10.2"></a>
+
 # 0.10.2 (2021-09-05)
 
-
 ## Named routes
+
 Many developers issued that version 0.10 doesn't support multiple routes with the same path. This version fixes it but you should give a unique name for the routes if they have same path.
 
 **Example**
@@ -189,14 +208,16 @@ module.exports = {
 ```
 
 ## Changes
-- add `removeRouteByName(name: string)` method to remove a route by its name.
 
+- add `removeRouteByName(name: string)` method to remove a route by its name.
 
 -----------------------------
 <a name="0.10.1"></a>
+
 # 0.10.1 (2021-09-01)
 
 ## Changes
+
 - set the default JSON bodyparser if `bodyParser: true`. [#258](https://github.com/moleculerjs/moleculer-web/issues/258)
 - add `pathToRegexpOptions` to route options to make available to pass options to `path-to-regexp` library. [#268](https://github.com/moleculerjs/moleculer-web/issues/268)
 - add `debounceTime` to route options to make available to change the debounce time at service changes. [#260](https://github.com/moleculerjs/moleculer-web/issues/260)
@@ -206,15 +227,18 @@ module.exports = {
 
 -----------------------------
 <a name="0.10.0"></a>
+
 # 0.10.0 (2021-06-27)
 
 ## Breaking changes
 
 ### Avoid array wrapping at file uploading
-Many users issued that at file uploading the response always wrapped into an array even single file uploading. This issues is fixed in this version. 
+
+Many users issued that at file uploading the response always wrapped into an array even single file uploading. This issues is fixed in this version.
 If you define `files: 1` in busboy settings, the response won't be wrapped into array.
 
 **Example**
+
 ```js
 const ApiGateway = require("moleculer-web");
 
@@ -238,10 +262,12 @@ module.exports = {
 };
 ```
 
-### JSON body-parser is the new default.
+### JSON body-parser is the new default
+
 In early version, if you added multiple routes, you should always set JSON body-parser. As of v0.10, it's the new default, if you don't define `bodyParsers` in the route options. If you don't want to use any body-parsers just set `bodyParsers: false`.
 
 **Example: disable body parsers**
+
 ```js
 const ApiGateway = require("moleculer-web");
 
@@ -257,12 +283,15 @@ module.exports = {
     }
 };
 ```
+
 ## New features
 
 ### Actions for adding and removing routes
+
 The `addRoute` and `removeRoute` methods exposed to service actions, as well. It means, you can add/remove routes from remote nodes, as well.
 
 **Adding a new route**
+
 ```js
 broker.call("api.addRoute", {
     route: {
@@ -276,11 +305,13 @@ broker.call("api.addRoute", {
 ```
 
 **Removing a route**
+
 ```js
 broker.call("api.removeRoute", { path: "/api" });
 ```
 
 ### New logging options
+
 There are two new logging service settings: `logRequest`, `logResponse`. You can define the logging level for request & response log messages.
 
 ```js
@@ -297,9 +328,11 @@ module.exports = {
 ```
 
 ### New `rootCallOptions` options
+
 There a new `rootCallOptions` property in the service settings. Here you can define the root `Context` calling options. It can be a static `Object` or a `Function`. It can be useful to take some data from the `req` and put them to the calling options (like tracing informations)
 
 **Example with static object**
+
 ```js
 const ApiGateway = require("moleculer-web");
 
@@ -316,6 +349,7 @@ module.exports = {
 ```
 
 **Example with Function which takes tracing information from the req and put them to the calling options**
+
 ```js
 const ApiGateway = require("moleculer-web");
 
@@ -356,6 +390,7 @@ module.exports = {
 ```
 
 ## Multiple route aliases
+
 You can define multiple REST aliases in the action definitions.
 
 ```js
@@ -376,13 +411,16 @@ module.exports = {
 ```
 
 ## Multipart fields & URL Params
+
 Several issues has been fixed with multipart handling.
+
 - URL parameters (e.g. `/api/upload/:tenant/:folder`) is available via `ctx.meta.$params`
 - Multipart fields is available via `ctx.meta.$multipart`
 - `ctx.params.$params` is not available, use `ctx.meta.$params`
 - The target action is called if no uploaded files but has multipart fields. In this case `ctx.params` is `{}` and the fields are in `ctx.meta.$multipart`.
 
 ## Other changes
+
 - set response header from `ctx.meta` in case of errors, as well.
 - update dependencies.
 - update index.d.ts.
@@ -390,34 +428,41 @@ Several issues has been fixed with multipart handling.
 
 -----------------------------
 <a name="0.9.1"></a>
+
 # 0.9.1 (2020-02-29)
 
 ## Changes
+
 - remove empty log lines
 - add `encodeResponse(req, res, data)` method. You can overwrite it in order to use other response encoding instead of JSON.
 
 -----------------------------
 <a name="0.9.0"></a>
+
 # 0.9.0 (2020-02-12)
 
 ## Breaking changes
 
 ### Drop Node 6 & 8 support
+
 Due to Node 6 & 8 LTS end of life, the minimum Node version is 10.
 
 ### Changed `mappingPolicy` default value
+
 In the previous version the `mappingPolicy` default value was `all` which means, you can call
 any services via API Gateway which accepted by whitelist. This setting is not too secure.
 From this version, the default value is `restrict` if at least one alias is defined in route options.
 If there are not aliases & `mappingPolicy` defined, the behaviour will be the old one.
 
 ### Use `server` property instead of `middleware`
+
 We have removed the `middleware` service setting because it was not straightforward. Therefore, we have created a new `server` setting.
 If `server: true` (which is the default value), API Gateway will create a HTTP(s) server. If `server: false`, it won't create a HTTP server, so you can use API Gateway as an Express middleware.
 
 #### Migration guide
 
 **Before**
+
 ```js
 const ApiGateway = require("moleculer-web");
 
@@ -430,6 +475,7 @@ module.exports = {
 ```
 
 **After**
+
 ```js
 const ApiGateway = require("moleculer-web");
 
@@ -442,16 +488,19 @@ module.exports = {
 ```
 
 ### Other low-level breaking changes
+
 - `sendResponse` signature is changed to `this.sendResponse(req, res, data)`
 
-## New 
+## New
 
 ### File upload aliases
+
 API Gateway has implemented file uploads. You can upload files as a multipart form data (thanks for busboy library) or as a raw request body. In both cases, the file is transferred to an action as a Stream. In multipart form data mode you can upload multiple files, as well.
 
 > Please note, you have to disable other body parsers in order to accept files.
 
 **Example**
+
 ```js
 const ApiGateway = require("moleculer-web");
 
@@ -508,9 +557,11 @@ module.exports = {
 ```
 
 ### HTTP2 server
+
 HTTP2 experimental server has been implemented into API Gateway. You can turn it on with `http2: true` service setting.
 
 **Example**
+
 ```js
 const ApiGateway = require("moleculer-web");
 
@@ -532,15 +583,18 @@ module.exports = {
 ```
 
 ### Dynamic routing
+
 The `this.addRoute(opts, toBottom = true)` new service method is added to add/replace routes. You can call it from your mixins to define new routes _(e.g. swagger route, graphql route...etc)_.
 The function detects that the route is defined early. In this case, it will replace the previous route configuration with the new one.
 
 To remove a route, use the `this.removeRoute("/admin")` method. It removes the route by path.
 
 ### ETag supporting
+
 Thank to tiaod for ETag implementation. PR: [#92](https://github.com/moleculerjs/moleculer-web/pull/92)
 
 **Example**
+
 ```js
 const ApiGateway = require("moleculer-web");
 
@@ -565,6 +619,7 @@ module.exports = {
 The `etag` option value can be `false`, `true`, `weak`, `strong`, or a custom Function.
 
 **Custom ETag generator function**
+
 ```js
 module.exports = {
     mixins: [ApiGateway],
@@ -578,6 +633,7 @@ module.exports = {
 Please note, it doesn't work with stream responses. In this case, you should generate the etag by yourself.
 
 **Example**
+
 ```js
 module.exports = {
     name: "export",
@@ -596,11 +652,13 @@ module.exports = {
 ```
 
 ### Auto-aliasing feature
+
 The auto-aliasing means you don't have to add all service aliases to the routes, the Gateway can generate it from service schema. If a new service is entered or leaved, Gateway regenerate aliases.
 
 To configure which services are used in route use the whitelist.
 
 **Example**
+
 ```js
 // api.service.js
 module.exports = {
@@ -670,6 +728,7 @@ module.exports = {
 ```
 
 **The generated aliases**
+
 ```
    GET /api/hi             => test.hello
    GET /api/v2/posts       => v2.posts.list
@@ -680,6 +739,7 @@ DELETE /api/v2/posts/:id   => v2.posts.remove
 ```
 
 **Example to define full path alias**
+
 ```js
 // posts.service.js
 module.exports = {
@@ -705,6 +765,7 @@ module.exports = {
 ```
 
 ## Changes
+
 - new `optimizeOrder: true` setting in order to optimize route & alias paths (deeper first). Default: `true`.
 - new `logging` route option to disable request logging. It can be useful for health check routes. Default: `true`.
 - tilde (`~`) replace issue fixed. [#98](https://github.com/moleculerjs/moleculer-web/pull/98)
@@ -717,36 +778,45 @@ module.exports = {
 
 -----------------------------
 <a name="0.8.5"></a>
+
 # 0.8.5 (2018-11-28)
 
 ## Changes
+
 - allow multiple whitespaces between method & path in aliases.
 
 -----------------------------
 <a name="0.8.4"></a>
+
 # 0.8.4 (2018-11-18)
 
 ## Changes
+
 - fix `req.url`, add `req.originalUrl` and `req.baseUrl` for better middleware support (e.g. support static serving in subpath).
 - update deps
 
 -----------------------------
 <a name="0.8.3"></a>
+
 # 0.8.3 (2018-11-11)
 
 ## Changes
+
 - use `Promise` in `started` & `stopped` handlers.
 - disable 4xx errors with `log4XXResponses` setting.
 
 -----------------------------
 <a name="0.8.2"></a>
+
 # 0.8.2 (2018-10-04)
 
-# New `authenticate` method.
+# New `authenticate` method
+
 This `authenticate` method is similar to `authorize`. You have access to `req`, `res` and `route` objects and you can authenticate the user from the request.
 The returned data is saved to the `ctx.meta.user`. To enable this logic set `authentication: true` in route options.
 
 **Example**
+
 ```js
 module.exports = {
     name: "api",
@@ -779,14 +849,18 @@ module.exports = {
 ```
 
 ## Changes
+
 - update dependencies.
 - added `.npmignore`
+
 -----------------------------
 
 <a name="0.8.1"></a>
+
 # 0.8.1 (2018-08-04)
 
 ## Changes
+
 - fix missing dependency.
 - fix middleware array promise-chaining bug
 - handle terminated requests in middlewares
@@ -794,14 +868,17 @@ module.exports = {
 
 -----------------------------
 <a name="0.8.0"></a>
+
 # 0.8.0 (2018-07-08)
 
 ## Breaking changes
 
 ### The `onAfterCall` hook has changed
+
 In previous versions of Moleculer Web, you couldn't manipulate the `data` in `onAfterCall`. Now you can, but you must always return the new or original `data`.
 
 **Modify only headers**
+
 ```js
 broker.createService(ApiGatewayService, {
     settings: {
@@ -818,6 +895,7 @@ broker.createService(ApiGatewayService, {
 ```
 
 **Modify (wrap) the original data**
+
 ```js
 broker.createService(ApiGatewayService, {
     settings: {
@@ -835,27 +913,31 @@ broker.createService(ApiGatewayService, {
 ```
 
 ### Custom alias hooks
+
 The `onBeforeCall` and `authorize` hooks are called before custom alias functions too.
 And you have access to Context as `req.$ctx` or `res.$ctx`
 
 ### Whitelist string matcher changed
+
 In early versions the `*` match string is enabled to call all services & actions. The matcher changed, in new versions use the `**` (double star) match string for the same function.
 
 ## New
 
 ### Response header data from `ctx.meta`
+
 Since Moleculer v0.12, you can use `ctx.meta` to send back response headers to the Moleculer Web.
 >The old method is deprecated but works.
 
 **Available meta fields:**
-* `ctx.meta.$statusCode` - set `res.statusCode`.
-* `ctx.meta.$statusMessage` - set `res.statusMessage`.
-* `ctx.meta.$responseType` - set `Content-Type` in header.
-* `ctx.meta.$responseHeaders` - set all keys in header.
-* `ctx.meta.$location` - set `Location` key in header for redirects.
 
+- `ctx.meta.$statusCode` - set `res.statusCode`.
+- `ctx.meta.$statusMessage` - set `res.statusMessage`.
+- `ctx.meta.$responseType` - set `Content-Type` in header.
+- `ctx.meta.$responseHeaders` - set all keys in header.
+- `ctx.meta.$location` - set `Location` key in header for redirects.
 
 **Old method**
+
 ```js
 module.exports = {
     name: "export",
@@ -874,6 +956,7 @@ module.exports = {
 ```
 
 **New method**
+
 ```js
 module.exports = {
     name: "export",
@@ -898,14 +981,17 @@ module.exports = {
 ```
 
 ### Support array & nested objects in query
+
 Thanks for [@hwuethrich](https://github.com/hwuethrich), Moleculer Web supports arrays & nested objects in querystring.
 
 **`GET /api/opt-test?a=1&a=2`**
+
 ```js
 a: ["1", "2"]
 ```
 
 **`GET /api/opt-test?foo[bar]=a&foo[bar]=b&foo[baz]=c`**
+
 ```js
 foo: { 
     bar: ["a", "b"], 
@@ -914,6 +1000,7 @@ foo: {
 ```
 
 ### Support error-handler middlewares
+
 There is support to use error-handler middlewares in the API Gateway. So if you pass an `Error` to the `next(err)` function, it will call error handler middlewares which have signature as `(err, req, res, next)`.
 
 ```js
@@ -945,6 +1032,7 @@ broker.createService({
 ```
 
 ## Changes
+
 - `preValidate` has been removed.
 - fix multiple CORS origin handling. Thanks for [@felipegcampos](https://github.com/felipegcampos)
 - if `X-Correlation-Id` is in the request header, it is used as `requestID` in `Context`.
@@ -953,25 +1041,32 @@ broker.createService({
 
 -----------------------------
 <a name="0.6.4"></a>
+
 # 0.6.4 (2018-03-04)
 
 ## Changes
+
 - update dependencies.
 
 -----------------------------
 <a name="0.6.3"></a>
+
 # 0.6.3 (2018-02-25)
 
 ## Changes
+
 - fix Bluebird cancellation error `UnhandledPromiseRejectionWarning: Error: cannot enable cancellation after promises are in use`[#202](https://github.com/moleculerjs/moleculer/issues/202)
 -update dependencies
 
 -----------------------------
 <a name="0.6.2"></a>
+
 # 0.6.2 (2018-01-15)
 
 ## Changes
+
 - turnable pre-validation with `preValidate` setting. Default to `true` in order to backward compatibility.
+
     ```js
     broker.createService({
         mixins: [ApiService],
@@ -984,22 +1079,27 @@ broker.createService({
 
 -----------------------------
 <a name="0.6.1"></a>
+
 # 0.6.1 (2018-01-07)
 
 ## Changes
+
 - fix CORS `OPTIONS` handling. [#30](https://github.com/moleculerjs/moleculer-web/issues/30)
 
 -----------------------------
 <a name="0.6.0"></a>
+
 # 0.6.0 (2018-01-04)
 
 ## Breaking changes
 
 ### Alias custom function arguments is changed
+
 The `route` first argument is removed. The new signature of function is `function(req, res) {}`. To access to route use the `req.$route` property.
 However you can use an array of `Function` for aliases. With it you can call middlewares. In this case the third argument is `next`. I.e.: `function(req, res, next) {}`.
 
 ## Other changes
+
 - better error handling. Always returns with JSON error response.
 - The charset is `UTF-8` for `application/json` responses.
 - `logRequestParams` setting to log the request parameters. Use log level value i.e. `"debug"`, `"info"` or `null` to disable.
@@ -1011,6 +1111,7 @@ However you can use an array of `Function` for aliases. With it you can call mid
 - `req.$endpoint` is pointed to the resolved action endpoint. It contains `action` and `nodeID`.
 
 ## Middlewares
+
 Support middlewares in global, routes & aliases.
 
 ```js
@@ -1052,6 +1153,7 @@ broker.createService({
 ```
 
 ## Custom response headers
+
 It supports custom response headers to define in action definition.
 
 ```js
@@ -1072,6 +1174,7 @@ module.exports = {
 ```
 
 ## Error handlers
+
 You can add route & global custom error handlers.
 
 ```js
@@ -1095,41 +1198,47 @@ broker.createService({
             res.setHeader("Content-Type", "text/plain");
             res.writeHead(501);
             res.end("Global error: " + err.message);
-        }		
+        }  
     }
 }
 ```
 
-
 ## New examples to serve client-side developing with Webpack
+
 - [Webpack](https://github.com/moleculerjs/moleculer-web/tree/master/examples/webpack) - webpack-dev-middleware example
 - [Webpack & Vue](https://github.com/moleculerjs/moleculer-web/tree/master/examples/webpack-vue) - Webpack, VueJS, HMR example
 
-
 -----------------------------
 <a name="0.5.2"></a>
+
 # 0.5.2 (2017-10-24)
 
 ## New
+
 - add `mappingPolicy` route option
 
 -----------------------------
 <a name="0.5.1"></a>
+
 # 0.5.1 (2017-10-07)
 
 ## New
+
 - add CORS headers
 - add Rate limiter
 
 -----------------------------
 <a name="0.5.0"></a>
+
 # 0.5.0 (2017-09-12)
 
 ## Breaking changes
+
 - compatibility with Moleculer >= v0.11.x
 
 -----------------------------
 <a name="0.4.4"></a>
+
 # 0.4.4 (2017-08-20)
 
 ## Changes
@@ -1138,6 +1247,7 @@ broker.createService({
 
 -----------------------------
 <a name="0.4.1"></a>
+
 # 0.4.1 (2017-07-24)
 
 ## New
@@ -1159,6 +1269,7 @@ module.exports = {
 ```
 
 ### Calling options in routes
+
 The `route` has a `callOptions` property which is passed to `broker.call`. So you can set `timeout`, `retryCount` or `fallbackResponse` options for routes.
 
 ```js
@@ -1181,26 +1292,32 @@ broker.createService(ApiGatewayService, {
 
 -----------------------------
 <a name="0.4.0"></a>
+
 # 0.4.0 (2017-07-07)
 
 ## Breaking changes
+
 - in the REST shorthand, the `GET /` calls the `list` action instead of `find`. The reason is `list` action in `moleculer-db` is support pagination
 
 ## Changes
+
 - changed order of param handling `ctx.params = Object.assign({}, body, query, params)`.
 - moved `onBeforeCall` before `authorize` in request flow. So you can also reach unauthorized requests in `onBeforeCall` handler.
 - the `sendResponse` method has new arguments: `sendResponse(ctx, route, req, res, data, responseType)`
 
 -----------------------------
 <a name="0.3.3"></a>
+
 # 0.3.3 (2017-06-07)
 
 ## New
 
 ### Functions in aliases
+
 There is available to use custom function in aliases. In this case you got `req` & `res` and you should return with the response. Use it for example file uploads. You can find example in the [full example](examples/full/index.js).
 
 **Usage**
+
 ```js
     ...
         aliases: {
@@ -1214,9 +1331,11 @@ There is available to use custom function in aliases. In this case you got `req`
 ```
 
 ### New `camelCaseNames` route setting
+
 There is a new `camelCaseNames` option in route setting. If it is true, the service will convert the received action name to [camelCase](https://lodash.com/docs/4.17.4#camelCase) name.
 
 **Usage**
+
 ```js
 broker.createService(ApiGatewayService, {
     settings: {
@@ -1238,10 +1357,12 @@ broker.createService({
 // Start server
 broker.start();
 ```
-In the above example the `sayHi` action can be called with http://localhost:3000/test/say-hi as well.
+
+In the above example the `sayHi` action can be called with <http://localhost:3000/test/say-hi> as well.
 
 -----------------------------
 <a name="0.3.2"></a>
+
 # 0.3.2 (2017-06-02)
 
 ## New
@@ -1257,11 +1378,13 @@ In the above example the `sayHi` action can be called with http://localhost:3000
 |`BadRequestError`|`type`, `data`| Bad Request HTTP error (400) |
 
 **Type contants:**
+
 - `ERR_NO_TOKEN`
 - `ERR_INVALID_TOKEN`
 - `ERR_UNABLE_DECODE_PARAM`
 
 **Usage**
+
 ```js
 const { UnAuthorizedError, ERR_NO_TOKEN } = require("moleculer-web").Errors;
     ...
@@ -1276,14 +1399,17 @@ const { UnAuthorizedError, ERR_NO_TOKEN } = require("moleculer-web").Errors;
 
 -----------------------------
 <a name="0.3.1"></a>
+
 # 0.3.1 (2017-06-02)
 
 ## New
 
 ### RESTful routes
+
 It is possible to use RESTful aliases which routed to CRUD service actions.
 
 **Usage**
+
 ```js
 broker.createService(ApiGatewayService, {
     settings: {
@@ -1301,26 +1427,30 @@ broker.start();
 ```
 
 The `"REST posts": "posts"` will be extracted to these aliases:
+
 ```js
 "GET posts":        "posts.find",
 "GET posts/:id":    "posts.get",
 "POST posts":       "posts.create",
 "PUT posts/:id":    "posts.update",
-"DELETE posts/:id": "posts.remove"				
+"DELETE posts/:id": "posts.remove"    
 ```
 
 Example: [examples/rest](/examples/rest)
 
 -----------------------------
 <a name="0.3.0"></a>
+
 # 0.3.0 (2017-06-01)
 
 ## New
 
 ### Named parameters in aliases
+
 It is possible to use named parameters in aliases. Named paramters are defined by prefixing a colon to the parameter name (`:name`)
 
 **Usage**
+
 ```js
 broker.createService(ApiGatewayService, {
     settings: {
@@ -1345,14 +1475,17 @@ Example: [examples/full](/examples/full)
 
 -----------------------------
 <a name="0.2.2"></a>
+
 # 0.2.2 (2017-06-01)
 
 ## New
 
 ### Before & after call hooks
+
 The route of service has `onBeforeCall` and `onAfterCall` hooks. It can be asynchronous if return with Promise. In methods the `this` is pointed to Service instance. So you can access the service methods & broker.
 
 **Usage**
+
 ```js
 broker.createService(ApiGatewayService, {
     settings: {
@@ -1379,14 +1512,17 @@ Example: [examples/full](/examples/full)
 
 -----------------------------
 <a name="0.2.1"></a>
+
 # 0.2.1 (2017-05-23)
 
 ## New
 
 ### ExpressJS middleware usage
+
 You can use Moleculer-Web as a middleware for [ExpressJS](http://expressjs.com/).
 
 **Usage**
+
 ```js
 const svc = broker.createService(ApiGatewayService, {
     settings: {
@@ -1411,15 +1547,18 @@ Example: [examples/express](/examples/express)
 
 -----------------------------
 <a name="0.2.0"></a>
+
 # 0.2.0 (2017-05-09)
 
 ## New
 
 ### Support custom authorization
+
 For more information check the [full](/examples/full) or [authorization](/examples/authorization) examples or [readme](https://github.com/moleculerjs/moleculer-web#authorization)
 
 -----------------------------
 <a name="0.2.0"></a>
+
 # 0.1.0 (2017-05-08)
 
 First release.
