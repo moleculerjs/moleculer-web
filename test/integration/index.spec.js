@@ -2021,7 +2021,7 @@ describe("Test body-parsers", () => {
 					code: 400,
 					type: "entity.parse.failed",
 					message: process.version.startsWith("v2")
-						? "Unexpected token 'i', \"#\" is not valid JSON"
+						? "Unexpected token 'i', \"invalid\" is not valid JSON"
 						: "Unexpected token i in JSON at position 0",
 					name: "MoleculerError"
 				});
