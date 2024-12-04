@@ -1,6 +1,6 @@
 /*
  * moleculer
- * Copyright (c) 2021 MoleculerJS (https://github.com/moleculerjs/moleculer)
+ * Copyright (c) 2024 MoleculerJS (https://github.com/moleculerjs/moleculer)
  * MIT Licensed
  */
 
@@ -14,7 +14,6 @@
  * @class MemoryStore
  */
 class MemoryStore {
-
 	/**
 	 * Creates an instance of MemoryStore.
 	 *

@@ -1,14 +1,14 @@
 /*
  * moleculer
- * Copyright (c) 2021 MoleculerJS (https://github.com/moleculerjs/moleculer)
+ * Copyright (c) 2024 MoleculerJS (https://github.com/moleculerjs/moleculer)
  * MIT Licensed
  */
 
 "use strict";
 
-const _ 				= require("lodash");
-const fresh 			= require("fresh");
-const etag 				= require("etag");
+const _ = require("lodash");
+const fresh = require("fresh");
+const etag = require("etag");
 
 const { BadRequestError, ERR_UNABLE_DECODE_PARAM } = require("./errors");
 const { MoleculerError } = require("moleculer").Errors;
@@ -20,7 +20,7 @@ const { MoleculerError } = require("moleculer").Errors;
 function decodeParam(param) {
 	try {
 		return decodeURIComponent(param);
-	} catch (_) {
+	} catch {
 		/* istanbul ignore next */
 		throw new BadRequestError(ERR_UNABLE_DECODE_PARAM, { param });
 	}
@@ -28,10 +28,8 @@ function decodeParam(param) {
 
 // Remove slashes "/" from the left & right sides and remove double "//" slashes
 function removeTrailingSlashes(s) {
-	if (s.startsWith("/"))
-		s = s.slice(1);
-	if (s.endsWith("/"))
-		s = s.slice(0, -1);
+	if (s.startsWith("/")) s = s.slice(1);
+	if (s.endsWith("/")) s = s.slice(0, -1);
 	return s; //.replace(/\/\//g, "/");
 }
 
@@ -55,8 +53,7 @@ function compose(...mws) {
 	return (req, res, done) => {
 		const next = (i, err) => {
 			if (i >= mws.length) {
-				if (_.isFunction(done))
-					return done.call(self, err);
+				if (_.isFunction(done)) return done.call(self, err);
 
 				/* istanbul ignore next */
 				return;
@@ -64,15 +61,11 @@ function compose(...mws) {
 
 			if (err) {
 				// Call only error middlewares (err, req, res, next)
-				if (mws[i].length == 4)
-					mws[i].call(self, err, req, res, err => next(i + 1, err));
-				else
-					next(i + 1, err);
+				if (mws[i].length == 4) mws[i].call(self, err, req, res, err => next(i + 1, err));
+				else next(i + 1, err);
 			} else {
-				if (mws[i].length < 4)
-					mws[i].call(self, req, res, err => next(i + 1, err));
-				else
-					next(i + 1);
+				if (mws[i].length < 4) mws[i].call(self, req, res, err => next(i + 1, err));
+				else next(i + 1);
 			}
 		};
 
@@ -90,12 +83,13 @@ function composeThen(req, res, ...mws) {
 		compose.call(this, ...mws)(req, res, err => {
 			if (err) {
 				/* istanbul ignore next */
-				if (err instanceof MoleculerError)
-					return reject(err);
+				if (err instanceof MoleculerError) return reject(err);
 
 				/* istanbul ignore next */
 				if (err instanceof Error)
-					return reject(new MoleculerError(err.message, err.code || err.status, err.type)); // TODO err.stack
+					return reject(
+						new MoleculerError(err.message, err.code || err.status, err.type)
+					); // TODO err.stack
 
 				/* istanbul ignore next */
 				return reject(new MoleculerError(err));
@@ -115,14 +109,11 @@ function composeThen(req, res, ...mws) {
  * @returns {String}
  */
 function generateETag(body, opt) {
-	if (_.isFunction(opt))
-		return opt.call(this, body);
+	if (_.isFunction(opt)) return opt.call(this, body);
 
-	let buf = !Buffer.isBuffer(body)
-		? Buffer.from(body)
-		: body;
+	let buf = !Buffer.isBuffer(body) ? Buffer.from(body) : body;
 
-	return etag(buf, (opt === true || opt === "weak") ? { weak: true } : null);
+	return etag(buf, opt === true || opt === "weak" ? { weak: true } : null);
 }
 
 /**
@@ -136,7 +127,7 @@ function generateETag(body, opt) {
 function isFresh(req, res) {
 	if ((res.statusCode >= 200 && res.statusCode < 300) || 304 === res.statusCode) {
 		return fresh(req.headers, {
-			"etag": res.getHeader("ETag"),
+			etag: res.getHeader("ETag"),
 			"last-modified": res.getHeader("Last-Modified")
 		});
 	}

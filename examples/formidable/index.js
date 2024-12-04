@@ -60,7 +60,7 @@ broker.createService({
 					// File upload from HTML form
 					"POST /multi"(req, res) {
 						return this.handleFileUpload(req, res);
-					},
+					}
 				},
 
 				callOptions: {
@@ -70,12 +70,11 @@ broker.createService({
 				},
 
 				mappingPolicy: "restrict"
-			},
-
+			}
 		],
 
 		assets: {
-			folder: "./examples/formidable/assets",
+			folder: "./examples/formidable/assets"
 		}
 	},
 
@@ -92,17 +91,26 @@ broker.createService({
 
 				const ctx = req.$ctx;
 				const entries = Array.isArray(files.myfile) ? files.myfile : [files.myfile];
-				const result = await Promise.all(entries.map(entry => {
-					return ctx.call("file.save", {
-						$filename: entry.name,
-						...req.params,
-						...fields,
-					}, { stream: fs.createReadStream(entry.path) });
-				}));
+				const result = await Promise.all(
+					entries.map(entry => {
+						return ctx.call(
+							"file.save",
+							{
+								$filename: entry.name,
+								...req.params,
+								...fields
+							},
+							{ stream: fs.createReadStream(entry.path) }
+						);
+					})
+				);
 
-				return this.sendResponse(req, res, Array.isArray(files.myfile) ? result : result[0]);
+				return this.sendResponse(
+					req,
+					res,
+					Array.isArray(files.myfile) ? result : result[0]
+				);
 			});
-
 		}
 	}
 });

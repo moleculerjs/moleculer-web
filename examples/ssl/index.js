@@ -19,10 +19,10 @@
  *
  */
 
-let fs	 				= require("fs");
-let path 				= require("path");
-let { ServiceBroker } 	= require("moleculer");
-let ApiService 			= require("../../index");
+let fs = require("fs");
+let path = require("path");
+let { ServiceBroker } = require("moleculer");
+let ApiService = require("../../index");
 
 // Create broker
 let broker = new ServiceBroker({
@@ -49,10 +49,7 @@ broker.createService({
 			// Create a route with whitelist & body-parser
 			{
 				path: "/",
-				whitelist: [
-					"math.*",
-					"file.image"
-				],
+				whitelist: ["math.*", "file.image"],
 
 				// Use JSON body-parser module
 				bodyParsers: {

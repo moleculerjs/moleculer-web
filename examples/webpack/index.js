@@ -7,17 +7,17 @@
  * Open the http://localhost:3000/ address in your browser.
  */
 
-let path 				= require("path");
-let { ServiceBroker } 	= require("moleculer");
-let ApiService 			= require("../../index");
+let path = require("path");
+let { ServiceBroker } = require("moleculer");
+let ApiService = require("../../index");
 
-const webpack	 		= require("webpack");
-const devMiddleware 	= require("webpack-dev-middleware");
-const compression		= require("compression");
-const serveStatic 		= require("serve-static");
+const webpack = require("webpack");
+const devMiddleware = require("webpack-dev-middleware");
+const compression = require("compression");
+const serveStatic = require("serve-static");
 
-const config 			= require("./webpack.config");
-const compiler 			= webpack(config);
+const config = require("./webpack.config");
+const compiler = webpack(config);
 
 // Create broker
 let broker = new ServiceBroker({
@@ -33,7 +33,6 @@ broker.createService({
 	mixins: [ApiService],
 
 	settings: {
-
 		routes: [
 			{
 				path: "/",
@@ -49,9 +48,9 @@ broker.createService({
 						headers: { "Access-Control-Allow-Origin": "*" }
 					}),
 					serveStatic(path.join(__dirname, "public"))
-				],
-			},
-		],
+				]
+			}
+		]
 	}
 });
 

@@ -113,12 +113,11 @@ broker.createService({
 				},
 
 				mappingPolicy: "restrict"
-			},
-
+			}
 		],
 
 		assets: {
-			folder: "./examples/file/assets",
+			folder: "./examples/file/assets"
 		}
 	}
 });

@@ -5,7 +5,7 @@
  */
 
 const { ServiceBroker } = require("moleculer");
-const ApiService 		= require("../../index");
+const ApiService = require("../../index");
 
 // Create broker
 const broker = new ServiceBroker();
@@ -32,23 +32,23 @@ broker.createService({
 				path: "/api1",
 
 				aliases: {
-					"welcome": {
+					welcome: {
 						method: "POST",
 						fullPath: "/welcome",
 						action: "greeter.welcome"
 					}
-				},
+				}
 			},
 			{
 				path: "/api2",
 
 				aliases: {
-					"welcome": {
+					welcome: {
 						method: "POST",
 						fullPath: "/api2/welcome",
 						action: "greeter.welcome"
 					}
-				},
+				}
 			}
 		]
 	}

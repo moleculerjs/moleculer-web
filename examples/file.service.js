@@ -14,7 +14,9 @@ module.exports = {
 			handler(ctx) {
 				ctx.meta.$responseType = "image/png";
 				// Return as stream
-				return fs.createReadStream(path.join(__dirname, "full", "assets", "images", "logo.png"));
+				return fs.createReadStream(
+					path.join(__dirname, "full", "assets", "images", "logo.png")
+				);
 			}
 		},
 
@@ -35,8 +37,7 @@ module.exports = {
 		get: {
 			handler(ctx) {
 				const filePath = path.join(uploadDir, ctx.params.file);
-				if (!fs.existsSync(filePath))
-					return new NotFoundError();
+				if (!fs.existsSync(filePath)) return new NotFoundError();
 
 				ctx.meta.$responseType = mime.lookup(ctx.params.file);
 				// Return as stream
@@ -49,7 +50,10 @@ module.exports = {
 				this.logger.info("Received upload params:", ctx.params);
 				return new this.Promise((resolve, reject) => {
 					//reject(new Error("Disk out of space"));
-					const filePath = path.join(uploadDir, ctx.params.$filename || this.randomName());
+					const filePath = path.join(
+						uploadDir,
+						ctx.params.$filename || this.randomName()
+					);
 					const f = fs.createWriteStream(filePath);
 					f.on("close", () => {
 						// File written successfully

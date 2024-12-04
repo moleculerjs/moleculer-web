@@ -4,12 +4,12 @@ module.exports = {
 		postMessage: {
 			params: {
 				message: "string",
-				user: "string",
+				user: "string"
 			},
 			handler(context) {
 				const { params } = context;
 				context.emit("chat.sse.message", params);
-			},
-		},
-	},
+			}
+		}
+	}
 };

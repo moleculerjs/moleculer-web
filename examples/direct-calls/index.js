@@ -13,14 +13,14 @@
  * 		GET http://localhost:3000/node-2/where
  */
 
-let path 				= require("path");
-let { ServiceBroker } 	= require("moleculer");
-let ApiService 			= require("../../index");
+let path = require("path");
+let { ServiceBroker } = require("moleculer");
+let ApiService = require("../../index");
 
 // Create broker
 let broker = new ServiceBroker({
 	nodeID: "api",
-	transporter: "NATS",
+	transporter: "NATS"
 });
 
 // Load API Gateway
@@ -48,20 +48,20 @@ broker.createService({
 				callOptions: {
 					nodeID: "node-2"
 				}
-			},
+			}
 		]
 	}
 });
 
 const node1 = new ServiceBroker({
 	nodeID: "node-1",
-	transporter: "NATS",
+	transporter: "NATS"
 });
 node1.loadService(path.join(__dirname, "..", "test.service.js"));
 
 const node2 = new ServiceBroker({
 	nodeID: "node-2",
-	transporter: "NATS",
+	transporter: "NATS"
 });
 node2.loadService(path.join(__dirname, "..", "test.service.js"));
 

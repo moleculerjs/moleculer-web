@@ -32,9 +32,9 @@
  *
  */
 
-let path				= require("path");
-let { ServiceBroker } 	= require("moleculer");
-let ApiGatewayService 	= require("../../index");
+let path = require("path");
+let { ServiceBroker } = require("moleculer");
+let ApiGatewayService = require("../../index");
 
 // Create broker
 let broker = new ServiceBroker({
@@ -51,22 +51,24 @@ broker.loadService(path.join(__dirname, "..", "post.service"));
 broker.createService({
 	mixins: [ApiGatewayService],
 	settings: {
-		routes: [{
-			// RESTful aliases
-			aliases: {
-				"REST posts": "posts"
-				/*
+		routes: [
+			{
+				// RESTful aliases
+				aliases: {
+					"REST posts": "posts"
+					/*
 				"GET posts": "posts.list",
 				"GET posts/:id": "posts.get",
 				"POST posts": "posts.create",
 				"PUT posts/:id": "posts.update",
 				"DELETE posts/:id": "posts.remove"
 				*/
-			},
+				},
 
-			// Disable direct URLs (`/posts/list` or `/posts.list`)
-			mappingPolicy: "restrict"
-		}]
+				// Disable direct URLs (`/posts/list` or `/posts.list`)
+				mappingPolicy: "restrict"
+			}
+		]
 	}
 });
 

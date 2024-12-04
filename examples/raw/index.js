@@ -47,7 +47,7 @@ broker.createService({
 
 				aliases: {
 					// File upload from HTML form
-					"POST /raw": "echo.params",
+					"POST /raw": "echo.params"
 				}
 			}
 		]

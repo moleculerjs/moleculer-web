@@ -6,10 +6,10 @@
 
 "use strict";
 
-const jwt 					= require("jsonwebtoken");
-const _ 					= require("lodash");
-const { MoleculerError } 	= require("moleculer").Errors;
-const { promisify }			= require("util");
+const jwt = require("jsonwebtoken");
+const _ = require("lodash");
+const { MoleculerError } = require("moleculer").Errors;
+const { promisify } = require("util");
 
 const JWT_SECRET = "TOP SECRET!!!";
 
@@ -39,14 +39,15 @@ module.exports = {
 		login: {
 			rest: "/login",
 			handler(ctx) {
-				let user = users.find(u => u.username == ctx.params.username && u.password == ctx.params.password);
+				let user = users.find(
+					u => u.username == ctx.params.username && u.password == ctx.params.password
+				);
 
 				if (user) {
 					return this.generateToken(user).then(token => {
 						return { token };
 					});
-				} else
-					return Promise.reject(new MoleculerError("Invalid credentials", 400));
+				} else return Promise.reject(new MoleculerError("Invalid credentials", 400));
 			}
 		},
 
@@ -92,7 +93,7 @@ module.exports = {
 					}
 				});
 			}
-		},
+		}
 	},
 
 	created() {

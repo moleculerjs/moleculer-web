@@ -18,9 +18,9 @@
  * 		GET http://localhost:3000/lang/en
  */
 
-const path				= require("path");
-const { ServiceBroker } 	= require("moleculer");
-const ApiGatewayService 	= require("../../index");
+const path = require("path");
+const { ServiceBroker } = require("moleculer");
+const ApiGatewayService = require("../../index");
 
 // Create broker
 const broker = new ServiceBroker();
@@ -41,24 +41,20 @@ broker.createService({
 				path: "/defined/",
 				aliases: {
 					"GET posts": "posts.list"
-				},
+				}
 			},
 			{
 				path: "/unsecure",
-				whitelist: [
-					"math.*"
-				],
+				whitelist: ["math.*"]
 			},
 			{
 				path: "/generated",
-				whitelist: [
-					"auth.*"
-				],
-				autoAliases: true,
+				whitelist: ["auth.*"],
+				autoAliases: true
 			},
 			{
 				path: "/params",
-				autoAliases: true,
+				autoAliases: true
 			},
 			{
 				path: "/lang/:lng/",

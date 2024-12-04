@@ -13,14 +13,14 @@ const HOST = "0.0.0.0";
 const SSE_HEADERS = {
 	Connection: "keep-alive",
 	"Content-Type": "text/event-stream",
-	"Cache-Control": "no-cache",
+	"Cache-Control": "no-cache"
 };
 
 // Create broker
 const broker = new ServiceBroker({
 	logger: console,
 	metrics: true,
-	validation: true,
+	validation: true
 });
 
 broker.createService(ChatService);
@@ -35,7 +35,7 @@ broker.createService({
 		ip: HOST,
 
 		assets: {
-			folder: path.join(__dirname, "assets"),
+			folder: path.join(__dirname, "assets")
 		},
 
 		routes: [
@@ -45,20 +45,17 @@ broker.createService({
 					"POST message": "chat.postMessage",
 					"GET message"(request, response) {
 						response.writeHead(200, SSE_HEADERS);
-						response.$service.addSSEListener(
-							response,
-							"chat.message"
-						);
-					},
-				},
-			},
-		],
+						response.$service.addSSEListener(response, "chat.message");
+					}
+				}
+			}
+		]
 	},
 
 	events: {
 		"chat.sse*"(context) {
 			this.handleSSE(context);
-		},
+		}
 	},
 
 	methods: {
@@ -76,8 +73,7 @@ broker.createService({
 		},
 
 		addSSEListener(stream, event) {
-			if (!stream.write)
-				throw new MoleculerError("Only writable can listen to SSE.");
+			if (!stream.write) throw new MoleculerError("Only writable can listen to SSE.");
 			const listeners = this.sseListeners.get(event) || new Set();
 			listeners.add(stream);
 			this.sseListeners.set(event, listeners);
@@ -92,7 +88,7 @@ broker.createService({
 			return `event: ${event}\ndata: ${JSON.stringify(
 				data
 			)}\nid: ${id}\nretry: ${this.sseRetry}\n\n`;
-		},
+		}
 	},
 
 	started() {
@@ -108,7 +104,7 @@ broker.createService({
 				listeners.delete(listener);
 			}
 		}
-	},
+	}
 });
 
 // Start server

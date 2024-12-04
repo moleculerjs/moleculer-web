@@ -12,11 +12,11 @@
  * 		https://localhost:3000/hi?name=John
  */
 
-const path 					= require("path");
-const fs 					= require("fs");
-const { ServiceBroker } 	= require("moleculer");
-const ApiGatewayService 	= require("../../index");
-const spdy 					= require("spdy");
+const path = require("path");
+const fs = require("fs");
+const { ServiceBroker } = require("moleculer");
+const ApiGatewayService = require("../../index");
+const spdy = require("spdy");
 
 // Create broker
 const broker = new ServiceBroker({
@@ -36,7 +36,7 @@ broker.createService({
 
 		// **optional** SPDY-specific options
 		spdy: {
-			protocols: [ "h2", "spdy/3.1", "http/1.1" ],
+			protocols: ["h2", "spdy/3.1", "http/1.1"],
 			plain: false,
 			"x-forwarded-for": true,
 			connection: {
@@ -45,15 +45,14 @@ broker.createService({
 			}
 		},
 
-		routes: [{
-			whitelist: [
-				"test.hello",
-				"test.greeter"
-			],
-			aliases: {
-				"GET hi": "test.greeter"
+		routes: [
+			{
+				whitelist: ["test.hello", "test.greeter"],
+				aliases: {
+					"GET hi": "test.greeter"
+				}
 			}
-		}]
+		]
 	},
 
 	methods: {

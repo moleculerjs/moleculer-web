@@ -13,9 +13,9 @@
  *
  */
 
-let path 				= require("path");
-let { ServiceBroker } 	= require("moleculer");
-let ApiService 			= require("../../index");
+let path = require("path");
+let { ServiceBroker } = require("moleculer");
+let ApiService = require("../../index");
 
 // Create broker
 let broker = new ServiceBroker({
@@ -36,17 +36,13 @@ broker.createService({
 			{
 				path: "api",
 
-				whitelist: [
-					"api.*",
-					"**posts.*",
-					"test.*"
-				],
+				whitelist: ["api.*", "**posts.*", "test.*"],
 
 				use: [
-					function(req, res, next) {
+					function (req, res, next) {
 						this.logger.info("Middleware ", this.name);
 						next();
-					},
+					}
 				],
 
 				aliases: {
@@ -58,10 +54,7 @@ broker.createService({
 			{
 				path: "/admin",
 
-				whitelist: [
-					"auth.*",
-					"$node.*"
-				],
+				whitelist: ["auth.*", "$node.*"],
 
 				aliases: {
 					"GET /services": "$node.services"

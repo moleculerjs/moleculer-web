@@ -21,9 +21,9 @@
  *
  */
 
-const path 				= require("path");
+const path = require("path");
 const { ServiceBroker } = require("moleculer");
-const ApiService 		= require("../../index");
+const ApiService = require("../../index");
 
 // Create broker
 const broker = new ServiceBroker();

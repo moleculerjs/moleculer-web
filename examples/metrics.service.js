@@ -1,19 +1,17 @@
 let _ = require("lodash");
 
-module.exports = function() {
+module.exports = function () {
 	return {
 		name: "metrics",
 
 		events: {
-
 			"metrics.trace.span.start"(payload) {
 				this.requests[payload.id] = payload;
 				payload.spans = [];
 
 				if (payload.parent) {
 					let parent = this.requests[payload.parent];
-					if (parent)
-						parent.spans.push(payload.id);
+					if (parent) parent.spans.push(payload.id);
 				}
 			},
 
@@ -21,8 +19,7 @@ module.exports = function() {
 				let item = this.requests[payload.id];
 				_.assign(item, payload);
 
-				if (!payload.parent)
-					this.printRequest(payload.id);
+				if (!payload.parent) this.printRequest(payload.id);
 			}
 		},
 
@@ -37,12 +34,19 @@ module.exports = function() {
 				let gw = 35;
 				let maxTitle = w - 2 - 2 - gw - 2 - 1;
 
-				this.logger.info(["┌", r("─", w-2), "┐"].join(""));
+				this.logger.info(["┌", r("─", w - 2), "┐"].join(""));
 
-				let printSpanTime = (span) => {
+				let printSpanTime = span => {
 					let time = span.duration == null ? "?" : span.duration.toFixed(2);
 
-					let maxActionName = maxTitle - (span.level-1) * 2 - time.length - 3 - (span.fromCache ? 2 : 0) - (span.remoteCall ? 2 : 0) - (span.error ? 2 : 0);
+					let maxActionName =
+						maxTitle -
+						(span.level - 1) * 2 -
+						time.length -
+						3 -
+						(span.fromCache ? 2 : 0) -
+						(span.remoteCall ? 2 : 0) -
+						(span.error ? 2 : 0);
 					let actionName = span.action ? span.action.name : "";
 					if (actionName.length > maxActionName)
 						actionName = _.truncate(span.action.name, { length: maxActionName });
@@ -63,27 +67,22 @@ module.exports = function() {
 						return;
 					}
 
-					let gstart = (span.startTime - main.startTime) / (main.endTime - main.startTime) * 100;
-					let gstop = (span.endTime - main.startTime) / (main.endTime - main.startTime) * 100;
+					let gstart =
+						((span.startTime - main.startTime) / (main.endTime - main.startTime)) * 100;
+					let gstop =
+						((span.endTime - main.startTime) / (main.endTime - main.startTime)) * 100;
 
 					if (_.isNaN(gstart) && _.isNaN(gstop)) {
 						gstart = 0;
 						gstop = 100;
 					}
-					if (gstop > 100)
-						gstop = 100;
+					if (gstop > 100) gstop = 100;
 
-					let p1 = Math.round(gw * gstart / 100);
-					let p2 = Math.round(gw * gstop / 100) - p1;
+					let p1 = Math.round((gw * gstart) / 100);
+					let p2 = Math.round((gw * gstop) / 100) - p1;
 					let p3 = Math.max(gw - (p1 + p2), 0);
 
-					let gauge = [
-						"[",
-						r(".", p1),
-						r("■", p2),
-						r(".", p3),
-						"]"
-					].join("");
+					let gauge = ["[", r(".", p1), r("■", p2), r(".", p3), "]"].join("");
 
 					this.logger.info("│ " + strAction + gauge + " │");
 
@@ -92,7 +91,7 @@ module.exports = function() {
 				};
 
 				printSpanTime(main);
-				this.logger.info(["└", r("─", w-2), "┘"].join(""));
+				this.logger.info(["└", r("─", w - 2), "┘"].join(""));
 			}
 		},
 

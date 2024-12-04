@@ -12,10 +12,10 @@
  * 		http://localhost:3333/api/hi?name=John
  */
 
-let path 				= require("path");
-let { ServiceBroker } 	= require("moleculer");
-let ApiGatewayService 	= require("../../index");
-let express 			= require("express");
+let path = require("path");
+let { ServiceBroker } = require("moleculer");
+let ApiGatewayService = require("../../index");
+let express = require("express");
 
 // Create broker
 let broker = new ServiceBroker({
@@ -31,16 +31,15 @@ const svc = broker.createService({
 
 	settings: {
 		server: false,
-		routes: [{
-			whitelist: [
-				"test.hello",
-				"test.greeter"
-			],
-			aliases: {
-				"GET hi": "test.greeter"
-			},
-			mappingPolicy: "all"
-		}]
+		routes: [
+			{
+				whitelist: ["test.hello", "test.greeter"],
+				aliases: {
+					"GET hi": "test.greeter"
+				},
+				mappingPolicy: "all"
+			}
+		]
 	}
 });
 
@@ -52,8 +51,7 @@ app.use("/api", svc.express());
 
 // Listening
 app.listen(3333, err => {
-	if (err)
-		return console.error(err);
+	if (err) return console.error(err);
 
 	console.log("Open http://localhost:3333/api/test/hello");
 });

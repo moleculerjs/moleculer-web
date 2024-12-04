@@ -13,9 +13,9 @@
  *
  */
 
-let path 				= require("path");
-let { ServiceBroker } 	= require("moleculer");
-let ApiService 			= require("../../index");
+let path = require("path");
+let { ServiceBroker } = require("moleculer");
+let ApiService = require("../../index");
 
 // Create broker
 let broker = new ServiceBroker({
@@ -39,11 +39,13 @@ broker.createService({
 				whitelist: ["**"],
 				use: [
 					(req, res, next) => next(new Error("Something went wrong")),
-					function(err, req, res, next) {
-						this.logger.warn("Error occured in middlewares! Terminating request and sending response");
+					function (err, req, res, next) {
+						this.logger.warn(
+							"Error occured in middlewares! Terminating request and sending response"
+						);
 						res.end("Handled. No problem.");
-					},
-				],
+					}
+				]
 			}
 		]
 	}

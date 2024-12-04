@@ -13,9 +13,9 @@
  *
  */
 
-let path 				= require("path");
-let { ServiceBroker } 	= require("moleculer");
-let ApiGatewayService 	= require("../../index");
+let path = require("path");
+let { ServiceBroker } = require("moleculer");
+let ApiGatewayService = require("../../index");
 
 // Create broker
 let broker = new ServiceBroker({
@@ -30,7 +30,6 @@ broker.createService({
 	mixins: [ApiGatewayService],
 
 	settings: {
-
 		routes: [
 			{
 				// Enable authentication

@@ -4,7 +4,6 @@ let errors = require("../../src/errors");
 let { MoleculerClientError } = require("moleculer").Errors;
 
 describe("Test Errors", () => {
-
 	it("test InvalidRequestBodyError", () => {
 		let err = new errors.InvalidRequestBodyError({ a: 5 }, "Problem");
 		expect(err).toBeDefined();

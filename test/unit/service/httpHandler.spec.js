@@ -2,25 +2,27 @@
 
 const HttpHandler = () => require("../../../src/index").methods.httpHandler;
 
-const MockLogger = () => Object.assign({
-	info: jest.fn(),
-	error: jest.fn(),
-	warning: jest.fn(),
-	debug: jest.fn(),
-	trace: jest.fn(),
-});
-const MockContext = ({ action = jest.fn(), serve, settings } = {}) => Object.assign({
-	actions: {
-		rest: action,
-	},
-	settings: { ...require("../../../src/index").settings, ...settings },
-	errorHandler: require("../../../src/index").methods.errorHandler,
-	logger: MockLogger(),
-	sendError: jest.fn(),
-	send404: jest.fn(),
-	corsHandler: jest.fn(() => false),
-	serve,
-});
+const MockLogger = () =>
+	Object.assign({
+		info: jest.fn(),
+		error: jest.fn(),
+		warning: jest.fn(),
+		debug: jest.fn(),
+		trace: jest.fn()
+	});
+const MockContext = ({ action = jest.fn(), serve, settings } = {}) =>
+	Object.assign({
+		actions: {
+			rest: action
+		},
+		settings: { ...require("../../../src/index").settings, ...settings },
+		errorHandler: require("../../../src/index").methods.errorHandler,
+		logger: MockLogger(),
+		sendError: jest.fn(),
+		send404: jest.fn(),
+		corsHandler: jest.fn(() => false),
+		serve
+	});
 
 const MockRequest = ({ headers = {} } = {}) => Object.assign(jest.fn(), { headers });
 
@@ -30,7 +32,7 @@ const makeFakeError = (message, code) => {
 	return error;
 };
 
-const setup = (headers) =>{
+const setup = headers => {
 	const handler = HttpHandler();
 	const req = MockRequest(headers);
 	const res = jest.fn();
@@ -89,18 +91,23 @@ describe("WebGateway", () => {
 				expect(res.locals).toEqual({});
 			});
 
-			it("maintains the requestId of a \"x-request-id\" header if present", async () => {
-				const { handler, req, res, next } = setup({ headers: { "x-request-id": "foobar" } });
+			it('maintains the requestId of a "x-request-id" header if present', async () => {
+				const { handler, req, res, next } = setup({
+					headers: { "x-request-id": "foobar" }
+				});
 				const context = MockContext({
 					action: jest.fn().mockResolvedValueOnce()
 				});
 
 				await handler.bind(context)(req, res, next);
 
-				expect(context.actions.rest.mock.calls[0]).toEqual([{ req, res }, { requestID: "foobar" }]);
+				expect(context.actions.rest.mock.calls[0]).toEqual([
+					{ req, res },
+					{ requestID: "foobar" }
+				]);
 			});
 
-			it("maintains the requestId of a \"x-correlation-id\" header if present", async () => {
+			it('maintains the requestId of a "x-correlation-id" header if present', async () => {
 				const { handler, req, res, next } = setup({
 					headers: {
 						"x-request-id": "foobar",
@@ -113,7 +120,10 @@ describe("WebGateway", () => {
 
 				await handler.bind(context)(req, res, next);
 
-				expect(context.actions.rest.mock.calls[0]).toEqual([{ req, res }, { requestID: "barfoo" }]);
+				expect(context.actions.rest.mock.calls[0]).toEqual([
+					{ req, res },
+					{ requestID: "barfoo" }
+				]);
 			});
 
 			it("resolves if the rest.action did resolve with an object result", async () => {
@@ -130,7 +140,7 @@ describe("WebGateway", () => {
 			it("sends a 404 response if the request could not be routed and serving static assets is not configured", async () => {
 				const { handler, req, res, next } = setup();
 				const context = MockContext({
-					action: jest.fn().mockResolvedValueOnce(null),
+					action: jest.fn().mockResolvedValueOnce(null)
 				});
 
 				await handler.bind(context)(req, res, next);
@@ -142,7 +152,7 @@ describe("WebGateway", () => {
 				const { handler, req, res, next } = setup();
 				let context = MockContext({
 					action: jest.fn().mockResolvedValueOnce(null),
-					serve: jest.fn(),
+					serve: jest.fn()
 				});
 
 				await handler.bind(context)(req, res, next);
@@ -156,7 +166,7 @@ describe("WebGateway", () => {
 				const { handler, req, res, next } = setup();
 				let context = MockContext({
 					action: jest.fn().mockResolvedValueOnce(null),
-					serve: jest.fn(),
+					serve: jest.fn()
 				});
 				const error = new Error("Something went wrong while serving a static asset");
 
@@ -169,7 +179,10 @@ describe("WebGateway", () => {
 
 			it("logs and responds with an error if the rest action rejects", async () => {
 				const { handler, req, res, next } = setup();
-				const error = makeFakeError("Something went wrong while invoking the rest action", 503);
+				const error = makeFakeError(
+					"Something went wrong while invoking the rest action",
+					503
+				);
 				const context = MockContext({
 					action: jest.fn().mockRejectedValueOnce(error)
 				});
@@ -177,12 +190,24 @@ describe("WebGateway", () => {
 				await handler.bind(context)(req, res, next);
 
 				expect(context.sendError.mock.calls[0]).toEqual([req, res, error]);
-				expect(context.logger.error.mock.calls[0]).toEqual(["   Request error!", error.name, ":", error.message, "\n", error.stack, "\nData:", error.data]);
+				expect(context.logger.error.mock.calls[0]).toEqual([
+					"   Request error!",
+					error.name,
+					":",
+					error.message,
+					"\n",
+					error.stack,
+					"\nData:",
+					error.data
+				]);
 			});
 
 			it("responds with an error but does not log the error if the rest action rejects, the error code is 400 and settings.log4XXResponses is false", async () => {
 				const { handler, req, res, next } = setup();
-				const error = makeFakeError("Something went wrong while invoking the rest action", 400);
+				const error = makeFakeError(
+					"Something went wrong while invoking the rest action",
+					400
+				);
 				const context = MockContext({
 					action: jest.fn().mockRejectedValueOnce(error),
 					settings: {
@@ -198,7 +223,10 @@ describe("WebGateway", () => {
 
 			it("logs and responds with an error if the rest action rejects, the error code is 399 and settings.log4XXResponses is false", async () => {
 				const { handler, req, res, next } = setup();
-				const error = makeFakeError("Something went wrong while invoking the rest action", 399);
+				const error = makeFakeError(
+					"Something went wrong while invoking the rest action",
+					399
+				);
 				const context = MockContext({
 					action: jest.fn().mockRejectedValueOnce(error),
 					settings: {
@@ -214,7 +242,10 @@ describe("WebGateway", () => {
 
 			it("logs and responds with an error if the rest action rejects, the error code is 500 and settings.log4XXResponses is false", async () => {
 				const { handler, req, res, next } = setup();
-				const error = makeFakeError("Something went wrong while invoking the rest action", 500);
+				const error = makeFakeError(
+					"Something went wrong while invoking the rest action",
+					500
+				);
 				const context = MockContext({
 					action: jest.fn().mockRejectedValueOnce(error),
 					settings: {

@@ -46,11 +46,16 @@
  *
  */
 
-const fs	 				= require("fs");
-const path 					= require("path");
-const { ServiceBroker } 	= require("moleculer");
-const { MoleculerError } 	= require("moleculer").Errors;
-const { ForbiddenError, UnAuthorizedError, ERR_NO_TOKEN, ERR_INVALID_TOKEN } = require("../../src/errors");
+const fs = require("fs");
+const path = require("path");
+const { ServiceBroker } = require("moleculer");
+const { MoleculerError } = require("moleculer").Errors;
+const {
+	ForbiddenError,
+	UnAuthorizedError,
+	ERR_NO_TOKEN,
+	ERR_INVALID_TOKEN
+} = require("../../src/errors");
 
 // ----
 
@@ -110,7 +115,6 @@ broker.createService({
 		path: "/api",
 
 		routes: [
-
 			/**
 			 * This route demonstrates a protected `/api/admin` path to access `users.*` & internal actions.
 			 * To access them, you need to login first & use the received token in header
@@ -120,15 +124,12 @@ broker.createService({
 				path: "/admin",
 
 				// Whitelist of actions (array of string mask or regex)
-				whitelist: [
-					"users.*",
-					"$node.*"
-				],
+				whitelist: ["users.*", "$node.*"],
 
 				// Route CORS settings
 				cors: {
 					origin: ["https://localhost:3000", "https://localhost:4000"],
-					methods: ["GET", "OPTIONS", "POST"],
+					methods: ["GET", "OPTIONS", "POST"]
 				},
 
 				authorization: true,
@@ -138,8 +139,8 @@ broker.createService({
 				// Action aliases
 				aliases: {
 					"POST users": "users.create",
-					"health": "$node.health",
-					"custom"(req, res) {
+					health: "$node.health",
+					custom(req, res) {
 						res.writeHead(201);
 						res.end();
 					}
@@ -167,7 +168,6 @@ broker.createService({
 					res.writeHead(err.code || 500);
 					res.end("Route error: " + err.message);
 				}
-
 			},
 
 			{
@@ -210,7 +210,7 @@ broker.createService({
 				onAfterCall(ctx, route, req, res, data) {
 					this.logger.info("async onAfterCall in upload route");
 					return new this.Promise(resolve => {
-						res.setHeader("X-Response-Type", typeof(data));
+						res.setHeader("X-Response-Type", typeof data);
 						resolve(data);
 					});
 				},
@@ -226,18 +226,12 @@ broker.createService({
 				path: "/",
 
 				// Middlewares
-				use: [
-				],
+				use: [],
 
 				etag: true,
 
 				// Whitelist of actions (array of string mask or regex)
-				whitelist: [
-					"auth.*",
-					"file.*",
-					"test.*",
-					/^math\.\w+$/
-				],
+				whitelist: ["auth.*", "file.*", "test.*", /^math\.\w+$/],
 
 				authorization: false,
 
@@ -246,8 +240,8 @@ broker.createService({
 
 				// Action aliases
 				aliases: {
-					"login": "auth.login",
-					"add": "math.add",
+					login: "auth.login",
+					add: "math.add",
 					"add/:a/:b": "math.add",
 					"GET sub": "math.sub",
 					"POST divide": "math.div",
@@ -261,7 +255,7 @@ broker.createService({
 				},
 
 				callOptions: {
-					timeout: 3000,
+					timeout: 3000
 					//fallbackResponse: "Fallback response via callOptions"
 				},
 
@@ -277,10 +271,10 @@ broker.createService({
 				onAfterCall(ctx, route, req, res, data) {
 					this.logger.info("async onAfterCall in public");
 					return new this.Promise(resolve => {
-						res.setHeader("X-Response-Type", typeof(data));
+						res.setHeader("X-Response-Type", typeof data);
 						resolve(data);
 					});
-				},
+				}
 			}
 		],
 
@@ -300,8 +294,7 @@ broker.createService({
 		},*/
 
 		// Do not log client side errors (does not log an error respons when the error.code is 400<=X<500)
-		log4XXResponses: false,
-
+		log4XXResponses: false
 	},
 
 	events: {
@@ -362,13 +355,11 @@ broker.createService({
 				return Promise.reject(new UnAuthorizedError(ERR_NO_TOKEN));
 			}
 			// Verify JWT token
-			return ctx.call("auth.resolveToken", { token })
-				.then(user => {
-					if (!user)
-						return Promise.reject(new UnAuthorizedError(ERR_INVALID_TOKEN));
+			return ctx.call("auth.resolveToken", { token }).then(user => {
+				if (!user) return Promise.reject(new UnAuthorizedError(ERR_INVALID_TOKEN));
 
-					ctx.meta.user = user;
-				});
+				ctx.meta.user = user;
+			});
 		}
 	}
 });

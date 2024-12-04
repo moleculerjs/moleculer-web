@@ -13,9 +13,9 @@
  *
  */
 
-let path 				= require("path");
-let { ServiceBroker } 	= require("moleculer");
-let ApiGatewayService 	= require("../../index");
+let path = require("path");
+let { ServiceBroker } = require("moleculer");
+let ApiGatewayService = require("../../index");
 
 const { UnAuthorizedError, ERR_NO_TOKEN, ERR_INVALID_TOKEN } = require("../../src/errors");
 
@@ -32,7 +32,6 @@ broker.createService({
 	mixins: [ApiGatewayService],
 
 	settings: {
-
 		routes: [
 			{
 				// Enable authorization
@@ -59,12 +58,8 @@ broker.createService({
 					// Set the authorized user entity to `ctx.meta`
 					ctx.meta.user = { id: 1, name: "John Doe" };
 					return Promise.resolve(ctx);
-
-				} else
-					return Promise.reject(new UnAuthorizedError(ERR_INVALID_TOKEN));
-
-			} else
-				return Promise.reject(new UnAuthorizedError(ERR_NO_TOKEN));
+				} else return Promise.reject(new UnAuthorizedError(ERR_INVALID_TOKEN));
+			} else return Promise.reject(new UnAuthorizedError(ERR_NO_TOKEN));
 		}
 	}
 });

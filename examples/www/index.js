@@ -27,9 +27,9 @@
  *
  */
 
-let path 				= require("path");
-let { ServiceBroker } 	= require("moleculer");
-let ApiGatewayService 	= require("../../index");
+let path = require("path");
+let { ServiceBroker } = require("moleculer");
+let ApiGatewayService = require("../../index");
 
 // Create broker
 let broker = new ServiceBroker({
@@ -46,7 +46,6 @@ broker.createService({
 	mixins: [ApiGatewayService],
 
 	settings: {
-
 		// Folder to server assets (static files)
 		assets: {
 			// Root folder of assets
@@ -60,28 +59,36 @@ broker.createService({
 				path: "/api",
 
 				// Whitelist of actions (array of string mask or regex)
-				whitelist: [
-					"file.*",
-					/^math\.\w+$/,
-					"$node.health"
-				],
+				whitelist: ["file.*", /^math\.\w+$/, "$node.health"],
 
 				// Action aliases
 				aliases: {
-					"add": "math.add",
+					add: "math.add",
 					"GET  	health": "$node.health",
 					"POST 	divide": "math.div",
-					"other": [
-						function(req, res, next) { this.logger.info("Middleware 1"); next(); },
-						function(req, res, next) { this.logger.info("Middleware 2"); next(); },
+					other: [
+						function (req, res, next) {
+							this.logger.info("Middleware 1");
+							next();
+						},
+						function (req, res, next) {
+							this.logger.info("Middleware 2");
+							next();
+						},
 						//"file.html"
-						function(req, res, next) {
+						function (req, res, next) {
 							this.logger.info("Custom alias", req.$ctx.id);
 							//res.end();
 							next(new Error("Wrong"));
 						},
-						function(req, res, next) { this.logger.info("Middleware 3"); res.end(); },
-						function(err, req, res, next) { this.logger.info("Error Middleware 4"); res.end(err.message); },
+						function (req, res, next) {
+							this.logger.info("Middleware 3");
+							res.end();
+						},
+						function (err, req, res, next) {
+							this.logger.info("Error Middleware 4");
+							res.end(err.message);
+						}
 					]
 				},
 
@@ -90,12 +97,10 @@ broker.createService({
 					json: true,
 					urlencoded: { extended: true }
 				}
-
 			}
 		],
 
 		logRequestParams: "info"
-
 	}
 });
 

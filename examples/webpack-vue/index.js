@@ -20,17 +20,17 @@
  *
  */
 
-let path 				= require("path");
-let { ServiceBroker } 	= require("moleculer");
-let ApiService 			= require("../../index");
+let path = require("path");
+let { ServiceBroker } = require("moleculer");
+let ApiService = require("../../index");
 
-const webpack	 		= require("webpack");
-const devMiddleware 	= require("webpack-dev-middleware");
-const hotMiddleware 	= require("webpack-hot-middleware");
-const serveStatic 		= require("serve-static");
+const webpack = require("webpack");
+const devMiddleware = require("webpack-dev-middleware");
+const hotMiddleware = require("webpack-hot-middleware");
+const serveStatic = require("serve-static");
 
-const config 			= require("./webpack.config");
-const compiler 			= webpack(config);
+const config = require("./webpack.config");
+const compiler = webpack(config);
 
 // Create broker
 let broker = new ServiceBroker({
@@ -46,16 +46,15 @@ broker.createService({
 	mixins: [ApiService],
 
 	settings: {
-
 		routes: [
 			{
 				path: "/api",
 
 				// Action aliases
 				aliases: {
-					"add": "math.add",
+					add: "math.add",
 					"GET hello": "test.hello",
-					"GET health": "$node.health",
+					"GET health": "$node.health"
 				},
 
 				// Use bodyparser modules
@@ -63,7 +62,6 @@ broker.createService({
 					json: true,
 					urlencoded: { extended: true }
 				}
-
 			},
 			{
 				path: "/",
@@ -79,9 +77,9 @@ broker.createService({
 						log: broker.logger.info
 					}),
 					serveStatic(path.join(__dirname, "public"))
-				],
-			},
-		],
+				]
+			}
+		]
 	}
 });
 
