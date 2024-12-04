@@ -17,7 +17,7 @@
 
 const fs = require("fs");
 const { ServiceBroker } = require("moleculer");
-const formidable = require("formidable");
+const { formidable } = require("formidable");
 
 // ----
 
@@ -96,11 +96,13 @@ broker.createService({
 						return ctx.call(
 							"file.save",
 							{
-								$filename: entry.name,
+								$filename: entry.originalFilename,
+								$filesize: entry.size,
+								$mimetype: entry.type,
 								...req.params,
 								...fields
 							},
-							{ stream: fs.createReadStream(entry.path) }
+							{ stream: fs.createReadStream(entry.filepath) }
 						);
 					})
 				);

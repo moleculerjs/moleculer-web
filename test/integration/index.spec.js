@@ -835,8 +835,8 @@ describe("Test aliases", () => {
 						"POST   /hello": "test.greeter",
 						"GET 	greeter/:name": "test.greeter",
 						"POST 	greeting/:name": "test.greeter",
-						"opt-test/:name?": "test.echo",
-						"/repeat-test/:args*": "test.echo",
+						"opt-test{/:name}": "test.echo",
+						"/repeat-test/*args": "test.echo",
 						"GET /": "test.hello",
 						"GET custom": customAlias,
 						"GET /middleware": customMiddlewares,
@@ -1006,7 +1006,7 @@ describe("Test aliases", () => {
 			});
 	});
 
-	it("GET opt-test/:name? with name", () => {
+	it("GET opt-test{/:name} with name", () => {
 		return request(server)
 			.get("/api/opt-test/John")
 			.then(res => {
@@ -1044,7 +1044,7 @@ describe("Test aliases", () => {
 			});
 	});
 
-	it("GET opt-test/:name? without name", () => {
+	it("GET opt-test/{:name} without name", () => {
 		return request(server)
 			.get("/api/opt-test")
 			.then(res => {
@@ -1054,14 +1054,14 @@ describe("Test aliases", () => {
 			});
 	});
 
-	it("GET repeat-test/:args?", () => {
+	it("GET repeat-test/*args", () => {
 		return request(server)
 			.get("/api/repeat-test/John/Jane/Adam/Walter")
 			.then(res => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
 				expect(res.body.params).toEqual({
-					args: ["John", "Jane", "Adam", "Walter"]
+					args: "John/Jane/Adam/Walter"
 				});
 			});
 	});
@@ -1270,8 +1270,8 @@ describe("Test un-merged params", () => {
 						"GET echo": "test.echo",
 						"POST /echo": "test.echo",
 						"param-test/:name": "test.echo",
-						"opt-test/:name?": "test.echo",
-						"repeat-test/:args*": "test.echo"
+						"opt-test{/:name}": "test.echo",
+						"repeat-test/*args": "test.echo"
 					}
 				}
 			]
@@ -1353,7 +1353,7 @@ describe("Test un-merged params", () => {
 			});
 	});
 
-	it("GET opt-test/:name? with name", () => {
+	it("GET opt-test/{:name} with name", () => {
 		return request(server)
 			.get("/api/opt-test/John")
 			.then(res => {
@@ -1403,7 +1403,7 @@ describe("Test un-merged params", () => {
 			});
 	});
 
-	it("GET opt-test/:name? without name", () => {
+	it("GET opt-test/{:name} without name", () => {
 		return request(server)
 			.get("/api/opt-test")
 			.then(res => {
@@ -1417,7 +1417,7 @@ describe("Test un-merged params", () => {
 			});
 	});
 
-	it("GET repeat-test/:args?", () => {
+	it("GET repeat-test/*args", () => {
 		return request(server)
 			.get("/api/repeat-test/John/Jane/Adam/Walter")
 			.query("foo[bar]=a&foo[bar]=b&foo[baz]=c")
@@ -1427,7 +1427,7 @@ describe("Test un-merged params", () => {
 				expect(res.body.params).toEqual({
 					body: {},
 					params: {
-						args: ["John", "Jane", "Adam", "Walter"]
+						args: "John/Jane/Adam/Walter"
 					},
 					query: {
 						foo: { bar: ["a", "b"], baz: "c" }
