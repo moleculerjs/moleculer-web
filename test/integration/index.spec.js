@@ -1912,7 +1912,7 @@ describe("Test body-parsers", () => {
 				expect(res.body).toEqual({
 					"code": 400,
 					"type": "entity.parse.failed",
-					"message": process.version.startsWith("v20")? "Unexpected token 'i', \"#\" is not valid JSON": "Unexpected token i in JSON at position 0",
+					"message": process.version.startsWith("v2")? "Unexpected token 'i', \"#\" is not valid JSON": "Unexpected token i in JSON at position 0",
 					"name": "MoleculerError"
 				});
 			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
