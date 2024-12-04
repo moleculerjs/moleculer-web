@@ -19,7 +19,7 @@ const _ = require("lodash");
 const bodyParser = require("body-parser");
 const serveStatic = require("serve-static");
 const isReadableStream = require("isstream").isReadable;
-const { pipeline } = require('stream');
+const { pipeline } = require("stream");
 
 const { MoleculerError, MoleculerServerError, ServiceNotFoundError } = require("moleculer").Errors;
 const { ServiceUnavailableError, NotFoundError, ForbiddenError, RateLimitExceeded, ERR_ORIGIN_NOT_ALLOWED } = require("./errors");
@@ -597,12 +597,12 @@ module.exports = {
 				});
 
 				if (alias.action)
-					return this.callAction(route, alias.action, req, res, alias.type == "stream" ? req : req.$params);
+					return this.callAction(route, alias.action, req, res, req.$params, alias.type == "stream");
 				else
 					throw new MoleculerServerError("No alias handler", 500, "NO_ALIAS_HANDLER", { path: req.originalUrl, alias: _.pick(alias, ["method", "path"]) });
 
 			} else if (alias.action) {
-				return this.callAction(route, alias.action, req, res, alias.type == "stream" ? req : req.$params);
+				return this.callAction(route, alias.action, req, res, req.$params, alias.type == "stream");
 			}
 		},
 
@@ -614,9 +614,10 @@ module.exports = {
 		 * @param {HttpRequest} req 	Request object
 		 * @param {HttpResponse} res 	Response object
 		 * @param {Object} params		Incoming params from request
+		 * @param {Boolean} isStream 	Is stream response
 		 * @returns {Promise}
 		 */
-		async callAction(route, actionName, req, res, params) {
+		async callAction(route, actionName, req, res, params, isStream) {
 			const ctx = req.$ctx;
 
 			try {
@@ -635,10 +636,8 @@ module.exports = {
 				}
 
 				const opts = route.callOptions ? { ...route.callOptions } : {};
-				if (params && params.$params) {
-					// Transfer URL parameters via meta in case of stream
-					if (!opts.meta) opts.meta = { $params: params.$params };
-					else opts.meta.$params = params.$params;
+				if (isStream) {
+					opts.stream = req;
 				}
 
 				// Call the action
@@ -647,8 +646,9 @@ module.exports = {
 				// Post-process the response
 
 				// onAfterCall handling
-				if (route.onAfterCall)
+				if (route.onAfterCall) {
 					data = await route.onAfterCall.call(this, ctx, route, req, res, data);
+				}
 
 				// Send back the response
 				this.sendResponse(req, res, data, req.$endpoint.action);
@@ -821,9 +821,9 @@ module.exports = {
 				if (isReadableStream(data)) { //Stream response
 					pipeline(data, res, err => {
 						if (err) {
-							this.logger.warn("Stream got an error.", { err, url: req.url, actionName: action.name })
+							this.logger.warn("Stream got an error.", { err, url: req.url, actionName: action.name });
 						}
-					})
+					});
 				} else {
 					res.end(chunk);
 				}

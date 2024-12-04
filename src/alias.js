@@ -144,7 +144,7 @@ class Alias {
 	 */
 	multipartHandler(req, res) {
 		const ctx = req.$ctx;
-		ctx.meta.$multipart = {};
+		const multipartParams = {};
 		const promises = [];
 
 		let numOfFiles = 0;
@@ -161,13 +161,7 @@ class Alias {
 				file.destroy(new PayloadTooLarge({ fieldname, filename, encoding, mimetype }));
 			});
 			numOfFiles++;
-			promises.push(ctx.call(this.action, file, _.defaultsDeep({}, this.route.opts.callOptions, { meta: {
-				fieldname: fieldname,
-				filename: filename,
-				encoding: encoding,
-				mimetype: mimetype,
-				$params: req.$params,
-			} })).catch(err => {
+			promises.push(ctx.call(this.action, _.defaultsDeep({ $fieldname: fieldname, $filename: filename, $encoding: encoding, $mimetype: mimetype }, multipartParams, req.$params), _.defaultsDeep({ stream: file }, this.route.opts.callOptions)).catch(err => {
 				file.resume(); // Drain file stream to continue processing form
 				busboy.emit("error", err);
 				return err;
@@ -175,7 +169,7 @@ class Alias {
 		});
 		busboy.on("field", (field, value) => {
 			hasField = true;
-			ctx.meta.$multipart[field] = value;
+			multipartParams[field] = value;
 		});
 
 		busboy.on("finish", async () => {
@@ -185,9 +179,7 @@ class Alias {
 
 			// Call the action if no files but multipart fields
 			if (numOfFiles == 0 && hasField) {
-				promises.push(ctx.call(this.action, {}, _.defaultsDeep({}, this.route.opts.callOptions, { meta: {
-					$params: req.$params,
-				} })));
+				promises.push(ctx.call(this.action, _.defaultsDeep({}, multipartParams, req.$params), _.defaultsDeep({}, this.route.opts.callOptions)));
 			}
 
 			try {

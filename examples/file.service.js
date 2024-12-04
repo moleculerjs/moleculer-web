@@ -46,18 +46,18 @@ module.exports = {
 
 		save: {
 			handler(ctx) {
-				this.logger.info("Received upload $params:", ctx.meta.$params);
+				this.logger.info("Received upload params:", ctx.params);
 				return new this.Promise((resolve, reject) => {
 					//reject(new Error("Disk out of space"));
-					const filePath = path.join(uploadDir, ctx.meta.filename || this.randomName());
+					const filePath = path.join(uploadDir, ctx.params.$filename || this.randomName());
 					const f = fs.createWriteStream(filePath);
 					f.on("close", () => {
 						// File written successfully
 						this.logger.info(`Uploaded file stored in '${filePath}'`);
-						resolve({ filePath, meta: ctx.meta });
+						resolve({ filePath, params: ctx.params });
 					});
 
-					ctx.params.on("error", err => {
+					ctx.stream.on("error", err => {
 						this.logger.info("File error received", err.message);
 						reject(err);
 
@@ -70,7 +70,7 @@ module.exports = {
 						fs.unlinkSync(filePath);
 					});
 
-					ctx.params.pipe(f);
+					ctx.stream.pipe(f);
 				});
 			}
 		}
