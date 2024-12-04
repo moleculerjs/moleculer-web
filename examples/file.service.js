@@ -1,11 +1,11 @@
 const fs = require("fs");
 const path = require("path");
 const { NotFoundError } = require("../src/errors");
-const mkdir = require("mkdirp").sync;
+const { mkdirpSync } = require("mkdirp");
 const mime = require("mime-types");
 
 const uploadDir = path.join(__dirname, "__uploads");
-mkdir(uploadDir);
+mkdirpSync(uploadDir);
 
 module.exports = {
 	name: "file",
