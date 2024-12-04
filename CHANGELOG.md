@@ -49,7 +49,7 @@ module.exports = {
 
 Example content of `ctx.params`:
 
-```json
+```js
 {
     // Multipart file properties
     $fieldname: "myfile", 
