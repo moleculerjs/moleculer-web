@@ -13,37 +13,37 @@ Thanks for the new solution, the multipart fields and request parameters are sen
 
 ```js
 module.exports = {
-	name: "file",
-	actions: {
-		save: {
-			handler(ctx) {
-				return new this.Promise((resolve, reject) => {
-					const filePath = path.join(uploadDir, ctx.params.$filename);
-					const f = fs.createWriteStream(filePath);
-					f.on("close", () => {
-						// File written successfully
-						this.logger.info(`Uploaded file stored in '${filePath}'`);
-						resolve({ filePath });
-					});
+    name: "file",
+    actions: {
+        save: {
+            handler(ctx) {
+                return new this.Promise((resolve, reject) => {
+                    const filePath = path.join(uploadDir, ctx.params.$filename);
+                    const f = fs.createWriteStream(filePath);
+                    f.on("close", () => {
+                        // File written successfully
+                        this.logger.info(`Uploaded file stored in '${filePath}'`);
+                        resolve({ filePath });
+                    });
 
-					ctx.stream.on("error", err => {
-						this.logger.info("File error received", err.message);
-						reject(err);
+                    ctx.stream.on("error", err => {
+                        this.logger.info("File error received", err.message);
+                        reject(err);
 
-						// Destroy the local file
-						f.destroy(err);
-					});
+                        // Destroy the local file
+                        f.destroy(err);
+                    });
 
-					f.on("error", () => {
-						// Remove the errored file.
-						fs.unlinkSync(filePath);
-					});
+                    f.on("error", () => {
+                        // Remove the errored file.
+                        fs.unlinkSync(filePath);
+                    });
 
-					ctx.stream.pipe(f);
-				});
-			}
-		}
-	}
+                    ctx.stream.pipe(f);
+                });
+            }
+        }
+    }
 };
 ```
 
@@ -51,18 +51,18 @@ Example content of `ctx.params`:
 
 ```json
 {
-	// Multipart file properties
-	$fieldname: "myfile", 
-	$filename: "avatar.png",
-	$encoding: "7bit",
-	$mimetype: "image/png",
-	
-	// Other multipart fields
-	// e.g.: `<input type="text" name="name" id="name" value="Test User">`
-	name: "Test User", 
+    // Multipart file properties
+    $fieldname: "myfile", 
+    $filename: "avatar.png",
+    $encoding: "7bit",
+    $mimetype: "image/png",
+    
+    // Other multipart fields
+    // e.g.: `<input type="text" name="name" id="name" value="Test User">`
+    name: "Test User", 
 
-	// Request path parameter, e.g.: `/upload/single/1234`
-	id: "1234" 
+    // Request path parameter, e.g.: `/upload/single/1234`
+    id: "1234" 
 }
 ```
 
