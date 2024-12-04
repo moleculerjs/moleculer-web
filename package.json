@@ -60,7 +60,7 @@
     "webpack-dev-middleware": "^5.2.1"
   },
   "peerDependencies": {
-    "moleculer": "^0.13.0 || ^0.14.0 || ^0.15.0"
+    "moleculer": "^0.15.0"
   },
   "dependencies": {
     "@fastify/busboy": "^1.0.0",
