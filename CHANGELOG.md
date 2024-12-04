@@ -3,6 +3,31 @@
 
 ## Changes
 
+### Updated `path-ro-regexp` librarz
+
+The `path-to-regexp` has been updated to 8.x.x. It contains many breaking changes in the path resolving. Check the [documentation](https://github.com/pillarjs/path-to-regexp?tab=readme-ov-file#express--4x) of library to how migrate your alias paths.
+
+**Optional parameter alias path**
+
+```
+    // Old way
+    "GET user/:name?": "user.get"
+
+    // New way
+    "GET user{/:name}": "user.get"
+```
+
+**Repeating parameter alias path**
+
+```
+    // Old way
+    "GET /users/*username": "user.resolveUsersByNames",
+
+    // New way
+    "GET /users/:username*": "user.resolveUsersByNames",
+```
+
+
 ### Using 0.15 new streaming solution
 
 The moleculer-web@0.11.x supports Moleculer v0.15.x including the new streaming solution. It means, it doesn't support 0.13 and 0.14 moleculer versions.
