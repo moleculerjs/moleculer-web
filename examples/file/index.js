@@ -43,6 +43,8 @@ broker.createService({
 				},
 
 				aliases: {
+					"GET /:file": "file.get",
+
 					// File upload from HTML form
 					"POST /": "multipart:file.save",
 

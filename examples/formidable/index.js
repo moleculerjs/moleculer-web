@@ -45,6 +45,8 @@ broker.createService({
 				},
 
 				aliases: {
+					"GET /:file": "file.get",
+
 					// File upload from AJAX or cURL
 					"PUT /": "stream:file.save",
 
@@ -91,15 +93,11 @@ broker.createService({
 				const ctx = req.$ctx;
 				const entries = Array.isArray(files.myfile) ? files.myfile : [files.myfile];
 				const result = await Promise.all(entries.map(entry => {
-					return ctx.call("file.save", fs.createReadStream(entry.path), {
-						meta: {
-							filename: entry.name,
-							$params: {
-								...req.params,
-								...fields,
-							}
-						}
-					});
+					return ctx.call("file.save", {
+						$filename: entry.name,
+						...req.params,
+						...fields,
+					}, { stream: fs.createReadStream(entry.path) });
 				}));
 
 				return this.sendResponse(req, res, Array.isArray(files.myfile) ? result : result[0]);

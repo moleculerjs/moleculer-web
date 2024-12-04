@@ -3615,16 +3615,16 @@ describe("Test file uploading", () => {
 		actions: {
 			save(ctx) {
 				return new this.Promise((resolve) => {
-					if (ctx.params.pipe) {
+					if (ctx.stream && ctx.stream.pipe) {
 						const hash = crypto.createHash("sha256");
 
 						hash.on("readable", () => {
 							const data = hash.read();
 							if (data)
-								resolve({ hash: data.toString("base64"), meta: ctx.meta });
+								resolve({ hash: data.toString("base64"), params: ctx.params, meta: ctx.meta });
 						});
 
-						ctx.params.pipe(hash);
+						ctx.stream.pipe(hash);
 					} else {
 						resolve({ params: ctx.params, meta: ctx.meta });
 					}
@@ -3722,14 +3722,12 @@ describe("Test file uploading", () => {
 			.then(res => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
-				expect(res.body).toEqual({ hash: origHashes["logo.png"], meta: {
-					$multipart: {},
-					$params: {},
-					encoding: "7bit",
-					fieldname: "myFile",
-					filename: "logo.png",
-					mimetype: "image/png"
-				} });
+				expect(res.body).toEqual({ hash: origHashes["logo.png"], params: {
+					$encoding: "7bit",
+					$fieldname: "myFile",
+					$filename: "logo.png",
+					$mimetype: "image/png"
+				}, meta: {} });
 
 				expect(onFilesLimitFn).toHaveBeenCalledTimes(0);
 			});
@@ -3738,21 +3736,18 @@ describe("Test file uploading", () => {
 	it("should send data field with multipart", () => {
 		return request(server)
 			.post("/upload")
-			.attach("myFile", assetsDir + "logo.png")
 			.field("name", "moleculer")
+			.attach("myFile", assetsDir + "logo.png")
 			.then(res => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
-				expect(res.body).toEqual({ hash: origHashes["logo.png"], meta: {
-					$multipart: {
-						name: "moleculer"
-					},
-					$params: {},
-					encoding: "7bit",
-					fieldname: "myFile",
-					filename: "logo.png",
-					mimetype: "image/png"
-				}  });
+				expect(res.body).toEqual({ hash: origHashes["logo.png"], params: {
+					name: "moleculer",
+					$encoding: "7bit",
+					$fieldname: "myFile",
+					$filename: "logo.png",
+					$mimetype: "image/png"
+				}, meta: {} });
 
 				expect(onFilesLimitFn).toHaveBeenCalledTimes(0);
 			});
@@ -3767,11 +3762,8 @@ describe("Test file uploading", () => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
 				expect(res.body).toEqual([{
-					meta: {
-						$multipart: { name: "moleculer", more: "services" },
-						$params: { id: "f1234" }
-					},
-					params: {}
+					meta: {},
+					params: { id: "f1234", name: "moleculer", more: "services" }
 				}]);
 			});
 	});
@@ -3784,14 +3776,12 @@ describe("Test file uploading", () => {
 			.then(res => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
-				expect(res.body).toEqual({ hash: origHashes["logo.png"], meta: {
-					$multipart: {},
-					$params: {},
-					encoding: "7bit",
-					fieldname: "myFile",
-					filename: "logo.png",
-					mimetype: "image/png"
-				}  });
+				expect(res.body).toEqual({ hash: origHashes["logo.png"], params: {
+					$encoding: "7bit",
+					$fieldname: "myFile",
+					$filename: "logo.png",
+					$mimetype: "image/png"
+				} , meta: {} });
 				expect(onFilesLimitFn).toHaveBeenCalledTimes(1);
 				expect(onFilesLimitFn).toHaveBeenCalledWith(expect.any(Busboy), expect.any(Alias), service);
 			});
@@ -3806,22 +3796,18 @@ describe("Test file uploading", () => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
 				expect(res.body).toEqual([
-					{ hash: origHashes["logo.png"], meta: {
-						$multipart: {},
-						$params: {},
-						encoding: "7bit",
-						fieldname: "myFile",
-						filename: "logo.png",
-						mimetype: "image/png"
-					}  },
-					{ hash: origHashes["lorem.txt"], meta: {
-						$multipart: {},
-						$params: {},
-						encoding: "7bit",
-						fieldname: "myText",
-						filename: "lorem.txt",
-						mimetype: "text/plain"
-					}  }
+					{ hash: origHashes["logo.png"], params: {
+						$encoding: "7bit",
+						$fieldname: "myFile",
+						$filename: "logo.png",
+						$mimetype: "image/png"
+					}, meta: {}  },
+					{ hash: origHashes["lorem.txt"], params: {
+						$encoding: "7bit",
+						$fieldname: "myText",
+						$filename: "lorem.txt",
+						$mimetype: "text/plain"
+					}, meta: {}  }
 				]);
 			});
 	});
@@ -3835,9 +3821,7 @@ describe("Test file uploading", () => {
 			.then(res => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
-				expect(res.body).toEqual({ hash: origHashes["logo.png"], meta: {
-					$params: {},
-				}  });
+				expect(res.body).toEqual({ hash: origHashes["logo.png"], params: {}, meta: {} });
 			});
 
 	});
@@ -3851,9 +3835,7 @@ describe("Test file uploading", () => {
 			.then(res => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
-				expect(res.body).toEqual({ hash: origHashes["logo.png"], meta: {
-					$params: { id: "f1234" },
-				} });
+				expect(res.body).toEqual({ hash: origHashes["logo.png"], params:  { id: "f1234" }, meta: {} });
 			});
 	});
 
