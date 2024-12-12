@@ -61,7 +61,7 @@ declare module "moleculer-web" {
 		inc(key: string): number | Promise<number>;
 	}
 
-	interface RateLimitStores {
+	export interface RateLimitStores {
 		MemoryStore: typeof MemoryStore;
 	}
 
@@ -335,7 +335,7 @@ declare module "moleculer-web" {
 		constructor(type: string, data: any);
 	}
 
-	interface ApiGatewayErrors {
+	export interface ApiGatewayErrors {
 		InvalidRequestBodyError: typeof InvalidRequestBodyError;
 		InvalidResponseTypeError: typeof InvalidResponseTypeError;
 		UnAuthorizedError: typeof UnAuthorizedError;
