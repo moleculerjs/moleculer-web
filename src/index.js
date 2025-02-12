@@ -496,6 +496,7 @@ module.exports = {
 		/**
 		 * Alias handler. Call action or call custom function
 		 * 	- check whitelist
+		 *  - check blacklist
 		 * 	- Rate limiter
 		 *  - Resolve endpoint
 		 *  - onBeforeCall
@@ -1155,6 +1156,23 @@ module.exports = {
 		},
 
 		/**
+		 * Check the action name in blacklist
+		 *
+		 * @param {Object} route
+		 * @param {String} action
+		 * @returns {Boolean}
+		 */
+		checkBlacklist(route, action) {
+			// Rewrite to for iterator (faster)
+			return (
+				route.blacklist.find((mask) => {
+					if (_.isString(mask)) return match(action, mask);
+					else if (_.isRegExp(mask)) return mask.test(action);
+				}) != null
+			);
+		},
+
+		/**
 		 * Resolve alias names
 		 *
 		 * @param {String} url
@@ -1368,6 +1386,10 @@ module.exports = {
 			route.whitelist = opts.whitelist;
 			route.hasWhitelist = Array.isArray(route.whitelist);
 
+			// Handle blacklist
+			route.blacklist = opts.blacklist;
+			route.hasBlacklist = Array.isArray(route.blacklist);
+
 			// `onBeforeCall` handler
 			if (opts.onBeforeCall)
 				route.onBeforeCall = opts.onBeforeCall;
@@ -1521,6 +1543,18 @@ module.exports = {
 
 							// Check whitelist
 							if (route.hasWhitelist && !this.checkWhitelist(route, action.name)) return;
+
+							// Blacklist check
+							if (route.hasBlacklist) {
+								if (this.checkBlacklist(route, alias.action)) {
+									this.logger.debug(
+										`  The '${alias.action}' action is in the blacklist!`
+									);
+									throw new ServiceNotFoundError({
+										action: alias.action,
+									});
+								}
+							}
 
 							let restRoutes = [];
 							if (!_.isArray(action.rest)) {
