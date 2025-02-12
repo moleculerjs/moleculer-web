@@ -21,6 +21,7 @@ The `moleculer-web` is the official API gateway service for [Moleculer](https://
 * support file uploading
 * alias names (with named parameters & REST shorthand)
 * whitelist
+* blacklist
 * multiple body parsers (json, urlencoded)
 * CORS headers
 * ETags

@@ -367,6 +367,7 @@ declare module "moleculer-web" {
 		cors: CorsOptions;
 		etag: boolean | "weak" | "strong" | Function;
 		hasWhitelist: boolean;
+		hasBlacklist: boolean;
 		logging: boolean;
 		mappingPolicy: string;
 		middlewares: Function[];
@@ -375,6 +376,7 @@ declare module "moleculer-web" {
 		opts: any;
 		path: string;
 		whitelist: string[];
+		blacklist: string[];
 	}
 
 	type onBeforeCall = (
@@ -514,6 +516,7 @@ declare module "moleculer-web" {
 		 * The gateway will dynamically build the full routes from service schema.
 		 * Gateway will regenerate the routes every time a service joins or leaves the network.<br>
 		 * Use `whitelist` parameter to specify services that the Gateway should track and build the routes.
+		 * And `blacklist` parameter to specify services that the Gateway should not track and build the routes.
 		 * @see https://moleculer.services/docs/0.14/moleculer-web.html#Auto-alias
 		 */
 		autoAliases?: boolean;
@@ -597,6 +600,15 @@ declare module "moleculer-web" {
 		 * @see https://moleculer.services/docs/0.14/moleculer-web.html#Whitelist
 		 */
 		whitelist?: (string | RegExp)[];
+		/**
+		 * If you don’t want to publish all actions, you can filter them with blacklist option.<br>
+		 * Use match strings or regexp in list. To enable all actions, use "**" item.<br>
+		 * "posts.*": `Access any actions in 'posts' service`<br>
+		 * "users.list": `Access call only the 'users.list' action`<br>
+		 * /^math\.\w+$/: `Access any actions in 'math' service`<br>
+		 * @see https://moleculer.services/docs/0.14/moleculer-web.html#Blacklist
+		 */
+		blacklist?: (string | RegExp)[];
 	}
 
 	type APISettingServer =
