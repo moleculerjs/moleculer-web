@@ -280,8 +280,31 @@ module.exports = {
 				return this.removeRoute(ctx.params.path);
 			}
 		},
-	},
+		compileRest: {
+			params: {
+				action: {
+					type: "string"
+				},
+				params: {
+					type: "record",
+					optional: true,
+					key: { type: "string", pattern: /[A-Za-z0-9_]+/ },
+					value: { type: "string", convert: true, optional: true }
+				}
+			},
+			visibility: "public",
+			handler(ctx) {
+				const actionName = ctx.params.action;
+				const foundAlias = this.aliases.find(alias => alias.action === actionName);
 
+				if(!foundAlias) {
+					return;
+				}
+
+				return foundAlias.compile(ctx.params.params);
+			}
+		}
+	},
 	methods: {
 		/**
 		 * Create HTTP server
