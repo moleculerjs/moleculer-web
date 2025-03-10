@@ -19,7 +19,7 @@ const _ = require("lodash");
 const bodyParser = require("body-parser");
 const serveStatic = require("serve-static");
 const isReadableStream = require("isstream").isReadable;
-const { pipeline } = require('stream');
+const { pipeline } = require("stream");
 
 const { MoleculerError, MoleculerServerError, ServiceNotFoundError } = require("moleculer").Errors;
 const { ServiceUnavailableError, NotFoundError, ForbiddenError, RateLimitExceeded, ERR_ORIGIN_NOT_ALLOWED } = require("./errors");
@@ -521,6 +521,14 @@ module.exports = {
 				}
 			}
 
+			// Blacklist check
+			if (alias.action && route.hasBlacklist) {
+				if (this.checkBlacklist(route, alias.action)) {
+					this.logger.debug(`  The '${alias.action}' action is in the blacklist!`);
+					throw new ServiceNotFoundError({ action: alias.action });
+				}
+			}
+
 			// Rate limiter
 			if (route.rateLimit) {
 				const opts = route.rateLimit;
@@ -822,9 +830,9 @@ module.exports = {
 				if (isReadableStream(data)) { //Stream response
 					pipeline(data, res, err => {
 						if (err) {
-							this.logger.warn("Stream got an error.", { err, url: req.url, actionName: action.name })
+							this.logger.warn("Stream got an error.", { err, url: req.url, actionName: action.name });
 						}
-					})
+					});
 				} else {
 					res.end(chunk);
 				}
@@ -1546,12 +1554,12 @@ module.exports = {
 
 							// Blacklist check
 							if (route.hasBlacklist) {
-								if (this.checkBlacklist(route, alias.action)) {
+								if (this.checkBlacklist(route, action.name)) {
 									this.logger.debug(
-										`  The '${alias.action}' action is in the blacklist!`
+										`  The '${action.name}' action is in the blacklist!`
 									);
 									throw new ServiceNotFoundError({
-										action: alias.action,
+										action: action.name,
 									});
 								}
 							}
