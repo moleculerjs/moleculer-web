@@ -777,6 +777,125 @@ describe("Test whitelist", () => {
 	});
 });
 
+describe("Test blacklist", () => {
+	let broker;
+	let service;
+	let server;
+	beforeAll(() => {
+		[broker, service, server] = setup({
+			routes: [
+				{
+					path: "/api",
+					blacklist: ["test.greeter", "math.sub", /^test\.json/],
+				},
+			],
+		});
+		broker.loadService("./test/services/math.service");
+		return broker.start();
+	});
+	afterAll(() => broker.stop());
+	it("GET /api/test/hello", () => {
+		return request(server)
+			.get("/api/test/hello")
+			.then((res) => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe(
+					"application/json; charset=utf-8"
+				);
+				expect(res.body).toBe("Hello Moleculer");
+			});
+	});
+	it("GET /api/test/json", () => {
+		return request(server)
+			.get("/api/test/json")
+			.then((res) => {
+				expect(res.statusCode).toBe(404);
+				expect(res.headers["content-type"]).toBe(
+					"application/json; charset=utf-8"
+				);
+				expect(res.body).toEqual({
+					code: 404,
+					message: "Service 'test.json' is not found.",
+					name: "ServiceNotFoundError",
+					type: "SERVICE_NOT_FOUND",
+					data: {
+						action: "test.json",
+					},
+				});
+			});
+	});
+	it("GET /api/test/jsonArray", () => {
+		return request(server)
+			.get("/api/test/jsonArray")
+			.then((res) => {
+				expect(res.statusCode).toBe(404);
+				expect(res.headers["content-type"]).toBe(
+					"application/json; charset=utf-8"
+				);
+				expect(res.body).toEqual({
+					code: 404,
+					message: "Service 'test.jsonArray' is not found.",
+					name: "ServiceNotFoundError",
+					type: "SERVICE_NOT_FOUND",
+					data: {
+						action: "test.jsonArray",
+					},
+				});
+			});
+	});
+	it("GET /api/test/greeter", () => {
+		return request(server)
+			.get("/api/test/greeter")
+			.then((res) => {
+				expect(res.statusCode).toBe(404);
+				expect(res.headers["content-type"]).toBe(
+					"application/json; charset=utf-8"
+				);
+				expect(res.body).toEqual({
+					code: 404,
+					message: "Service 'test.greeter' is not found.",
+					name: "ServiceNotFoundError",
+					type: "SERVICE_NOT_FOUND",
+					data: {
+						action: "test.greeter",
+					},
+				});
+			});
+	});
+	it("GET /api/math.add", () => {
+		return request(server)
+			.get("/api/math.add")
+			.query({ a: 5, b: 8 })
+			.then((res) => {
+				expect(res.statusCode).toBe(200);
+				expect(res.headers["content-type"]).toBe(
+					"application/json; charset=utf-8"
+				);
+				expect(res.body).toBe(13);
+			});
+	});
+	it("GET /api/math.sub", () => {
+		return request(server)
+			.get("/api/math.sub")
+			.query({ a: 5, b: 8 })
+			.then((res) => {
+				expect(res.statusCode).toBe(404);
+				expect(res.headers["content-type"]).toBe(
+					"application/json; charset=utf-8"
+				);
+				expect(res.body).toEqual({
+					code: 404,
+					message: "Service 'math.sub' is not found.",
+					name: "ServiceNotFoundError",
+					type: "SERVICE_NOT_FOUND",
+					data: {
+						action: "math.sub",
+					},
+				});
+			});
+	});
+});
+
 describe("Test aliases", () => {
 	let broker;
 	let service;
