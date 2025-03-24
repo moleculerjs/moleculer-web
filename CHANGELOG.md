@@ -1,3 +1,11 @@
+<a name="0.10.8"></a>
+# 0.10.8 (2025-03-24)
+
+## Changes
+- fix index.d.ts [#349](https://github.com/moleculerjs/moleculer-web/pull/349) [#360](https://github.com/moleculerjs/moleculer-web/pull/360)
+- add blacklist functionality [#361](https://github.com/moleculerjs/moleculer-web/pull/361)
+
+-----------------------------
 <a name="0.10.7"></a>
 # 0.10.7 (2023-11-12)
 
