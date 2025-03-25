@@ -525,7 +525,7 @@ module.exports = {
 			if (alias.action && route.hasBlacklist) {
 				if (this.checkBlacklist(route, alias.action)) {
 					this.logger.debug(`  The '${alias.action}' action is in the blacklist!`);
-					throw new ServiceNotFoundError({ action: alias.action });
+					return;
 				}
 			}
 
@@ -1558,9 +1558,7 @@ module.exports = {
 									this.logger.debug(
 										`  The '${action.name}' action is in the blacklist!`
 									);
-									throw new ServiceNotFoundError({
-										action: action.name,
-									});
+									return;
 								}
 							}
 
