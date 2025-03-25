@@ -1558,9 +1558,7 @@ module.exports = {
 									this.logger.debug(
 										`  The '${action.name}' action is in the blacklist!`
 									);
-									throw new ServiceNotFoundError({
-										action: action.name,
-									});
+									return;
 								}
 							}
 
