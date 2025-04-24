@@ -685,7 +685,7 @@ module.exports = {
 		 */
 		encodeResponse(req, res, data) {
 			if (this.settings.encodeResponse)
-				return this.settings.encodeResponse.call(this, req, res, data);
+				return this.settings.encodeResponse.call(this, req, res, data, this.logger);
 			else
 				return JSON.stringify(data);
 		},
