@@ -80,7 +80,7 @@
     "serve-static": "^2.2.0"
   },
   "engines": {
-    "node": ">= 18.x.x"
+    "node": ">= 20.x.x"
   },
   "typings": "./index.d.ts",
   "jest": {
