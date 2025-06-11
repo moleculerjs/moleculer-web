@@ -1,9 +1,18 @@
+<a name="0.11.0-beta2"></a>
+# 0.11.0-beta2 (2025-06-xx)
+
+## Changes
+
+### BREAKING: Node 20 minimum
+
+The minimum Node versions is Node 20.x.
+
 <a name="0.11.0-beta1"></a>
 # 0.11.0-beta1 (2024-12-04)
 
 ## Changes
 
-### Updated `path-ro-regexp` librarz
+### BREAKING: Updated `path-ro-regexp` library
 
 The `path-to-regexp` has been updated to 8.x.x. It contains many breaking changes in the path resolving. Check the [documentation](https://github.com/pillarjs/path-to-regexp?tab=readme-ov-file#express--4x) of library to how migrate your alias paths.
 

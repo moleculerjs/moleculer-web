@@ -549,7 +549,7 @@ describe("Test only assets", () => {
 			.get("/")
 			.then(res => {
 				expect(res.statusCode).toBe(200);
-				expect(res.headers["content-type"]).toBe("text/html; charset=UTF-8");
+				expect(res.headers["content-type"]).toBe("text/html; charset=utf-8");
 				expect(res.text).toBe(
 					fs.readFileSync(path.join(__dirname, "..", "assets", "index.html"), "utf8")
 				);
@@ -561,7 +561,7 @@ describe("Test only assets", () => {
 			.get("/lorem.txt")
 			.then(res => {
 				expect(res.statusCode).toBe(200);
-				expect(res.headers["content-type"]).toBe("text/plain; charset=UTF-8");
+				expect(res.headers["content-type"]).toBe("text/plain; charset=utf-8");
 				expect(res.text).toBe(
 					"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis in faucibus sapien, vitae aliquet nisi. Vivamus quis finibus tortor."
 				);
@@ -659,7 +659,7 @@ describe("Test assets & API route", () => {
 			.get("/")
 			.then(res => {
 				expect(res.statusCode).toBe(200);
-				expect(res.headers["content-type"]).toBe("text/html; charset=UTF-8");
+				expect(res.headers["content-type"]).toBe("text/html; charset=utf-8");
 				expect(res.text).toBe(
 					fs.readFileSync(path.join(__dirname, "..", "assets", "index.html"), "utf8")
 				);
@@ -671,7 +671,7 @@ describe("Test assets & API route", () => {
 			.get("/lorem.txt")
 			.then(res => {
 				expect(res.statusCode).toBe(200);
-				expect(res.headers["content-type"]).toBe("text/plain; charset=UTF-8");
+				expect(res.headers["content-type"]).toBe("text/plain; charset=utf-8");
 				expect(res.text).toBe(
 					"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis in faucibus sapien, vitae aliquet nisi. Vivamus quis finibus tortor."
 				);
@@ -1288,7 +1288,6 @@ describe("Test un-merged params", () => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
 				expect(res.body.params).toEqual({
-					body: {},
 					params: {},
 					query: {}
 				});
@@ -1303,7 +1302,6 @@ describe("Test un-merged params", () => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
 				expect(res.body.params).toEqual({
-					body: {},
 					params: {},
 					query: {
 						a: "5",
@@ -1360,7 +1358,6 @@ describe("Test un-merged params", () => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
 				expect(res.body.params).toEqual({
-					body: {},
 					params: {
 						name: "John"
 					},
@@ -1377,7 +1374,6 @@ describe("Test un-merged params", () => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
 				expect(res.body.params).toEqual({
-					body: {},
 					params: {},
 					query: {
 						a: ["1", "2"]
@@ -1394,7 +1390,6 @@ describe("Test un-merged params", () => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
 				expect(res.body.params).toEqual({
-					body: {},
 					params: {},
 					query: {
 						foo: { bar: ["a", "b"], baz: "c" }
@@ -1410,7 +1405,6 @@ describe("Test un-merged params", () => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
 				expect(res.body.params).toEqual({
-					body: {},
 					params: {},
 					query: {}
 				});
@@ -1425,7 +1419,6 @@ describe("Test un-merged params", () => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
 				expect(res.body.params).toEqual({
-					body: {},
 					params: {
 						args: "John/Jane/Adam/Walter"
 					},
