@@ -1726,6 +1726,13 @@ module.exports = {
 
 			/* istanbul ignore next */
 			this.server.on("error", err => {
+				if (err.code === 'EADDRINUSE') {
+					return this.broker.fatal(
+						`Port ${this.settings.port} is already in use!`,
+						err,
+						true // Exit process
+					);
+				}
 				this.logger.error("Server error", err);
 			});
 
@@ -1785,7 +1792,13 @@ module.exports = {
 		/* istanbul ignore next */
 		return new this.Promise((resolve, reject) => {
 			this.server.listen(this.settings.port, this.settings.ip, err => {
-				if (err) return reject(err);
+				if (err) {
+					return this.broker.fatal(
+						`Server listening error on port ${this.settings.port}.`,
+						err,
+						true // Exit process
+					);
+				}
 
 				const addr = this.server.address();
 				const listenAddr =
