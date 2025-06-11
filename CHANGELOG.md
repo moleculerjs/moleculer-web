@@ -7,6 +7,9 @@
 
 The minimum Node versions is Node 20.x.
 
+### BREAKING: Update dependencies
+Many dependencies (major, minor, patch) is upgraded which can contain breaking changes
+
 <a name="0.11.0-beta1"></a>
 # 0.11.0-beta1 (2024-12-04)
 
