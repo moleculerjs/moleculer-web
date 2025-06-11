@@ -3,9 +3,9 @@
 
 ## Changes
 
-### BREAKING: Node 20 minimum
+### BREAKING: Minimum Node 20
 
-The minimum Node versions is Node 20.x.
+The minimum Node version is Node 20.x.
 
 ### BREAKING: Update dependencies
 Many dependencies (major, minor, patch) is upgraded which can contain breaking changes
