@@ -770,5 +770,8 @@ declare module "moleculer-web" {
 		Errors: ApiGatewayErrors;
 		RateLimitStores: RateLimitStores;
 	};
+
+	export = ApiGatewayService;
+
 	export default ApiGatewayService;
 }
