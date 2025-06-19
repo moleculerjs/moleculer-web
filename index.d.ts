@@ -337,22 +337,22 @@ declare module "moleculer-web" {
 		constructor(dataType: string);
 	}
 	class UnAuthorizedError extends Errors.MoleculerError {
-		constructor(type: string | null | undefined, data: any);
+		constructor(type: string | null | undefined, data?: any);
 	}
 	class ForbiddenError extends Errors.MoleculerError {
-		constructor(type: string, data: any);
+		constructor(type: string, data?: any);
 	}
 	class BadRequestError extends Errors.MoleculerError {
-		constructor(type: string, data: any);
+		constructor(type: string, data?: any);
 	}
 	class RateLimitExceeded extends Errors.MoleculerClientError {
-		constructor(type: string, data: any);
+		constructor(type: string, data?: any);
 	}
 	class NotFoundError extends Errors.MoleculerClientError {
-		constructor(type: string, data: any);
+		constructor(type: string, data?: any);
 	}
 	class ServiceUnavailableError extends Errors.MoleculerError {
-		constructor(type: string, data: any);
+		constructor(type: string, data?: any);
 	}
 
 	interface ApiGatewayErrors {
