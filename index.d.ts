@@ -8,7 +8,8 @@ import type {
 	LogLevels,
 	Service,
 	ServiceBroker,
-	ServiceSchema
+	ServiceSchema,
+	ServiceSettingsSchema
 } from "moleculer";
 import { Errors } from "moleculer";
 
@@ -454,7 +455,7 @@ declare module "moleculer-web" {
 		[k: string]: any;
 	};
 
-	type CommonSettingSchema = {
+	export interface CommonSettingSchema {
 		/**
 		 * Cross-origin resource sharing configuration (using module [cors](https://www.npmjs.com/package/cors))<br>
 		 * @example {
@@ -628,7 +629,7 @@ declare module "moleculer-web" {
 		| NetServer
 		| TLSServer;
 
-	export interface ApiSettingsSchema extends CommonSettingSchema {
+	export interface ApiSettingsSchema extends ServiceSettingsSchema, CommonSettingSchema {
 		/**
 		 * It serves assets with the [serve-static](https://github.com/expressjs/serve-static) module like ExpressJS.
 		 * @see https://moleculer.services/docs/0.14/moleculer-web.html#Serve-static-files
