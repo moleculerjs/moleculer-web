@@ -774,5 +774,5 @@ declare module "moleculer-web" {
 
 	export default ApiGatewayService;
 
-	// export = ApiGatewayService;	
+	export = ApiGatewayService;	
 }
