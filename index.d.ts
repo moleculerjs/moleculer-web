@@ -9,7 +9,7 @@ import type {
 	Service,
 	ServiceBroker,
 	ServiceSchema,
-	ServiceSettingsSchema
+	ServiceSettingSchema
 } from "moleculer";
 import { Errors } from "moleculer";
 
@@ -500,7 +500,8 @@ declare module "moleculer-web" {
 		 * @see https://moleculer.services/docs/0.14/moleculer-web.html#Middlewares
 		 */
 		use?: (routeMiddleware | routeMiddlewareError)[];
-	};
+	}
+
 	export interface ApiRouteSchema extends CommonSettingSchema {
 		/**
 		 * You can use alias names instead of action names. You can also specify the method. Otherwise it will handle every method types.<br>
@@ -629,7 +630,7 @@ declare module "moleculer-web" {
 		| NetServer
 		| TLSServer;
 
-	export interface ApiSettingsSchema extends ServiceSettingsSchema, CommonSettingSchema {
+	export interface ApiSettingsSchema extends ServiceSettingSchema, CommonSettingSchema {
 		/**
 		 * It serves assets with the [serve-static](https://github.com/expressjs/serve-static) module like ExpressJS.
 		 * @see https://moleculer.services/docs/0.14/moleculer-web.html#Serve-static-files
@@ -774,5 +775,5 @@ declare module "moleculer-web" {
 
 	export default ApiGatewayService;
 
-	export = ApiGatewayService;	
+	export = ApiGatewayService;
 }
