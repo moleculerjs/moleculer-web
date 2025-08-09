@@ -474,7 +474,7 @@ declare module "moleculer-web" {
 		}
 		 * @see https://moleculer.services/docs/0.14/moleculer-web.html#CORS-headers
 		 */
-		cors?: CorsOptions;
+		cors?: boolean | CorsOptions;
 		/**
 		 * The etag option value can be `false`, `true`, `weak`, `strong`, or a custom `Function`
 		 * @default settings.etag (null)
