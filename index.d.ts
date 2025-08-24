@@ -305,7 +305,7 @@ declare module "moleculer-web" {
 		setHeaders?: ((res: ServerResponse, path: string, stat: any) => any) | undefined;
 	}
 
-	type AssetsConfig = {
+	export type AssetsConfig = {
 		/**
 		 * Root folder of assets
 		 */
@@ -315,6 +315,14 @@ declare module "moleculer-web" {
 		 */
 		options?: ServeStaticOptions;
 	};
+
+	export interface ContextResponseMeta {
+		$responseType?: string;
+		$statusCode?: number;
+		$statusMessage?: string;
+		$location?: string;
+		$responseHeaders?: Record<string, string>;
+	}
 
 	// CorsOptions
 	// From: https://github.com/DefinitelyTyped/DefinitelyTyped/blob/master/types/cors/index.d.ts
