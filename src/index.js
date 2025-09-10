@@ -1726,7 +1726,7 @@ module.exports = {
 
 			/* istanbul ignore next */
 			this.server.on("error", err => {
-				if (err.code === 'EADDRINUSE') {
+				if (err.code === "EADDRINUSE") {
 					return this.broker.fatal(
 						`Port ${this.settings.port} is already in use!`,
 						err,
@@ -1744,7 +1744,7 @@ module.exports = {
 			this.settings.internalServiceSpecialChar != null
 				? this.settings.internalServiceSpecialChar
 				: "~";
-		// eslint-disable-next-line security/detect-non-literal-regexp
+
 		this._isscRe = new RegExp(specChar);
 
 		// Create static server middleware
@@ -1790,7 +1790,7 @@ module.exports = {
 		if (this.settings.server === false) return this.Promise.resolve();
 
 		/* istanbul ignore next */
-		return new this.Promise((resolve, reject) => {
+		return new this.Promise(resolve => {
 			this.server.listen(this.settings.port, this.settings.ip, err => {
 				if (err) {
 					return this.broker.fatal(

@@ -1,4 +1,6 @@
 import { IParseOptions } from "qs";
+import { BodyParser } from "body-parser";
+import { ServeStatic } from "serve-static";
 
 import type {
 	ActionEndpoint,
@@ -779,6 +781,9 @@ declare module "moleculer-web" {
 	const ApiGatewayService: ServiceSchema & {
 		Errors: ApiGatewayErrors;
 		RateLimitStores: RateLimitStores;
+
+		bodyParser: BodyParser;
+		serveStatic: ServeStatic;
 	};
 
 	export default ApiGatewayService;
