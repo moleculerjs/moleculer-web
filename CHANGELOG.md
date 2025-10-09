@@ -1,3 +1,15 @@
+<a name="0.11.0-beta3"></a>
+# 0.11.0-beta3 (2025-10-09)
+
+## Changes
+
+- Added missing exported 3rd-party types
+- Added context response type
+- Added boolean CORS option
+- Fixed TypeScript definition exports
+- Fixed TypeScript import issue in case of module node16
+- Fixed typo in documentation
+
 <a name="0.11.0-beta2"></a>
 # 0.11.0-beta2 (2025-06-11)
 
