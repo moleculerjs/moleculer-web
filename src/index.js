@@ -384,7 +384,7 @@ module.exports = {
 					// Not routed.
 
 					const shouldBreak = this.corsHandler(this.settings, req, res); // check cors settings first
-					if(shouldBreak) {
+					if (shouldBreak) {
 						return;
 					}
 
@@ -431,7 +431,7 @@ module.exports = {
 					let params = {};
 
 					const shouldBreak = this.corsHandler(route, req, res);
-					if(shouldBreak) {
+					if (shouldBreak) {
 						return resolve(true);
 					}
 
@@ -718,7 +718,7 @@ module.exports = {
 			}
 
 			// Redirect
-			if (res.statusCode==201 || (res.statusCode >= 300 && res.statusCode < 400 && res.statusCode !== 304)) {
+			if (res.statusCode == 201 || (res.statusCode >= 300 && res.statusCode < 400 && res.statusCode !== 304)) {
 				const location = ctx.meta.$location;
 				/* istanbul ignore next */
 				if (!location) {
@@ -1526,7 +1526,7 @@ module.exports = {
 
 			const services = this.broker.registry.getServiceList({ withActions: true, grouping: true });
 			services.forEach(service => {
-				if(!service.settings) return;
+				if (!service.settings) return;
 				const serviceName = service.fullName || getServiceFullname(service);
 
 				let basePaths = [];
@@ -1556,11 +1556,9 @@ module.exports = {
 							if (route.hasBlacklist) {
 								if (this.checkBlacklist(route, action.name)) {
 									this.logger.debug(
-										`  The '${action.name}' action is in the blacklist!`
+										`  The '${action.name}' action is in the blacklist. Skipping...`
 									);
-									throw new ServiceNotFoundError({
-										action: action.name,
-									});
+									return;
 								}
 							}
 
