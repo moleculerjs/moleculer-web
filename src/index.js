@@ -525,7 +525,7 @@ module.exports = {
 			if (alias.action && route.hasBlacklist) {
 				if (this.checkBlacklist(route, alias.action)) {
 					this.logger.debug(`  The '${alias.action}' action is in the blacklist!`);
-					return;
+					throw new ServiceNotFoundError({ action: alias.action });
 				}
 			}
 
@@ -1554,12 +1554,7 @@ module.exports = {
 
 							// Blacklist check
 							if (route.hasBlacklist) {
-								if (this.checkBlacklist(route, action.name)) {
-									this.logger.debug(
-										`  The '${action.name}' action is in the blacklist!`
-									);
-									return;
-								}
+								if (this.checkBlacklist(route, action.name)) return;
 							}
 
 							let restRoutes = [];
