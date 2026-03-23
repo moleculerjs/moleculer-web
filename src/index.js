@@ -1834,14 +1834,15 @@ module.exports = {
 		if (this.settings.server === false) return this.Promise.resolve();
 
 		/* istanbul ignore next */
-		return new this.Promise(resolve => {
+		return new this.Promise((resolve, reject) => {
 			this.server.listen(this.settings.port, this.settings.ip, err => {
 				if (err) {
-					return this.broker.fatal(
+					this.broker.fatal(
 						`Server listening error on port ${this.settings.port}.`,
 						err,
 						true // Exit process
 					);
+					return reject(err);
 				}
 
 				const addr = this.server.address();
