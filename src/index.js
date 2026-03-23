@@ -452,15 +452,6 @@ module.exports = {
 						return resolve(true);
 					}
 
-					// Merge params
-					if (route.opts.mergeParams === false) {
-						params = { body: req.body, query: req.query };
-					} else {
-						const body = _.isObject(req.body) ? req.body : {};
-						Object.assign(params, body, req.query);
-					}
-					req.$params = params;
-
 					// Resolve action name
 					let urlPath = req.parsedUrl.slice(route.path.length);
 					if (urlPath.startsWith("/")) urlPath = urlPath.slice(1);
@@ -470,9 +461,17 @@ module.exports = {
 					let action = urlPath;
 
 					// #331 Always merge parameters for internal services
-					if (action.startsWith("$")) {
-						route.opts.mergeParams = true;
+					const shouldMergeParams =
+						route.opts.mergeParams !== false || action.startsWith("$");
+
+					// Merge params
+					if (!shouldMergeParams) {
+						params = { body: req.body, query: req.query };
+					} else {
+						const body = _.isObject(req.body) ? req.body : {};
+						Object.assign(params, body, req.query);
 					}
+					req.$params = params;
 
 					// Resolve aliases
 					if (foundAlias) {
