@@ -169,6 +169,9 @@ class Alias {
 				}
 				file.destroy(new PayloadTooLarge({ fieldname, filename, encoding, mimetype }));
 			});
+			file.on("error", err => {
+				busboy.emit("error", err);
+			});
 			numOfFiles++;
 			promises.push(
 				ctx

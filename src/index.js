@@ -469,6 +469,11 @@ module.exports = {
 					urlPath = urlPath.replace(this._isscRe, "$");
 					let action = urlPath;
 
+					// #331 Always merge parameters for internal services
+					if (action.startsWith("$")) {
+						route.opts.mergeParams = true;
+					}
+
 					// Resolve aliases
 					if (foundAlias) {
 						const alias = foundAlias.alias;
@@ -1623,11 +1628,9 @@ module.exports = {
 							if (route.hasBlacklist) {
 								if (this.checkBlacklist(route, action.name)) {
 									this.logger.debug(
-										`  The '${action.name}' action is in the blacklist!`
+										`  The '${action.name}' action is in the blacklist. Skipping...`
 									);
-									throw new ServiceNotFoundError({
-										action: action.name,
-									});
+									return;
 								}
 							}
 
