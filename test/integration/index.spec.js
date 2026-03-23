@@ -5436,3 +5436,99 @@ describe("Test qs options forwarding", () => {
 			});
 	});
 });
+
+describe("Test blacklist with autoAliases", () => {
+	let broker;
+	let service;
+	let server;
+
+	function regenerate() {
+		service.routes.forEach(
+			route => route.opts.autoAliases && service.regenerateAutoAliases(route)
+		);
+	}
+
+	beforeAll(() => {
+		[broker, service, server] = setup({
+			routes: [
+				{
+					path: "/api",
+					autoAliases: true,
+					blacklist: ["test.greeter"]
+				}
+			]
+		});
+
+		return broker.start().then(() => regenerate());
+	});
+
+	afterAll(() => broker.stop());
+
+	it("should allow non-blacklisted action via autoAliases", () => {
+		return request(server)
+			.get("/api/hi")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.body).toBe("Hello Moleculer");
+			});
+	});
+
+	it("should block blacklisted action via autoAliases", () => {
+		return request(server)
+			.get("/api/greeter")
+			.query({ name: "Tester" })
+			.then(res => {
+				expect(res.statusCode).toBe(404);
+			});
+	});
+
+	it("should not crash during regenerateAutoAliases with blacklisted actions", () => {
+		const routeObj = service.routes.find(r => r.opts.autoAliases);
+		expect(() => {
+			service.regenerateAutoAliases(routeObj);
+		}).not.toThrow();
+	});
+});
+
+describe("Test mergeParams with internal services", () => {
+	let broker;
+	let service;
+	let server;
+
+	beforeAll(() => {
+		[broker, service, server] = setup({
+			routes: [
+				{
+					path: "/api",
+					mergeParams: false
+				}
+			]
+		});
+		return broker.start();
+	});
+
+	afterAll(() => broker.stop());
+
+	it("should merge params for internal service even when mergeParams is false", () => {
+		return request(server)
+			.get("/api/~node/services")
+			.query({ withActions: true })
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(Array.isArray(res.body)).toBe(true);
+				// Verify that withActions param was actually merged (actions should be present)
+				const testService = res.body.find(s => s.name === "test");
+				expect(testService).toBeDefined();
+				expect(testService.actions).toBeDefined();
+			});
+	});
+
+	it("should not merge params for regular actions when mergeParams is false", () => {
+		return request(server)
+			.get("/api/test/hello")
+			.then(res => {
+				expect(res.statusCode).toBe(200);
+				expect(res.body).toBe("Hello Moleculer");
+			});
+	});
+});
