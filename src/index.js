@@ -280,6 +280,138 @@ module.exports = {
 				return this.removeRoute(ctx.params.path);
 			}
 		},
+
+		/**
+		 * Provides a comprehensive list of all mappings (both explicit aliases and computed routes).
+		 * This is an internal action useful for debugging and generating API documentation.
+		 */
+		listAllMappings: {
+			rest: "GET /list-all-mappings",
+			params: {
+				// Group results by routes
+				grouping: { type: "boolean", optional: true, convert: true },
+				// Include the action schema in the response
+				withActionSchema: { type: "boolean", optional: true, convert: true },
+				// Respect the HTTP method defined in the action's `rest` settings
+				respectRest: { type: "boolean", optional: true, convert: true }
+			},
+			handler(ctx) {
+				// Get params from the request
+				const grouping = !!ctx.params.grouping;
+				const withActionSchema = !!ctx.params.withActionSchema;
+				const respectRest = !!ctx.params.respectRest;
+
+				// Get the full list of registered actions from the broker
+				const actionList = this.broker.registry.getActionList({});
+				const res = [];
+				// Symbol to replace $ in internal service names
+				const internalChar = this.settings.internalServiceSpecialChar != null ? this.settings.internalServiceSpecialChar : "~";
+
+				// --- Step 1: Process explicitly defined aliases ---
+				this.aliases.forEach(alias => {
+					// Skip system actions, which usually start with "$"
+					if (alias.action && alias.action.charAt(0) === "$") return;
+
+					const obj = {
+						actionName: alias.action,
+						path: alias.path,
+						fullPath: alias.fullPath,
+						methods: alias.method,
+						routePath: alias.route.path
+					};
+
+					// If requested, add the action schema to the response
+					if (withActionSchema && alias.action) {
+						const actionSchema = actionList.find(item => item.name == alias.action);
+						if (actionSchema && actionSchema.action) obj.action = _.omit(actionSchema.action, ["handler"]);
+					}
+
+					// Group results by route if specified in params
+					if (grouping) {
+						const r = res.find(item => item.route == alias.route);
+						if (r) r.aliases.push(obj);
+						else res.push({ route: alias.route, aliases: [obj] });
+					} else res.push(obj);
+				});
+
+				// --- Step 2: Process automatically computed routes for the 'all' policy ---
+				this.routes.forEach(route => {
+					// This block only runs for routes with `mappingPolicy: "all"`
+					if (route.mappingPolicy !== MAPPING_POLICY_ALL) return;
+
+					actionList.forEach(item => {
+						const actionName = item.name;
+						const actionSchema = item.action;
+
+						// Skip actions belonging to the API Gateway service itself to avoid exposing them
+						if (item.service && (item.service.name == this.name || (item.service.metadata && item.service.metadata.$category == "gateway"))) return;
+
+						// Skip system actions (e.g., "$node.*")
+						if (actionName && actionName.charAt(0) === "$") return;
+
+						// Consider action visibility. Must be 'published'.
+						if (actionSchema && actionSchema.visibility != null && actionSchema.visibility != "published") return;
+						// Apply whitelist and blacklist filters
+						if (route.hasWhitelist && !this.checkWhitelist(route, actionName)) return;
+						if (route.hasBlacklist && this.checkBlacklist(route, actionName)) return;
+
+						// Convert action name to a relative URL path (e.g., "posts.create" -> "/posts/create")
+						let relativePath = actionName.replace(/\./g, "/").replace(/\$/g, internalChar);
+						let fullPath = addSlashes(route.path) + relativePath;
+						fullPath = normalizePath(fullPath);
+
+						// Determine HTTP methods
+						let methods = "*"; // All methods are allowed by default
+						if (respectRest && actionSchema && actionSchema.rest) {
+							const rest = actionSchema.rest;
+							const collect = (r) => {
+								if (_.isString(r)) { // e.g., "POST /users"
+									if (r.indexOf(" ") !== -1) return r.split(/\s+/)[0];
+									return null;
+								} else if (_.isObject(r)) { // e.g., { method: "POST", path: "/users" }
+									return r.method || null;
+								}
+								return null;
+							};
+							if (Array.isArray(rest)) {
+								const ms = _.compact(rest.map(collect));
+								if (ms.length > 0) methods = ms.join(", ");
+							} else {
+								const m = collect(rest);
+								if (m) methods = m;
+							}
+						}
+
+						const obj = {
+							actionName,
+							path: removeTrailingSlashes(relativePath),
+							fullPath,
+							methods,
+							routePath: route.path
+						};
+
+						if (withActionSchema && actionSchema) obj.action = _.omit(actionSchema, ["handler"]);
+
+						// Group results if required
+						if (grouping) {
+							const r = res.find(item => item.route == route);
+							if (r) r.aliases.push(obj);
+							else res.push({ route, aliases: [obj] });
+						} else res.push(obj);
+					});
+				});
+
+				// --- Final processing of grouped results ---
+				if (grouping) {
+					res.forEach(item => {
+						item.path = item.route.path;
+						delete item.route;
+					});
+				}
+
+				return res;
+			}
+		},
 	},
 
 	methods: {
