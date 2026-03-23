@@ -1222,7 +1222,7 @@ module.exports = {
 		checkBlacklist(route, action) {
 			// Rewrite to for iterator (faster)
 			return (
-				route.blacklist.find((mask) => {
+				route.blacklist.find(mask => {
 					if (_.isString(mask)) return match(action, mask);
 					else if (_.isRegExp(mask)) return mask.test(action);
 				}) != null
@@ -1596,7 +1596,7 @@ module.exports = {
 				if (!service.settings) return;
 				const serviceName = service.fullName || getServiceFullname(service);
 
-				let basePaths = [];
+				let basePaths;
 				if (_.isString(service.settings.rest)) {
 					basePaths = [service.settings.rest];
 				} else if (_.isArray(service.settings.rest)) {
@@ -1633,7 +1633,7 @@ module.exports = {
 								}
 							}
 
-							let restRoutes = [];
+							let restRoutes;
 							if (!_.isArray(action.rest)) {
 								restRoutes = [action.rest];
 							} else {
