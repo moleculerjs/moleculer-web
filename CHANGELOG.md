@@ -1,3 +1,26 @@
+<a name="0.11.0-beta4"></a>
+# 0.11.0-beta4 (2026-03-23)
+
+## Changes
+
+### Bug fixes
+- fix: skip blacklisted actions in auto-alias regeneration [#366](https://github.com/moleculerjs/moleculer-web/pull/366)
+- fix: crash when the upload file size exceeds the limit [#363](https://github.com/moleculerjs/moleculer-web/pull/363)
+- fix: mergeParams for internal services ($node.*) — params were not merged on the current request [#332](https://github.com/moleculerjs/moleculer-web/pull/332)
+
+### Improvements
+- Remove incorrect `declare module "moleculer-web"` wrapper from TypeScript definitions (based on [#357](https://github.com/moleculerjs/moleculer-web/pull/357))
+- Add tests for blacklist with autoAliases and mergeParams with internal services
+
+### Dependencies
+- Update all dependencies (major: eslint 10, @sinonjs/fake-timers 15, @types/serve-static 2, cross-env 10, eslint-plugin-security 4, webpack-dev-middleware 8)
+- Remove unused `eslint-plugin-node`
+- Add `@eslint/js` and `globals` for ESLint 10 flat config
+
+### CI
+- Update Node.js CI matrix: remove 18.x, add 24.x
+
+-----------------------------
 <a name="0.11.0-beta3"></a>
 # 0.11.0-beta3 (2025-10-09)
 

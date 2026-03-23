@@ -25,7 +25,6 @@ module.exports = [
 				fetch: "readonly"
 			}
 		},
-		// plugins: ["node", "security"],
 		rules: {
 			"no-var": ["error"],
 			"no-console": ["error"],
@@ -34,8 +33,7 @@ module.exports = [
 			"security/detect-object-injection": ["off"],
 			"security/detect-non-literal-require": ["off"],
 			"security/detect-non-literal-fs-filename": ["off"],
-			"no-process-exit": ["off"],
-			"node/no-unpublished-require": 0
+			"no-process-exit": ["off"]
 		},
 		ignores: ["benchmark/test.js", "test/typescript/hello-world/out/*.js"]
 	},
