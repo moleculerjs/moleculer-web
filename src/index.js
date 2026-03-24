@@ -688,7 +688,10 @@ module.exports = {
 		 * @param {any} data
 		 */
 		encodeResponse(req, res, data) {
-			return JSON.stringify(data);
+			if (this.settings.encodeResponse)
+				return this.settings.encodeResponse.call(this, req, res, data, this.logger);
+			else
+				return JSON.stringify(data);
 		},
 
 		/**

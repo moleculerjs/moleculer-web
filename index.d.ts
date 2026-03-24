@@ -469,6 +469,16 @@ declare module "moleculer-web" {
 		 */
 		onError?: (req: IncomingRequest, res: ServerResponse, error: Error) => void;
 		/**
+		 * You can add custom encodeResponse handler
+		 */
+		encodeResponse?: (req: IncomingRequest, res: ServerResponse, data: unknown, logger: {
+			trace?: (...content: any[]) => void;
+			debug: (...content: any[]) => void;
+			info: (...content: any[]) => void;
+			warn: (...content: any[]) => void;
+			error: (...content: any[]) => void;
+		}) => string;
+		/**
 		 * The Moleculer-Web has a built-in rate limiter with a memory store.
 		 * @see https://moleculer.services/docs/0.14/moleculer-web.html#Rate-limiter
 		 */
