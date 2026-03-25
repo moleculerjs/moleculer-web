@@ -18,7 +18,8 @@
 - Add `@eslint/js` and `globals` for ESLint 10 flat config
 
 ### CI
-- Update Node.js CI matrix: remove 18.x, add 24.x
+- Update Node.js CI matrix: remove 18.x and 20.x, add 24.x
+- Bump minimum Node.js version to 22.x
 
 -----------------------------
 <a name="0.11.0-beta3"></a>
