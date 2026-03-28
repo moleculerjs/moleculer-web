@@ -51,7 +51,7 @@
     "jsonwebtoken": "^9.0.3",
     "mime-types": "^3.0.2",
     "mkdirp": "^3.0.1",
-    "moleculer": "next",
+    "moleculer": "^0.15.0",
     "moleculer-repl": "^0.7.4",
     "nats": "^2.29.3",
     "nodemon": "^3.1.14",
@@ -64,7 +64,7 @@
     "webpack-dev-middleware": "^8.0.0"
   },
   "peerDependencies": {
-    "moleculer": "^0.15.0-0"
+    "moleculer": "^0.15.0"
   },
   "dependencies": {
     "@fastify/busboy": "^3.2.0",
