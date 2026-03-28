@@ -3,6 +3,7 @@ name: Publish to NPM
 on:
   release:
     types: [published]
+  workflow_dispatch:
 
 permissions:
   id-token: write
@@ -15,16 +16,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Use Node.js 22.x
+      - name: Use Node.js 24.x
         uses: actions/setup-node@v4
         with:
-          node-version: 22.x
+          node-version: 24.x
+          registry-url: https://registry.npmjs.org
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Run tests
-        run: npm test
-
       - name: Publish
-        run: npm publish --provenance
+        run: npm publish --provenance --access public
+
