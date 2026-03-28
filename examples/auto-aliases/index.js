@@ -13,9 +13,9 @@
  *
  */
 
-let path 				= require("path");
-let { ServiceBroker } 	= require("moleculer");
-let ApiService 			= require("../../index");
+let path = require("path");
+let { ServiceBroker } = require("moleculer");
+let ApiService = require("../../index");
 
 // Create broker
 let broker = new ServiceBroker({
@@ -29,23 +29,20 @@ broker.loadService(path.join(__dirname, "..", "post.service"));
 broker.loadService(path.join(__dirname, "..", "auth.service"));
 
 // Load API Gateway
-broker.createService(ApiService, {
+broker.createService({
+	mixins: [ApiService],
 	settings: {
 		routes: [
 			{
 				path: "api",
 
-				whitelist: [
-					"api.*",
-					"**posts.*",
-					"test.*"
-				],
+				whitelist: ["api.*", "**posts.*", "test.*"],
 
 				use: [
-					function(req, res, next) {
+					function (req, res, next) {
 						this.logger.info("Middleware ", this.name);
 						next();
-					},
+					}
 				],
 
 				aliases: {
@@ -57,10 +54,7 @@ broker.createService(ApiService, {
 			{
 				path: "/admin",
 
-				whitelist: [
-					"auth.*",
-					"$node.*"
-				],
+				whitelist: ["auth.*", "$node.*"],
 
 				aliases: {
 					"GET /services": "$node.services"

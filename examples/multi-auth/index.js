@@ -16,9 +16,9 @@
  *
  */
 
-let path 				= require("path");
-let { ServiceBroker } 	= require("moleculer");
-let ApiGatewayService 	= require("../../index");
+let path = require("path");
+let { ServiceBroker } = require("moleculer");
+let ApiGatewayService = require("../../index");
 
 const { UnAuthorizedError, ERR_NO_TOKEN, ERR_INVALID_TOKEN } = require("../../src/errors");
 
@@ -32,10 +32,9 @@ broker.loadService(path.join(__dirname, "..", "test.service"));
 
 // Load API Gateway
 broker.createService({
-	mixins: ApiGatewayService,
+	mixins: [ApiGatewayService],
 
 	settings: {
-
 		routes: [
 			{
 				path: "/aaa",

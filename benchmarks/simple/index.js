@@ -1,8 +1,7 @@
-/* eslint-disable no-console */
 "use strict";
 
-const { ServiceBroker } 	= require("moleculer");
-const ApiService 			= require("../../index");
+const { ServiceBroker } = require("moleculer");
+const ApiService = require("../../index");
 
 // Create broker
 const broker = new ServiceBroker({
@@ -23,8 +22,7 @@ broker.createService({
 broker.createService(ApiService);
 
 // Start server
-broker.start()
-	.then(() => console.log("Test URL: http://localhost:3000/test/hello"));
+broker.start().then(() => console.log("Test URL: http://localhost:3000/test/hello"));
 
 /**
  * Result on i7 4770K 32GB RAM Windows 10 x64

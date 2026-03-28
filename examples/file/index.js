@@ -28,7 +28,7 @@ broker.loadService("./examples/file.service.js");
 
 // Load API Gateway
 broker.createService({
-	mixins: ApiGatewayService,
+	mixins: [ApiGatewayService],
 	settings: {
 		path: "/upload",
 
@@ -43,6 +43,8 @@ broker.createService({
 				},
 
 				aliases: {
+					"GET /:file": "file.get",
+
 					// File upload from HTML form
 					"POST /": "multipart:file.save",
 
@@ -111,12 +113,11 @@ broker.createService({
 				},
 
 				mappingPolicy: "restrict"
-			},
-
+			}
 		],
 
 		assets: {
-			folder: "./examples/file/assets",
+			folder: "./examples/file/assets"
 		}
 	}
 });

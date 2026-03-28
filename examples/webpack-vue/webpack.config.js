@@ -23,11 +23,7 @@ module.exports = {
 				loader: "vue-loader",
 				options: {
 					loaders: {
-						"scss": [
-							"vue-style-loader",
-							"css-loader",
-							"sass-loader"
-						],
+						scss: ["vue-style-loader", "css-loader", "sass-loader"]
 					}
 				}
 			},
@@ -40,23 +36,15 @@ module.exports = {
 			},
 			{
 				test: /\.scss$/,
-				use: [
-					"vue-style-loader",
-					"css-loader",
-					"sass-loader"
-				]
+				use: ["vue-style-loader", "css-loader", "sass-loader"]
 			},
 			// this will apply to both plain `.css` files
 			// AND `<style>` blocks in `.vue` files
 			{
 				test: /\.css$/,
-				use: [
-					"vue-style-loader",
-					"css-loader"
-				]
+				use: ["vue-style-loader", "css-loader"]
 			}
 		]
-
 	},
 
 	plugins: [
@@ -69,7 +57,7 @@ module.exports = {
 		extensions: [".vue", ".js", ".json"],
 		mainFiles: ["index"],
 		alias: {
-			"vue$": "vue/dist/vue.esm.js"
+			vue$: "vue/dist/vue.esm.js"
 		}
 	},
 

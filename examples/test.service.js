@@ -92,7 +92,9 @@ module.exports = {
 
 		slow(ctx) {
 			let time = ctx.params.delay || 5000;
-			return this.Promise.resolve().delay(time).then(() => `Done after ${time / 1000} sec!`);
+			return this.Promise.resolve()
+				.delay(time)
+				.then(() => `Done after ${time / 1000} sec!`);
 		},
 
 		wrong(ctx) {
@@ -107,9 +109,12 @@ module.exports = {
 		stream: {
 			handler(ctx) {
 				ctx.meta.$responseHeaders = {
-					"Content-Disposition": "attachment; filename=\"stream-lorem.txt\""
+					"Content-Disposition": 'attachment; filename="stream-lorem.txt"'
 				};
-				const stream = fs.createReadStream(path.join(__dirname, "..", "test", "assets", "lorem.txt"), "utf8");
+				const stream = fs.createReadStream(
+					path.join(__dirname, "..", "test", "assets", "lorem.txt"),
+					"utf8"
+				);
 				setTimeout(() => {
 					stream.read(1024);
 				}, 100);
@@ -134,16 +139,16 @@ module.exports = {
 		},
 
 		func2: {
-			rest : "GET /fixed/:param1/:param2",
-			visibility : "published",
+			rest: "GET /fixed/:param1/:param2",
+			visibility: "published",
 			async handler(ctx) {
 				return Promise.resolve("func2");
 			}
 		},
 
 		func1: {
-			rest : "GET /:param1/:param2/:param3/:param4?",
-			visibility : "published",
+			rest: "GET /:param1/:param2/:param3/:param4?",
+			visibility: "published",
 			async handler(ctx) {
 				return Promise.resolve("func1");
 			}

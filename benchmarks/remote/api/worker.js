@@ -1,8 +1,7 @@
-/* eslint-disable no-console */
 "use strict";
 
-let { ServiceBroker } 	= require("moleculer");
-let ApiService 			= require("../../../index");
+let { ServiceBroker } = require("moleculer");
+let ApiService = require("../../../index");
 
 // Create broker
 let broker = new ServiceBroker({
@@ -17,5 +16,4 @@ let broker = new ServiceBroker({
 broker.createService(ApiService);
 
 // Start server
-broker.start()
-	.then(() => console.log(`Worker '${broker.nodeID}' started.`));
+broker.start().then(() => console.log(`Worker '${broker.nodeID}' started.`));

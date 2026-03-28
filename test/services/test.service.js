@@ -35,7 +35,7 @@ module.exports = {
 		fullPath: {
 			rest: {
 				method: "GET",
-				fullPath: "/fullPath",
+				fullPath: "/fullPath"
 			},
 			handler(ctx) {
 				return "Full path";
@@ -173,15 +173,15 @@ module.exports = {
 		jsonArray(ctx) {
 			return [
 				{ id: 1, name: "John" },
-				{ id: 2, name: "Jane" },
+				{ id: 2, name: "Jane" }
 			];
 		},
 
 		function(ctx) {
-			return () => { };
+			return () => {};
 		},
 
-		nothing(ctx) { },
+		nothing(ctx) {},
 
 		null(ctx) {
 			return null;
@@ -202,7 +202,7 @@ module.exports = {
 		bufferJson: {
 			handler(ctx) {
 				ctx.meta.$responseType = "application/json";
-				return Buffer.from("{ \"a\": 5 }");
+				return Buffer.from('{ "a": 5 }');
 			}
 		},
 
@@ -237,9 +237,12 @@ module.exports = {
 		stream: {
 			handler(ctx) {
 				ctx.meta.$responseHeaders = {
-					"Content-Disposition": "attachment; filename=\"stream-lorem.txt\""
+					"Content-Disposition": 'attachment; filename="stream-lorem.txt"'
 				};
-				const stream = fs.createReadStream(path.join(__dirname, "..", "assets", "lorem.txt"), "utf8");
+				const stream = fs.createReadStream(
+					path.join(__dirname, "..", "assets", "lorem.txt"),
+					"utf8"
+				);
 				setTimeout(() => {
 					stream.read(1024);
 				}, 100);
@@ -250,9 +253,12 @@ module.exports = {
 
 		streamWithError(ctx) {
 			ctx.meta.$responseHeaders = {
-				"Content-Disposition": "attachment; filename=\"stream-lorem.txt\""
+				"Content-Disposition": 'attachment; filename="stream-lorem.txt"'
 			};
-			const stream = fs.createReadStream(path.join(__dirname, "..", "assets", "lorem.txt"), "utf8");
+			const stream = fs.createReadStream(
+				path.join(__dirname, "..", "assets", "lorem.txt"),
+				"utf8"
+			);
 			setTimeout(() => {
 				stream.emit("error", new MoleculerServerError("Something happened!"));
 			}, 100);
@@ -269,7 +275,7 @@ module.exports = {
 
 		etag(ctx) {
 			ctx.meta.$responseHeaders = {
-				"ETag": "my custom etag"
+				ETag: "my custom etag"
 			};
 			return {};
 		},
@@ -320,6 +326,6 @@ module.exports = {
 			handler(ctx) {
 				return ctx.params.names;
 			}
-		},
+		}
 	}
 };

@@ -26,7 +26,7 @@ const broker = new ServiceBroker({});
 
 // Load API Gateway
 broker.createService({
-	mixins: ApiGatewayService,
+	mixins: [ApiGatewayService],
 	settings: {
 		path: "/api",
 
@@ -47,7 +47,7 @@ broker.createService({
 
 				aliases: {
 					// File upload from HTML form
-					"POST /raw": "echo.params",
+					"POST /raw": "echo.params"
 				}
 			}
 		]

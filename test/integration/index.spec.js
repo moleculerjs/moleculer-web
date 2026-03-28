@@ -27,10 +27,13 @@ setTimeout(() => {
 }, 10 * 1000).unref();*/
 
 function setup(settings, brokerSettings = {}) {
-	const broker = new ServiceBroker(Object.assign({}, { nodeID: undefined, logger: false }, brokerSettings));
+	const broker = new ServiceBroker(
+		Object.assign({}, { nodeID: undefined, logger: false }, brokerSettings)
+	);
 	broker.loadService("./test/services/test.service");
 
-	const service = broker.createService(_.cloneDeep(ApiGateway), {
+	const service = broker.createService({
+		mixins: [ApiGateway],
 		settings
 	});
 	const server = service.server;
@@ -57,10 +60,10 @@ describe("Test default settings", () => {
 				expect(res.statusCode).toBe(404);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
 				expect(res.body).toEqual({
-					"code": 404,
-					"message": "Not found",
-					"name": "NotFoundError",
-					"type": "NOT_FOUND"
+					code: 404,
+					message: "Not found",
+					name: "NotFoundError",
+					type: "NOT_FOUND"
 				});
 			});
 	});
@@ -72,11 +75,11 @@ describe("Test default settings", () => {
 				expect(res.statusCode).toBe(404);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
 				expect(res.body).toEqual({
-					"code": 404,
-					"message": "Service 'other.action' is not found.",
-					"name": "ServiceNotFoundError",
-					"type": "SERVICE_NOT_FOUND",
-					"data": {
+					code: 404,
+					message: "Service 'other.action' is not found.",
+					name: "ServiceNotFoundError",
+					type: "SERVICE_NOT_FOUND",
+					data: {
 						action: "other.action"
 					}
 				});
@@ -163,12 +166,16 @@ describe("Test responses", () => {
 	let server;
 
 	beforeAll(() => {
-
-		[broker, service, server] = setup({
-			routes: [{
-				camelCaseNames: true
-			}]
-		}, { metrics: true });
+		[broker, service, server] = setup(
+			{
+				routes: [
+					{
+						camelCaseNames: true
+					}
+				]
+			},
+			{ metrics: true }
+		);
 
 		return broker.start();
 	});
@@ -334,8 +341,12 @@ describe("Test responses", () => {
 			.then(res => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/octet-stream");
-				expect(res.headers["content-disposition"]).toBe("attachment; filename=\"stream-lorem.txt\"");
-				expect(Buffer.from(res.body).toString("utf8")).toEqual("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis in faucibus sapien, vitae aliquet nisi. Vivamus quis finibus tortor.");
+				expect(res.headers["content-disposition"]).toBe(
+					'attachment; filename="stream-lorem.txt"'
+				);
+				expect(Buffer.from(res.body).toString("utf8")).toEqual(
+					"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis in faucibus sapien, vitae aliquet nisi. Vivamus quis finibus tortor."
+				);
 			});
 	});
 
@@ -389,9 +400,9 @@ describe("Test responses", () => {
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
 				expect(res.headers["x-request-id"]).toBeDefined();
 				expect(res.body).toEqual({
-					"code": 500,
-					"message": "I'm dangerous",
-					"name": "MoleculerServerError"
+					code: 500,
+					message: "I'm dangerous",
+					name: "MoleculerServerError"
 				});
 			});
 	});
@@ -405,7 +416,9 @@ describe("Test responses", () => {
 				expect(res.headers["x-invalid-header"]).toBe(encodeURI("\r\nBOOM"));
 				expect(res.headers["x-request-id"]).toBeDefined();
 				expect(res.headers["x-custom-header"]).toBe("Custom content");
-				expect(res.text).toBe("{\"name\":\"MoleculerServerError\",\"message\":\"It is a wrong action! I always throw error!\",\"code\":500}");
+				expect(res.text).toBe(
+					'{"name":"MoleculerServerError","message":"It is a wrong action! I always throw error!","code":500}'
+				);
 			});
 	});
 
@@ -415,7 +428,7 @@ describe("Test responses", () => {
 			.then(res => {
 				expect(res.headers["x-valid-header"]).toBe("valid header");
 				expect(res.headers["x-invalid-header"]).toBe(encodeURI("\r\nBOOM"));
-				expect(res.text).toBe("{\"x-invalid-header\":\"\\r\\nBOOM\"}");
+				expect(res.text).toBe('{"x-invalid-header":"\\r\\nBOOM"}');
 			});
 	});
 });
@@ -441,10 +454,10 @@ describe("Test with `path` prefix", () => {
 				expect(res.statusCode).toBe(404);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
 				expect(res.body).toEqual({
-					"code": 404,
-					"message": "Not found",
-					"name": "NotFoundError",
-					"type": "NOT_FOUND"
+					code: 404,
+					message: "Not found",
+					name: "NotFoundError",
+					type: "NOT_FOUND"
 				});
 			});
 	});
@@ -456,10 +469,10 @@ describe("Test with `path` prefix", () => {
 				expect(res.statusCode).toBe(404);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
 				expect(res.body).toEqual({
-					"code": 404,
-					"message": "Not found",
-					"name": "NotFoundError",
-					"type": "NOT_FOUND"
+					code: 404,
+					message: "Not found",
+					name: "NotFoundError",
+					type: "NOT_FOUND"
 				});
 			});
 	});
@@ -473,7 +486,6 @@ describe("Test with `path` prefix", () => {
 				expect(res.body).toBe("Hello Moleculer");
 			});
 	});
-
 });
 
 describe("Test with `/` path prefix", () => {
@@ -497,10 +509,10 @@ describe("Test with `/` path prefix", () => {
 				expect(res.statusCode).toBe(404);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
 				expect(res.body).toEqual({
-					"code": 404,
-					"message": "Not found",
-					"name": "NotFoundError",
-					"type": "NOT_FOUND"
+					code: 404,
+					message: "Not found",
+					name: "NotFoundError",
+					type: "NOT_FOUND"
 				});
 			});
 	});
@@ -514,7 +526,6 @@ describe("Test with `/` path prefix", () => {
 				expect(res.body).toBe("Hello Moleculer");
 			});
 	});
-
 });
 
 describe("Test only assets", () => {
@@ -538,8 +549,10 @@ describe("Test only assets", () => {
 			.get("/")
 			.then(res => {
 				expect(res.statusCode).toBe(200);
-				expect(res.headers["content-type"]).toBe("text/html; charset=UTF-8");
-				expect(res.text).toBe(fs.readFileSync(path.join(__dirname, "..", "assets", "index.html"), "utf8"));
+				expect(res.headers["content-type"]).toBe("text/html; charset=utf-8");
+				expect(res.text).toBe(
+					fs.readFileSync(path.join(__dirname, "..", "assets", "index.html"), "utf8")
+				);
 			});
 	});
 
@@ -548,8 +561,10 @@ describe("Test only assets", () => {
 			.get("/lorem.txt")
 			.then(res => {
 				expect(res.statusCode).toBe(200);
-				expect(res.headers["content-type"]).toBe("text/plain; charset=UTF-8");
-				expect(res.text).toBe("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis in faucibus sapien, vitae aliquet nisi. Vivamus quis finibus tortor.");
+				expect(res.headers["content-type"]).toBe("text/plain; charset=utf-8");
+				expect(res.text).toBe(
+					"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis in faucibus sapien, vitae aliquet nisi. Vivamus quis finibus tortor."
+				);
 			});
 	});
 
@@ -560,15 +575,13 @@ describe("Test only assets", () => {
 				expect(res.statusCode).toBe(404);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
 				expect(res.body).toEqual({
-					"code": 404,
-					"message": "Not found",
-					"name": "NotFoundError",
-					"type": "NOT_FOUND"
+					code: 404,
+					message: "Not found",
+					name: "NotFoundError",
+					type: "NOT_FOUND"
 				});
 			});
-
 	});
-
 });
 
 describe("Test assets with cors", () => {
@@ -631,9 +644,11 @@ describe("Test assets & API route", () => {
 			assets: {
 				folder: path.join(__dirname, "..", "assets")
 			},
-			routes: [{
-				path: "/api"
-			}]
+			routes: [
+				{
+					path: "/api"
+				}
+			]
 		});
 		return broker.start();
 	});
@@ -644,8 +659,10 @@ describe("Test assets & API route", () => {
 			.get("/")
 			.then(res => {
 				expect(res.statusCode).toBe(200);
-				expect(res.headers["content-type"]).toBe("text/html; charset=UTF-8");
-				expect(res.text).toBe(fs.readFileSync(path.join(__dirname, "..", "assets", "index.html"), "utf8"));
+				expect(res.headers["content-type"]).toBe("text/html; charset=utf-8");
+				expect(res.text).toBe(
+					fs.readFileSync(path.join(__dirname, "..", "assets", "index.html"), "utf8")
+				);
 			});
 	});
 
@@ -654,8 +671,10 @@ describe("Test assets & API route", () => {
 			.get("/lorem.txt")
 			.then(res => {
 				expect(res.statusCode).toBe(200);
-				expect(res.headers["content-type"]).toBe("text/plain; charset=UTF-8");
-				expect(res.text).toBe("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis in faucibus sapien, vitae aliquet nisi. Vivamus quis finibus tortor.");
+				expect(res.headers["content-type"]).toBe("text/plain; charset=utf-8");
+				expect(res.text).toBe(
+					"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis in faucibus sapien, vitae aliquet nisi. Vivamus quis finibus tortor."
+				);
 			});
 	});
 
@@ -678,7 +697,6 @@ describe("Test assets & API route", () => {
 				expect(res.body).toEqual(Buffer.from("Hello file content\n"));
 			});
 	});
-
 });
 
 describe("Test whitelist", () => {
@@ -688,14 +706,12 @@ describe("Test whitelist", () => {
 
 	beforeAll(() => {
 		[broker, service, server] = setup({
-			routes: [{
-				path: "/api",
-				whitelist: [
-					"test.hello",
-					"math.*",
-					/^test\.json/
-				]
-			}]
+			routes: [
+				{
+					path: "/api",
+					whitelist: ["test.hello", "math.*", /^test\.json/]
+				}
+			]
 		});
 
 		broker.loadService("./test/services/math.service");
@@ -731,7 +747,7 @@ describe("Test whitelist", () => {
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
 				expect(res.body).toEqual([
 					{ id: 1, name: "John" },
-					{ id: 2, name: "Jane" },
+					{ id: 2, name: "Jane" }
 				]);
 			});
 	});
@@ -933,27 +949,36 @@ describe("Test aliases", () => {
 				{
 					path: "/api",
 					aliases: {
-						"add": "math.add",
+						add: "math.add",
 						"GET hello": "test.hello",
 						"POST   /hello": "test.greeter",
 						"GET 	greeter/:name": "test.greeter",
 						"POST 	greeting/:name": "test.greeter",
-						"opt-test/:name?": "test.echo",
-						"/repeat-test/:args*": "test.echo",
+						"opt-test{/:name}": "test.echo",
+						"/repeat-test/*args": "test.echo",
 						"GET /": "test.hello",
 						"GET custom": customAlias,
 						"GET /middleware": customMiddlewares,
 						"GET /wrong-middleware": [customMiddlewares[0], customMiddlewares[1]],
-						"GET /error-middleware": [customMiddlewares[0], customMiddlewares[1], throwMiddleware],
-						"GET /error-handled-middleware": [customMiddlewares[0], customMiddlewares[1], throwMiddleware, errorHandlerMiddleware],
+						"GET /error-middleware": [
+							customMiddlewares[0],
+							customMiddlewares[1],
+							throwMiddleware
+						],
+						"GET /error-handled-middleware": [
+							customMiddlewares[0],
+							customMiddlewares[1],
+							throwMiddleware,
+							errorHandlerMiddleware
+						],
 						"GET reqres": {
 							action: "test.reqres",
 							passReqResToParams: true
-						},
+						}
 					}
 				},
 				{
-					path: "/unsecure",
+					path: "/unsecure"
 				}
 			]
 		});
@@ -963,7 +988,6 @@ describe("Test aliases", () => {
 	});
 
 	afterAll(() => broker.stop());
-
 
 	it("GET /unsecure/math.add", () => {
 		return request(server)
@@ -984,10 +1008,10 @@ describe("Test aliases", () => {
 				expect(res.statusCode).toBe(404);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
 				expect(res.body).toEqual({
-					"name": "NotFoundError",
-					"message": "Not found",
-					"code": 404,
-					"type": "NOT_FOUND",
+					name: "NotFoundError",
+					message: "Not found",
+					code: 404,
+					type: "NOT_FOUND"
 				});
 			});
 	});
@@ -1081,10 +1105,10 @@ describe("Test aliases", () => {
 				expect(res.statusCode).toBe(404);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
 				expect(res.body).toEqual({
-					"name": "NotFoundError",
-					"message": "Not found",
-					"code": 404,
-					"type": "NOT_FOUND"
+					name: "NotFoundError",
+					message: "Not found",
+					code: 404,
+					type: "NOT_FOUND"
 				});
 			});
 	});
@@ -1101,7 +1125,7 @@ describe("Test aliases", () => {
 			});
 	});
 
-	it("GET opt-test/:name? with name", () => {
+	it("GET opt-test{/:name} with name", () => {
 		return request(server)
 			.get("/api/opt-test/John")
 			.then(res => {
@@ -1121,7 +1145,7 @@ describe("Test aliases", () => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
 				expect(res.body.params).toEqual({
-					a: ["1", "2"],
+					a: ["1", "2"]
 				});
 			});
 	});
@@ -1139,7 +1163,7 @@ describe("Test aliases", () => {
 			});
 	});
 
-	it("GET opt-test/:name? without name", () => {
+	it("GET opt-test/{:name} without name", () => {
 		return request(server)
 			.get("/api/opt-test")
 			.then(res => {
@@ -1149,14 +1173,14 @@ describe("Test aliases", () => {
 			});
 	});
 
-	it("GET repeat-test/:args?", () => {
+	it("GET repeat-test/*args", () => {
 		return request(server)
 			.get("/api/repeat-test/John/Jane/Adam/Walter")
 			.then(res => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
 				expect(res.body.params).toEqual({
-					args: ["John", "Jane", "Adam", "Walter"]
+					args: "John/Jane/Adam/Walter"
 				});
 			});
 	});
@@ -1179,7 +1203,11 @@ describe("Test aliases", () => {
 				expect(res.statusCode).toBe(200);
 				expect(res.text).toBe("Custom Alias by Ben");
 				expect(customAlias).toHaveBeenCalledTimes(1);
-				expect(customAlias).toHaveBeenCalledWith(expect.any(http.IncomingMessage), expect.any(http.ServerResponse), expect.any(Function));
+				expect(customAlias).toHaveBeenCalledWith(
+					expect.any(http.IncomingMessage),
+					expect.any(http.ServerResponse),
+					expect.any(Function)
+				);
 			});
 	});
 
@@ -1192,13 +1220,23 @@ describe("Test aliases", () => {
 				expect(res.body).toBe("Hello Ben");
 
 				expect(customMiddlewares[0]).toHaveBeenCalledTimes(1);
-				expect(customMiddlewares[0]).toHaveBeenCalledWith(expect.any(http.IncomingMessage), expect.any(http.ServerResponse), expect.any(Function));
+				expect(customMiddlewares[0]).toHaveBeenCalledWith(
+					expect.any(http.IncomingMessage),
+					expect.any(http.ServerResponse),
+					expect.any(Function)
+				);
 
 				expect(customMiddlewares[1]).toHaveBeenCalledTimes(1);
-				expect(customMiddlewares[1]).toHaveBeenCalledWith(expect.any(http.IncomingMessage), expect.any(http.ServerResponse), expect.any(Function));
+				expect(customMiddlewares[1]).toHaveBeenCalledWith(
+					expect.any(http.IncomingMessage),
+					expect.any(http.ServerResponse),
+					expect.any(Function)
+				);
 
 				expect(customMiddlewares[0].mock.calls[0][0].url).toBe("/middleware?name=Ben");
-				expect(customMiddlewares[0].mock.calls[0][0].originalUrl).toBe("/api/middleware?name=Ben");
+				expect(customMiddlewares[0].mock.calls[0][0].originalUrl).toBe(
+					"/api/middleware?name=Ben"
+				);
 				expect(customMiddlewares[0].mock.calls[0][0].baseUrl).toBe("/api");
 			});
 	});
@@ -1212,27 +1250,34 @@ describe("Test aliases", () => {
 			.then(res => {
 				expect(res.statusCode).toBe(500);
 				expect(res.body).toEqual({
-					"name": "MoleculerServerError",
-					"message": "No alias handler",
-					"code": 500,
-					"type": "NO_ALIAS_HANDLER",
-					"data": {
-						"path": "/api/wrong-middleware",
-						"alias": {
-							"method": "GET",
-							"path": "wrong-middleware"
+					name: "MoleculerServerError",
+					message: "No alias handler",
+					code: 500,
+					type: "NO_ALIAS_HANDLER",
+					data: {
+						path: "/api/wrong-middleware",
+						alias: {
+							method: "GET",
+							path: "wrong-middleware"
 						}
 					}
 				});
 
 				expect(customMiddlewares[0]).toHaveBeenCalledTimes(1);
-				expect(customMiddlewares[0]).toHaveBeenCalledWith(expect.any(http.IncomingMessage), expect.any(http.ServerResponse), expect.any(Function));
+				expect(customMiddlewares[0]).toHaveBeenCalledWith(
+					expect.any(http.IncomingMessage),
+					expect.any(http.ServerResponse),
+					expect.any(Function)
+				);
 
 				expect(customMiddlewares[1]).toHaveBeenCalledTimes(1);
-				expect(customMiddlewares[1]).toHaveBeenCalledWith(expect.any(http.IncomingMessage), expect.any(http.ServerResponse), expect.any(Function));
+				expect(customMiddlewares[1]).toHaveBeenCalledWith(
+					expect.any(http.IncomingMessage),
+					expect.any(http.ServerResponse),
+					expect.any(Function)
+				);
 			});
 	});
-
 
 	it("GET /api/error-middleware", () => {
 		customMiddlewares[0].mockClear();
@@ -1244,19 +1289,31 @@ describe("Test aliases", () => {
 			.then(res => {
 				expect(res.statusCode).toBe(500);
 				expect(res.body).toEqual({
-					"name": "MoleculerError",
-					"message": "Some error",
-					"code": 500
+					name: "MoleculerError",
+					message: "Some error",
+					code: 500
 				});
 
 				expect(customMiddlewares[0]).toHaveBeenCalledTimes(1);
-				expect(customMiddlewares[0]).toHaveBeenCalledWith(expect.any(http.IncomingMessage), expect.any(http.ServerResponse), expect.any(Function));
+				expect(customMiddlewares[0]).toHaveBeenCalledWith(
+					expect.any(http.IncomingMessage),
+					expect.any(http.ServerResponse),
+					expect.any(Function)
+				);
 
 				expect(customMiddlewares[1]).toHaveBeenCalledTimes(1);
-				expect(customMiddlewares[1]).toHaveBeenCalledWith(expect.any(http.IncomingMessage), expect.any(http.ServerResponse), expect.any(Function));
+				expect(customMiddlewares[1]).toHaveBeenCalledWith(
+					expect.any(http.IncomingMessage),
+					expect.any(http.ServerResponse),
+					expect.any(Function)
+				);
 
 				expect(throwMiddleware).toHaveBeenCalledTimes(1);
-				expect(throwMiddleware).toHaveBeenCalledWith(expect.any(http.IncomingMessage), expect.any(http.ServerResponse), expect.any(Function));
+				expect(throwMiddleware).toHaveBeenCalledWith(
+					expect.any(http.IncomingMessage),
+					expect.any(http.ServerResponse),
+					expect.any(Function)
+				);
 			});
 	});
 
@@ -1273,16 +1330,33 @@ describe("Test aliases", () => {
 				expect(res.text).toEqual("Error is handled");
 
 				expect(customMiddlewares[0]).toHaveBeenCalledTimes(1);
-				expect(customMiddlewares[0]).toHaveBeenCalledWith(expect.any(http.IncomingMessage), expect.any(http.ServerResponse), expect.any(Function));
+				expect(customMiddlewares[0]).toHaveBeenCalledWith(
+					expect.any(http.IncomingMessage),
+					expect.any(http.ServerResponse),
+					expect.any(Function)
+				);
 
 				expect(customMiddlewares[1]).toHaveBeenCalledTimes(1);
-				expect(customMiddlewares[1]).toHaveBeenCalledWith(expect.any(http.IncomingMessage), expect.any(http.ServerResponse), expect.any(Function));
+				expect(customMiddlewares[1]).toHaveBeenCalledWith(
+					expect.any(http.IncomingMessage),
+					expect.any(http.ServerResponse),
+					expect.any(Function)
+				);
 
 				expect(throwMiddleware).toHaveBeenCalledTimes(1);
-				expect(throwMiddleware).toHaveBeenCalledWith(expect.any(http.IncomingMessage), expect.any(http.ServerResponse), expect.any(Function));
+				expect(throwMiddleware).toHaveBeenCalledWith(
+					expect.any(http.IncomingMessage),
+					expect.any(http.ServerResponse),
+					expect.any(Function)
+				);
 
 				expect(errorHandlerMiddleware).toHaveBeenCalledTimes(1);
-				expect(errorHandlerMiddleware).toHaveBeenCalledWith(expect.any(MoleculerError), expect.any(http.IncomingMessage), expect.any(http.ServerResponse), expect.any(Function));
+				expect(errorHandlerMiddleware).toHaveBeenCalledWith(
+					expect.any(MoleculerError),
+					expect.any(http.IncomingMessage),
+					expect.any(http.ServerResponse),
+					expect.any(Function)
+				);
 			});
 	});
 
@@ -1307,17 +1381,19 @@ describe("Test un-merged params", () => {
 
 	beforeAll(() => {
 		[broker, service, server] = setup({
-			routes: [{
-				path: "/api",
-				mergeParams: false,
-				aliases: {
-					"GET echo": "test.echo",
-					"POST /echo": "test.echo",
-					"param-test/:name": "test.echo",
-					"opt-test/:name?": "test.echo",
-					"repeat-test/:args*": "test.echo",
+			routes: [
+				{
+					path: "/api",
+					mergeParams: false,
+					aliases: {
+						"GET echo": "test.echo",
+						"POST /echo": "test.echo",
+						"param-test/:name": "test.echo",
+						"opt-test{/:name}": "test.echo",
+						"repeat-test/*args": "test.echo"
+					}
 				}
-			}]
+			]
 		});
 		return broker.start();
 	});
@@ -1331,7 +1407,6 @@ describe("Test un-merged params", () => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
 				expect(res.body.params).toEqual({
-					body: {},
 					params: {},
 					query: {}
 				});
@@ -1346,7 +1421,6 @@ describe("Test un-merged params", () => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
 				expect(res.body.params).toEqual({
-					body: {},
 					params: {},
 					query: {
 						a: "5",
@@ -1396,14 +1470,13 @@ describe("Test un-merged params", () => {
 			});
 	});
 
-	it("GET opt-test/:name? with name", () => {
+	it("GET opt-test/{:name} with name", () => {
 		return request(server)
 			.get("/api/opt-test/John")
 			.then(res => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
 				expect(res.body.params).toEqual({
-					body: {},
 					params: {
 						name: "John"
 					},
@@ -1420,7 +1493,6 @@ describe("Test un-merged params", () => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
 				expect(res.body.params).toEqual({
-					body: {},
 					params: {},
 					query: {
 						a: ["1", "2"]
@@ -1437,7 +1509,6 @@ describe("Test un-merged params", () => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
 				expect(res.body.params).toEqual({
-					body: {},
 					params: {},
 					query: {
 						foo: { bar: ["a", "b"], baz: "c" }
@@ -1446,21 +1517,20 @@ describe("Test un-merged params", () => {
 			});
 	});
 
-	it("GET opt-test/:name? without name", () => {
+	it("GET opt-test/{:name} without name", () => {
 		return request(server)
 			.get("/api/opt-test")
 			.then(res => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
 				expect(res.body.params).toEqual({
-					body: {},
 					params: {},
 					query: {}
 				});
 			});
 	});
 
-	it("GET repeat-test/:args?", () => {
+	it("GET repeat-test/*args", () => {
 		return request(server)
 			.get("/api/repeat-test/John/Jane/Adam/Walter")
 			.query("foo[bar]=a&foo[bar]=b&foo[baz]=c")
@@ -1468,9 +1538,8 @@ describe("Test un-merged params", () => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
 				expect(res.body.params).toEqual({
-					body: {},
 					params: {
-						args: ["John", "Jane", "Adam", "Walter"]
+						args: "John/Jane/Adam/Walter"
 					},
 					query: {
 						foo: { bar: ["a", "b"], baz: "c" }
@@ -1487,12 +1556,14 @@ describe("Test REST shorthand aliases", () => {
 
 	beforeAll(() => {
 		[broker, service, server] = setup({
-			routes: [{
-				path: "/api",
-				aliases: {
-					"REST posts": "posts"
+			routes: [
+				{
+					path: "/api",
+					aliases: {
+						"REST posts": "posts"
+					}
 				}
-			}]
+			]
 		});
 
 		broker.loadService("./test/services/posts.service");
@@ -1509,7 +1580,6 @@ describe("Test REST shorthand aliases", () => {
 				expect(res.body.length).toBe(5);
 			});
 	});
-
 
 	it("GET /api/posts/2", () => {
 		return request(server)
@@ -1589,7 +1659,6 @@ describe("Test REST shorthand aliases", () => {
 				expect(res.statusCode).toBe(404);
 			});
 	});
-
 });
 
 describe("Test REST shorthand aliases and only filter", () => {
@@ -1599,15 +1668,17 @@ describe("Test REST shorthand aliases and only filter", () => {
 
 	beforeAll(() => {
 		[broker, service, server] = setup({
-			routes: [{
-				path: "/api",
-				aliases: {
-					"REST posts": {
-						action: "posts",
-						only: ["list", "get"]
+			routes: [
+				{
+					path: "/api",
+					aliases: {
+						"REST posts": {
+							action: "posts",
+							only: ["list", "get"]
+						}
 					}
 				}
-			}]
+			]
 		});
 
 		broker.loadService("./test/services/posts.service");
@@ -1680,15 +1751,17 @@ describe("Test REST shorthand aliases and except filter", () => {
 
 	beforeAll(() => {
 		[broker, service, server] = setup({
-			routes: [{
-				path: "/api",
-				aliases: {
-					"REST posts": {
-						action: "posts",
-						except: ["list", "get", "update", "remove"]
+			routes: [
+				{
+					path: "/api",
+					aliases: {
+						"REST posts": {
+							action: "posts",
+							except: ["list", "get", "update", "remove"]
+						}
 					}
 				}
-			}]
+			]
 		});
 
 		broker.loadService("./test/services/posts.service");
@@ -1763,16 +1836,18 @@ describe("Test REST shorthand aliases and only, except filter", () => {
 
 	beforeAll(() => {
 		[broker, service, server] = setup({
-			routes: [{
-				path: "/api",
-				aliases: {
-					"REST posts": {
-						action: "posts",
-						only: ["list", "get"],
-						except: ["list"]
+			routes: [
+				{
+					path: "/api",
+					aliases: {
+						"REST posts": {
+							action: "posts",
+							only: ["list", "get"],
+							except: ["list"]
+						}
 					}
 				}
-			}]
+			]
 		});
 
 		broker.loadService("./test/services/posts.service");
@@ -1843,21 +1918,21 @@ describe("Test alias & whitelist", () => {
 
 	beforeAll(() => {
 		[broker, service, server] = setup({
-			routes: [{
-				path: "/api",
-				whitelist: [
-					"math.*"
-				],
-				aliases: {
-					"add": "math.add",
-					"hello": "test.hello",
-					"mw-hello": [
-						(req, res, next) => next(),
-						(req, res, next) => next(),
-						"test.hello",
-					]
+			routes: [
+				{
+					path: "/api",
+					whitelist: ["math.*"],
+					aliases: {
+						add: "math.add",
+						hello: "test.hello",
+						"mw-hello": [
+							(req, res, next) => next(),
+							(req, res, next) => next(),
+							"test.hello"
+						]
+					}
 				}
-			}]
+			]
 		});
 
 		broker.loadService("./test/services/math.service");
@@ -1911,7 +1986,6 @@ describe("Test alias & whitelist", () => {
 				});
 			});
 	});
-
 });
 
 describe("Test body-parsers", () => {
@@ -1919,8 +1993,7 @@ describe("Test body-parsers", () => {
 	let service;
 	let server;
 
-	beforeAll(() => {
-	});
+	beforeAll(() => {});
 
 	describe("JSON parser should be set to default", () => {
 		it("When its value is null / undefined", () => {
@@ -1931,27 +2004,35 @@ describe("Test body-parsers", () => {
 			expect(Array.isArray(service.routes) && service.routes.length === 1).toBeTruthy();
 			const middlewares = service.routes[0].middlewares;
 			expect(Array.isArray(middlewares) && middlewares.length === 1).toBeTruthy();
-			expect(typeof middlewares[0] === "function" && middlewares[0].name === "jsonParser").toBeTruthy();
+			expect(
+				typeof middlewares[0] === "function" && middlewares[0].name === "jsonParser"
+			).toBeTruthy();
 		});
 
 		it("When its value is true", () => {
 			[broker, service, server] = setup({
-				routes: [{
-					"bodyParsers": true
-				}]
+				routes: [
+					{
+						bodyParsers: true
+					}
+				]
 			});
 
 			expect(Array.isArray(service.routes) && service.routes.length === 1).toBeTruthy();
 			const middlewares = service.routes[0].middlewares;
 			expect(Array.isArray(middlewares) && middlewares.length === 1).toBeTruthy();
-			expect(typeof middlewares[0] === "function" && middlewares[0].name === "jsonParser").toBeTruthy();
+			expect(
+				typeof middlewares[0] === "function" && middlewares[0].name === "jsonParser"
+			).toBeTruthy();
 		});
 
 		it("But not truly", () => {
 			[broker, service, server] = setup({
-				routes: [{
-					"bodyParsers": 1
-				}]
+				routes: [
+					{
+						bodyParsers: 1
+					}
+				]
 			});
 
 			expect(Array.isArray(service.routes) && service.routes.length === 1).toBeTruthy();
@@ -1962,120 +2043,169 @@ describe("Test body-parsers", () => {
 
 	it("POST /api/test.gretter without bodyParsers", () => {
 		[broker, service, server] = setup({
-			routes: [{
-				bodyParsers: false
-			}]
+			routes: [
+				{
+					bodyParsers: false
+				}
+			]
 		});
 
-		return broker.start()
-			.then(() => request(server)
-				.post("/test.greeter")
-				.send({ name: "John" }))
+		return broker
+			.start()
+			.then(() => request(server).post("/test.greeter").send({ name: "John" }))
 			.then(res => {
 				expect(res.statusCode).toBe(422);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
 				expect(res.body).toEqual({
-					"code": 422,
-					"data": [{
-						"field": "name",
-						"message": "The 'name' field is required.",
-						"type": "required",
-						"action": "test.greeter",
-						"nodeID": broker.nodeID
-					}],
-					"message": "Parameters validation error!",
-					"name": "ValidationError",
-					"type": "VALIDATION_ERROR"
+					code: 422,
+					data: [
+						{
+							field: "name",
+							message: "The 'name' field is required.",
+							type: "required",
+							action: "test.greeter",
+							nodeID: broker.nodeID
+						}
+					],
+					message: "Parameters validation error!",
+					name: "ValidationError",
+					type: "VALIDATION_ERROR"
 				});
-			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
+			})
+			.then(() => broker.stop())
+			.catch(err =>
+				broker.stop().then(() => {
+					throw err;
+				})
+			);
 	});
 
 	it("POST /api/test.gretter with JSON parser", () => {
 		[broker, service, server] = setup({
-			routes: [{
-				bodyParsers: {
-					json: true
+			routes: [
+				{
+					bodyParsers: {
+						json: true
+					}
 				}
-			}]
+			]
 		});
 
-		return broker.start()
-			.then(() => request(server)
-				.post("/test.greeter")
-				.send({ name: "John" }))
+		return broker
+			.start()
+			.then(() => request(server).post("/test.greeter").send({ name: "John" }))
 			.then(res => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
 				expect(res.body).toBe("Hello John");
-			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
+			})
+			.then(() => broker.stop())
+			.catch(err =>
+				broker.stop().then(() => {
+					throw err;
+				})
+			);
 	});
 
 	it("POST /api/test.gretter with JSON parser & invalid JSON", () => {
 		[broker, service, server] = setup({
-			routes: [{
-				bodyParsers: {
-					json: true
+			routes: [
+				{
+					bodyParsers: {
+						json: true
+					}
 				}
-			}]
+			]
 		});
 
-		return broker.start()
-			.then(() => request(server)
-				.post("/test.greeter")
-				.set("Content-Type", "application/json; charset=utf-8")
-				.send("invalid"))
+		return broker
+			.start()
+			.then(() =>
+				request(server)
+					.post("/test.greeter")
+					.set("Content-Type", "application/json; charset=utf-8")
+					.send("invalid")
+			)
 			.then(res => {
 				expect(res.statusCode).toBe(400);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
 				expect(res.body).toEqual({
-					"code": 400,
-					"type": "entity.parse.failed",
-					"message": process.version.startsWith("v20")? "Unexpected token 'i', \"#\" is not valid JSON": "Unexpected token i in JSON at position 0",
-					"name": "MoleculerError"
+					code: 400,
+					type: "entity.parse.failed",
+					message: process.version.startsWith("v2")
+						? "Unexpected token 'i', \"invalid\" is not valid JSON"
+						: "Unexpected token i in JSON at position 0",
+					name: "MoleculerError"
 				});
-			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
+			})
+			.then(() => broker.stop())
+			.catch(err =>
+				broker.stop().then(() => {
+					throw err;
+				})
+			);
 	});
-
 
 	it("POST /api/test.gretter with JSON parser & urlEncoded body", () => {
 		[broker, service, server] = setup({
-			routes: [{
-				bodyParsers: {
-					json: true
+			routes: [
+				{
+					bodyParsers: {
+						json: true
+					}
 				}
-			}]
+			]
 		});
 
-		return broker.start()
-			.then(() => request(server)
-				.post("/test.greeter")
-				.set("Content-Type", "application/x-www-form-urlencoded")
-				.send({ name: "Bill" }))
+		return broker
+			.start()
+			.then(() =>
+				request(server)
+					.post("/test.greeter")
+					.set("Content-Type", "application/x-www-form-urlencoded")
+					.send({ name: "Bill" })
+			)
 			.then(res => {
 				expect(res.statusCode).toBe(422);
 			})
-			.then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
+			.then(() => broker.stop())
+			.catch(err =>
+				broker.stop().then(() => {
+					throw err;
+				})
+			);
 	});
 
 	it("POST /api/test.gretter with urlencoder parser", () => {
 		[broker, service, server] = setup({
-			routes: [{
-				bodyParsers: {
-					urlencoded: { extended: true }
+			routes: [
+				{
+					bodyParsers: {
+						urlencoded: { extended: true }
+					}
 				}
-			}]
+			]
 		});
 
-		return broker.start()
-			.then(() => request(server)
-				.post("/test.greeter")
-				.set("Content-Type", "application/x-www-form-urlencoded")
-				.send({ name: "Adam" }))
+		return broker
+			.start()
+			.then(() =>
+				request(server)
+					.post("/test.greeter")
+					.set("Content-Type", "application/x-www-form-urlencoded")
+					.send({ name: "Adam" })
+			)
 			.then(res => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
 				expect(res.body).toBe("Hello Adam");
-			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
+			})
+			.then(() => broker.stop())
+			.catch(err =>
+				broker.stop().then(() => {
+					throw err;
+				})
+			);
 	});
 });
 
@@ -2089,21 +2219,17 @@ describe("Test multiple routes", () => {
 			routes: [
 				{
 					path: "/api1",
-					whitelist: [
-						"math.*"
-					],
+					whitelist: ["math.*"],
 					aliases: {
-						"main": "math.add"
+						main: "math.add"
 					},
 					mappingPolicy: "all"
 				},
 				{
 					path: "/api2",
-					whitelist: [
-						"test.*"
-					],
+					whitelist: ["test.*"],
 					aliases: {
-						"main": "test.greeter"
+						main: "test.greeter"
 					},
 					mappingPolicy: "all"
 				}
@@ -2188,11 +2314,9 @@ describe("Test mappingPolicy route option", () => {
 				routes: [
 					{
 						path: "/api",
-						whitelist: [
-							"math.*"
-						],
+						whitelist: ["math.*"],
 						aliases: {
-							"add": "math.add"
+							add: "math.add"
 						},
 						mappingPolicy: "all"
 					}
@@ -2244,11 +2368,9 @@ describe("Test mappingPolicy route option", () => {
 				routes: [
 					{
 						path: "/api",
-						whitelist: [
-							"math.*"
-						],
+						whitelist: ["math.*"],
 						aliases: {
-							"add": "math.add"
+							add: "math.add"
 						},
 						mappingPolicy: "restrict"
 					}
@@ -2319,7 +2441,6 @@ describe("Test mappingPolicy route option", () => {
 					expect(res.statusCode).toBe(404);
 				});
 		});
-
 	});
 });
 
@@ -2328,20 +2449,25 @@ describe("Test CORS", () => {
 	let service;
 	let server;
 
-	beforeAll(() => {
-	});
+	beforeAll(() => {});
 
 	it("no errors if missing origin header", () => {
 		[broker, service, server] = setup({
 			cors: {}
 		});
-		return broker.start()
-			.then(() => request(server)
-				.get("/test/hello"))
+		return broker
+			.start()
+			.then(() => request(server).get("/test/hello"))
 			.then(res => {
 				expect(res.statusCode).toBe(200);
 				expect(res.body).toEqual("Hello Moleculer");
-			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
+			})
+			.then(() => broker.stop())
+			.catch(err =>
+				broker.stop().then(() => {
+					throw err;
+				})
+			);
 	});
 
 	it("errors on mismatching origin header", () => {
@@ -2350,19 +2476,24 @@ describe("Test CORS", () => {
 				origin: "a"
 			}
 		});
-		return broker.start()
-			.then(() => request(server)
-				.get("/test/hello")
-				.set("Origin", "http://localhost:3000"))
+		return broker
+			.start()
+			.then(() => request(server).get("/test/hello").set("Origin", "http://localhost:3000"))
 			.then(res => {
 				expect(res.statusCode).toBe(403);
 				expect(res.body).toEqual({
-					"message": "Forbidden",
-					"code": 403,
-					"type": "ORIGIN_NOT_ALLOWED",
-					"name": "ForbiddenError"
+					message: "Forbidden",
+					code: 403,
+					type: "ORIGIN_NOT_ALLOWED",
+					name: "ForbiddenError"
 				});
-			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
+			})
+			.then(() => broker.stop())
+			.catch(err =>
+				broker.stop().then(() => {
+					throw err;
+				})
+			);
 	});
 
 	it("with default settings", () => {
@@ -2370,10 +2501,9 @@ describe("Test CORS", () => {
 			cors: {}
 		});
 
-		return broker.start()
-			.then(() => request(server)
-				.get("/test/hello")
-				.set("Origin", "http://localhost:3000"))
+		return broker
+			.start()
+			.then(() => request(server).get("/test/hello").set("Origin", "http://localhost:3000"))
 			.then(res => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
@@ -2381,7 +2511,12 @@ describe("Test CORS", () => {
 
 				expect(res.body).toBe("Hello Moleculer");
 			})
-			.then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
+			.then(() => broker.stop())
+			.catch(err =>
+				broker.stop().then(() => {
+					throw err;
+				})
+			);
 	});
 
 	it("with custom global settings (string)", () => {
@@ -2393,10 +2528,9 @@ describe("Test CORS", () => {
 			}
 		});
 
-		return broker.start()
-			.then(() => request(server)
-				.get("/test/hello")
-				.set("Origin", "http://localhost:3000"))
+		return broker
+			.start()
+			.then(() => request(server).get("/test/hello").set("Origin", "http://localhost:3000"))
 			.then(res => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
@@ -2406,13 +2540,18 @@ describe("Test CORS", () => {
 
 				expect(res.body).toBe("Hello Moleculer");
 			})
-			.then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
+			.then(() => broker.stop())
+			.catch(err =>
+				broker.stop().then(() => {
+					throw err;
+				})
+			);
 	});
 
 	it("with custom global settings (function)", () => {
 		[broker, service, server] = setup({
 			cors: {
-				origin: (origin) => {
+				origin: origin => {
 					return origin === "http://localhost:3000";
 				},
 				exposedHeaders: "X-Response-Time",
@@ -2420,10 +2559,9 @@ describe("Test CORS", () => {
 			}
 		});
 
-		return broker.start()
-			.then(() => request(server)
-				.get("/test/hello")
-				.set("Origin", "http://localhost:3000"))
+		return broker
+			.start()
+			.then(() => request(server).get("/test/hello").set("Origin", "http://localhost:3000"))
 			.then(res => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
@@ -2433,13 +2571,16 @@ describe("Test CORS", () => {
 
 				expect(res.body).toBe("Hello Moleculer");
 			})
-			.then(() => request(server)
-				.get("/test/hello")
-				.set("Origin", "http://badhost:3000"))
+			.then(() => request(server).get("/test/hello").set("Origin", "http://badhost:3000"))
 			.then(res => {
 				expect(res.statusCode).toBe(403);
 			})
-			.then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
+			.then(() => broker.stop())
+			.catch(err =>
+				broker.stop().then(() => {
+					throw err;
+				})
+			);
 	});
 
 	it("with custom global settings (array)", () => {
@@ -2451,20 +2592,26 @@ describe("Test CORS", () => {
 			}
 		});
 
-		return broker.start()
-			.then(() => request(server)
-				.get("/test/hello")
-				.set("Origin", "https://localhost:4000"))
+		return broker
+			.start()
+			.then(() => request(server).get("/test/hello").set("Origin", "https://localhost:4000"))
 			.then(res => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
 				expect(res.headers["access-control-allow-origin"]).toBe("https://localhost:4000");
 				expect(res.headers["access-control-allow-credentials"]).toBe("true");
-				expect(res.headers["access-control-expose-headers"]).toBe("X-Custom-Header, X-Response-Time");
+				expect(res.headers["access-control-expose-headers"]).toBe(
+					"X-Custom-Header, X-Response-Time"
+				);
 
 				expect(res.body).toBe("Hello Moleculer");
 			})
-			.then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
+			.then(() => broker.stop())
+			.catch(err =>
+				broker.stop().then(() => {
+					throw err;
+				})
+			);
 	});
 
 	it("with custom route settings", () => {
@@ -2474,19 +2621,20 @@ describe("Test CORS", () => {
 				exposedHeaders: ["X-Custom-Header", "X-Response-Time"],
 				credentials: true
 			},
-			routes: [{
-				cors: {
-					origin: "http://test-server",
-					credentials: false,
-					exposedHeaders: ["X-Response-Time"]
+			routes: [
+				{
+					cors: {
+						origin: "http://test-server",
+						credentials: false,
+						exposedHeaders: ["X-Response-Time"]
+					}
 				}
-			}]
+			]
 		});
 
-		return broker.start()
-			.then(() => request(server)
-				.get("/test/hello")
-				.set("Origin", "http://test-server"))
+		return broker
+			.start()
+			.then(() => request(server).get("/test/hello").set("Origin", "http://test-server"))
 			.then(res => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
@@ -2495,20 +2643,24 @@ describe("Test CORS", () => {
 
 				expect(res.body).toBe("Hello Moleculer");
 			})
-			.then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
+			.then(() => broker.stop())
+			.catch(err =>
+				broker.stop().then(() => {
+					throw err;
+				})
+			);
 	});
 
 	it("returns matching CORS origin wildcard with single origin", () => {
 		[broker, service, server] = setup({
 			cors: {
-				origin: "http://localhost:*",
+				origin: "http://localhost:*"
 			}
 		});
 
-		return broker.start()
-			.then(() => request(server)
-				.get("/test/hello")
-				.set("Origin", "http://localhost:4000"))
+		return broker
+			.start()
+			.then(() => request(server).get("/test/hello").set("Origin", "http://localhost:4000"))
 			.then(res => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
@@ -2517,20 +2669,24 @@ describe("Test CORS", () => {
 
 				expect(res.body).toBe("Hello Moleculer");
 			})
-			.then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
+			.then(() => broker.stop())
+			.catch(err =>
+				broker.stop().then(() => {
+					throw err;
+				})
+			);
 	});
 
 	it("returns matching CORS origin wildcard", () => {
 		[broker, service, server] = setup({
 			cors: {
-				origin: ["http://test.example.com", "http://www.example.com", "http://*.a.com"],
+				origin: ["http://test.example.com", "http://www.example.com", "http://*.a.com"]
 			}
 		});
 
-		return broker.start()
-			.then(() => request(server)
-				.get("/test/hello")
-				.set("Origin", "http://www.a.com"))
+		return broker
+			.start()
+			.then(() => request(server).get("/test/hello").set("Origin", "http://www.a.com"))
 			.then(res => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
@@ -2539,20 +2695,24 @@ describe("Test CORS", () => {
 
 				expect(res.body).toBe("Hello Moleculer");
 			})
-			.then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
+			.then(() => broker.stop())
+			.catch(err =>
+				broker.stop().then(() => {
+					throw err;
+				})
+			);
 	});
 
 	it("returns matching CORS origin wildcard when more than one wildcard", () => {
 		[broker, service, server] = setup({
 			cors: {
-				origin: ["http://test.example.com", "http://*.b.com", "http://*.a.com"],
+				origin: ["http://test.example.com", "http://*.b.com", "http://*.a.com"]
 			}
 		});
 
-		return broker.start()
-			.then(() => request(server)
-				.get("/test/hello")
-				.set("Origin", "http://www.a.com"))
+		return broker
+			.start()
+			.then(() => request(server).get("/test/hello").set("Origin", "http://www.a.com"))
 			.then(res => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
@@ -2561,7 +2721,12 @@ describe("Test CORS", () => {
 
 				expect(res.body).toBe("Hello Moleculer");
 			})
-			.then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
+			.then(() => broker.stop())
+			.catch(err =>
+				broker.stop().then(() => {
+					throw err;
+				})
+			);
 	});
 
 	it("preflight request with custom route settings", () => {
@@ -2570,35 +2735,47 @@ describe("Test CORS", () => {
 				origin: ["http://localhost:3000"],
 				exposedHeaders: ["X-Custom-Header", "X-Response-Time"]
 			},
-			routes: [{
-				cors: {
-					origin: "http://test-server",
-					credentials: true,
-					allowedHeaders: "X-Rate-Limiting",
-					methods: ["GET", "POST", "DELETE"],
-					maxAge: 3600
+			routes: [
+				{
+					cors: {
+						origin: "http://test-server",
+						credentials: true,
+						allowedHeaders: "X-Rate-Limiting",
+						methods: ["GET", "POST", "DELETE"],
+						maxAge: 3600
+					}
 				}
-			}]
+			]
 		});
 
-		return broker.start()
-			.then(() => request(server)
-				.options("/test/hello")
-				.set("Origin", "http://test-server")
-				.set("Access-Control-Request-Method", "GET"))
+		return broker
+			.start()
+			.then(() =>
+				request(server)
+					.options("/test/hello")
+					.set("Origin", "http://test-server")
+					.set("Access-Control-Request-Method", "GET")
+			)
 			.then(res => {
 				expect(res.statusCode).toBe(204);
 				expect(res.headers["access-control-allow-origin"]).toBe("http://test-server");
 				expect(res.headers["access-control-allow-headers"]).toBe("X-Rate-Limiting");
 				expect(res.headers["access-control-allow-methods"]).toBe("GET, POST, DELETE");
 				expect(res.headers["access-control-allow-credentials"]).toBe("true");
-				expect(res.headers["access-control-expose-headers"]).toBe("X-Custom-Header, X-Response-Time");
+				expect(res.headers["access-control-expose-headers"]).toBe(
+					"X-Custom-Header, X-Response-Time"
+				);
 				expect(res.headers["access-control-max-age"]).toBe("3600");
 				expect(res.headers["vary"]).toBe("Origin");
 
 				expect(res.text).toBe("");
 			})
-			.then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
+			.then(() => broker.stop())
+			.catch(err =>
+				broker.stop().then(() => {
+					throw err;
+				})
+			);
 	});
 
 	it("preflight request with default settings", () => {
@@ -2608,19 +2785,29 @@ describe("Test CORS", () => {
 			}
 		});
 
-		return broker.start()
-			.then(() => request(server)
-				.options("/test/hello")
-				.set("Origin", "http://localhost:3000")
-				.set("Access-Control-Request-Method", "GET"))
+		return broker
+			.start()
+			.then(() =>
+				request(server)
+					.options("/test/hello")
+					.set("Origin", "http://localhost:3000")
+					.set("Access-Control-Request-Method", "GET")
+			)
 			.then(res => {
 				expect(res.statusCode).toBe(204);
 				expect(res.headers["access-control-allow-origin"]).toBe("*");
-				expect(res.headers["access-control-allow-headers"]).toBe("X-Custom-Header, X-Response-Time");
+				expect(res.headers["access-control-allow-headers"]).toBe(
+					"X-Custom-Header, X-Response-Time"
+				);
 
 				expect(res.text).toBe("");
 			})
-			.then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
+			.then(() => broker.stop())
+			.catch(err =>
+				broker.stop().then(() => {
+					throw err;
+				})
+			);
 	});
 
 	it("preflight request with 'Access-Control-Request-Headers'", () => {
@@ -2628,33 +2815,45 @@ describe("Test CORS", () => {
 			cors: {
 				origin: "http://localhost:3000",
 				exposedHeaders: ["X-Custom-Header", "X-Response-Time"],
-				methods: "GET",
+				methods: "GET"
 			},
-			routes: [{
-				aliases: {
-					"GET hello": "test.hello"
-				},
-				mappingPolicy: "restrict"
-			}]
+			routes: [
+				{
+					aliases: {
+						"GET hello": "test.hello"
+					},
+					mappingPolicy: "restrict"
+				}
+			]
 		});
 
-		return broker.start()
-			.then(() => request(server)
-				.options("/hello")
-				.set("Origin", "http://localhost:3000")
-				.set("Access-Control-Request-Method", "GET")
-				.set("Access-Control-Request-Headers", "X-Rate-Limiting"))
+		return broker
+			.start()
+			.then(() =>
+				request(server)
+					.options("/hello")
+					.set("Origin", "http://localhost:3000")
+					.set("Access-Control-Request-Method", "GET")
+					.set("Access-Control-Request-Headers", "X-Rate-Limiting")
+			)
 			.then(res => {
 				expect(res.statusCode).toBe(204);
 				expect(res.headers["access-control-allow-origin"]).toBe("http://localhost:3000");
 				expect(res.headers["access-control-allow-headers"]).toBe("X-Rate-Limiting");
 				expect(res.headers["access-control-allow-methods"]).toBe("GET");
-				expect(res.headers["access-control-expose-headers"]).toBe("X-Custom-Header, X-Response-Time");
+				expect(res.headers["access-control-expose-headers"]).toBe(
+					"X-Custom-Header, X-Response-Time"
+				);
 				expect(res.headers["vary"]).toBe("Access-Control-Request-Headers");
 
 				expect(res.text).toBe("");
 			})
-			.then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
+			.then(() => broker.stop())
+			.catch(err =>
+				broker.stop().then(() => {
+					throw err;
+				})
+			);
 	});
 });
 
@@ -2770,12 +2969,15 @@ describe("Test Rate Limiter", () => {
 		});
 
 		expect(factory).toHaveBeenCalledTimes(1);
-		expect(factory).toHaveBeenCalledWith(10000, service.routes[0].rateLimit, expect.any(ServiceBroker));
+		expect(factory).toHaveBeenCalledWith(
+			10000,
+			service.routes[0].rateLimit,
+			expect.any(ServiceBroker)
+		);
 	});
 });
 
 describe("Test onBeforeCall & onAfterCall", () => {
-
 	it("should call handlers", () => {
 		const broker = new ServiceBroker({ logger: true, logLevel: "error" });
 		broker.loadService("./test/services/test.service");
@@ -2800,16 +3002,19 @@ describe("Test onBeforeCall & onAfterCall", () => {
 			return data;
 		});
 
-		const service = broker.createService(ApiGateway, {
+		const service = broker.createService({
+			mixins: [ApiGateway],
 			settings: {
-				routes: [{
-					aliases: {
-						"hello": "test.hello",
-						"custom": (req, res) => res.end("Hello Custom")
-					},
-					onBeforeCall: beforeCall,
-					onAfterCall: afterCall,
-				}]
+				routes: [
+					{
+						aliases: {
+							hello: "test.hello",
+							custom: (req, res) => res.end("Hello Custom")
+						},
+						onBeforeCall: beforeCall,
+						onAfterCall: afterCall
+					}
+				]
 			}
 		});
 		const server = service.server;
@@ -2817,16 +3022,22 @@ describe("Test onBeforeCall & onAfterCall", () => {
 		expect(service.routes[0].onBeforeCall).toBeDefined();
 		expect(service.routes[0].onAfterCall).toBeDefined();
 
-		return broker.start()
-			.then(() => request(server)
-				.get("/hello"))
+		return broker
+			.start()
+			.then(() => request(server).get("/hello"))
 			.then(res => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
 				expect(res.headers["x-custom-header"]).toBe("working");
 				expect(res.body).toBe("Hello Moleculer");
 				expect(beforeCall).toHaveBeenCalledTimes(1);
-				expect(beforeCall).toHaveBeenCalledWith(expect.any(Context), expect.any(Object), expect.any(http.IncomingMessage), expect.any(http.ServerResponse), expect.any(Object));
+				expect(beforeCall).toHaveBeenCalledWith(
+					expect.any(Context),
+					expect.any(Object),
+					expect.any(http.IncomingMessage),
+					expect.any(http.ServerResponse),
+					expect.any(Object)
+				);
 
 				const ctx = beforeCall.mock.calls[0][0];
 				const req = beforeCall.mock.calls[0][2];
@@ -2846,21 +3057,31 @@ describe("Test onBeforeCall & onAfterCall", () => {
 				expect(response.$service).toBeDefined();
 				expect(response.$route).toBeDefined();
 
-
 				expect(afterCall).toHaveBeenCalledTimes(1);
-				expect(afterCall).toHaveBeenCalledWith(expect.any(Context), expect.any(Object), expect.any(http.IncomingMessage), expect.any(http.ServerResponse), "Hello Moleculer");
+				expect(afterCall).toHaveBeenCalledWith(
+					expect.any(Context),
+					expect.any(Object),
+					expect.any(http.IncomingMessage),
+					expect.any(http.ServerResponse),
+					"Hello Moleculer"
+				);
 				expect(afterCall.mock.calls[0][0].meta.custom).toBe("John");
 
 				beforeCall.mockClear();
 				afterCall.mockClear();
 			})
-			.then(() => request(server)
-				.get("/custom"))
+			.then(() => request(server).get("/custom"))
 			.then(res => {
 				expect(res.statusCode).toBe(200);
 				expect(res.text).toBe("Hello Custom");
 				expect(beforeCall).toHaveBeenCalledTimes(1);
-				expect(beforeCall).toHaveBeenCalledWith(expect.any(Context), expect.any(Object), expect.any(http.IncomingMessage), expect.any(http.ServerResponse), expect.any(Object));
+				expect(beforeCall).toHaveBeenCalledWith(
+					expect.any(Context),
+					expect.any(Object),
+					expect.any(http.IncomingMessage),
+					expect.any(http.ServerResponse),
+					expect.any(Object)
+				);
 
 				const ctx = beforeCall.mock.calls[0][0];
 				const req = beforeCall.mock.calls[0][2];
@@ -2879,7 +3100,13 @@ describe("Test onBeforeCall & onAfterCall", () => {
 				expect(response.$route).toBeDefined();
 
 				expect(afterCall).toHaveBeenCalledTimes(0);
-			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
+			})
+			.then(() => broker.stop())
+			.catch(err =>
+				broker.stop().then(() => {
+					throw err;
+				})
+			);
 	});
 
 	it("should modify response in 'onAfterCall'", () => {
@@ -2894,18 +3121,21 @@ describe("Test onBeforeCall & onAfterCall", () => {
 			};
 		});
 
-		const service = broker.createService(ApiGateway, {
+		const service = broker.createService({
+			mixins: [ApiGateway],
 			settings: {
-				routes: [{
-					onAfterCall: afterCall,
-				}]
+				routes: [
+					{
+						onAfterCall: afterCall
+					}
+				]
 			}
 		});
 		const server = service.server;
 
-		return broker.start()
-			.then(() => request(server)
-				.get("/test/json"))
+		return broker
+			.start()
+			.then(() => request(server).get("/test/json"))
 			.then(res => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
@@ -2918,12 +3148,17 @@ describe("Test onBeforeCall & onAfterCall", () => {
 					}
 				});
 				expect(afterCall).toHaveBeenCalledTimes(1);
-			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
+			})
+			.then(() => broker.stop())
+			.catch(err =>
+				broker.stop().then(() => {
+					throw err;
+				})
+			);
 	});
 });
 
 describe("Test encodeResponse", () => {
-
 	it("should call encodeResponse in sendResponse", () => {
 		const broker = new ServiceBroker({ logger: true, logLevel: "error" });
 		broker.loadService("./test/services/test.service");
@@ -2932,32 +3167,44 @@ describe("Test encodeResponse", () => {
 			return JSON.stringify(req.headers["accept"]);
 		});
 
-		const service = broker.createService(ApiGateway, {
+		const service = broker.createService({
+			mixins: [ApiGateway],
 			settings: {
-				routes: [{
-					aliases: {
-						"hello": "test.hello",
-					},
-				}]
+				routes: [
+					{
+						aliases: {
+							hello: "test.hello"
+						}
+					}
+				]
 			},
 			methods: {
-				encodeResponse: encodeResponse,
+				encodeResponse: encodeResponse
 			}
 		});
 		const server = service.server;
 
-		return broker.start()
-			.then(() => request(server)
-				.get("/hello")
-				.set("Accept", "some/encoding"))
+		return broker
+			.start()
+			.then(() => request(server).get("/hello").set("Accept", "some/encoding"))
 			.then(res => {
 				expect(res.statusCode).toBe(200);
 				expect(res.body).toBe("some/encoding");
 				expect(encodeResponse).toHaveBeenCalledTimes(1);
-				expect(encodeResponse).toHaveBeenCalledWith(expect.any(http.IncomingMessage), expect.any(http.ServerResponse), expect.any(String));
+				expect(encodeResponse).toHaveBeenCalledWith(
+					expect.any(http.IncomingMessage),
+					expect.any(http.ServerResponse),
+					expect.any(String)
+				);
 
 				encodeResponse.mockClear();
-			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
+			})
+			.then(() => broker.stop())
+			.catch(err =>
+				broker.stop().then(() => {
+					throw err;
+				})
+			);
 	});
 
 	it("should overwrite the content type header", () => {
@@ -2969,32 +3216,45 @@ describe("Test encodeResponse", () => {
 			return data;
 		});
 
-		const service = broker.createService(ApiGateway, {
+		const service = broker.createService({
+			mixins: [ApiGateway],
 			settings: {
-				routes: [{
-					aliases: {
-						"hello": "test.hello",
-					},
-				}]
+				routes: [
+					{
+						aliases: {
+							hello: "test.hello"
+						}
+					}
+				]
 			},
 			methods: {
-				encodeResponse: encodeResponse,
+				encodeResponse: encodeResponse
 			}
 		});
 		const server = service.server;
 
-		return broker.start()
-			.then(() => request(server)
-				.get("/hello"))
+		return broker
+			.start()
+			.then(() => request(server).get("/hello"))
 			.then(res => {
 				expect(res.statusCode).toBe(200);
 				expect(res.text).toBe("Hello Moleculer");
 				expect(res.header["content-type"]).toBe("text/html");
 				expect(encodeResponse).toHaveBeenCalledTimes(1);
-				expect(encodeResponse).toHaveBeenCalledWith(expect.any(http.IncomingMessage), expect.any(http.ServerResponse), expect.any(String));
+				expect(encodeResponse).toHaveBeenCalledWith(
+					expect.any(http.IncomingMessage),
+					expect.any(http.ServerResponse),
+					expect.any(String)
+				);
 
 				encodeResponse.mockClear();
-			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
+			})
+			.then(() => broker.stop())
+			.catch(err =>
+				broker.stop().then(() => {
+					throw err;
+				})
+			);
 	});
 
 	it("should call encodeResponse in sendError", () => {
@@ -3005,37 +3265,48 @@ describe("Test encodeResponse", () => {
 			return JSON.stringify(req.headers["accept"]);
 		});
 
-		const service = broker.createService(ApiGateway, {
+		const service = broker.createService({
+			mixins: [ApiGateway],
 			settings: {
-				routes: [{
-					aliases: {
-						"error": "test.error",
-					},
-				}]
+				routes: [
+					{
+						aliases: {
+							error: "test.error"
+						}
+					}
+				]
 			},
 			methods: {
-				encodeResponse: encodeResponse,
+				encodeResponse: encodeResponse
 			}
 		});
 		const server = service.server;
 
-		return broker.start()
-			.then(() => request(server)
-				.get("/error")
-				.set("Accept", "some/encoding"))
+		return broker
+			.start()
+			.then(() => request(server).get("/error").set("Accept", "some/encoding"))
 			.then(res => {
 				expect(res.statusCode).toBe(500);
 				expect(res.body).toBe("some/encoding");
 				expect(encodeResponse).toHaveBeenCalledTimes(1);
-				expect(encodeResponse).toHaveBeenCalledWith(expect.any(http.IncomingMessage), expect.any(http.ServerResponse), expect.any(Object));
+				expect(encodeResponse).toHaveBeenCalledWith(
+					expect.any(http.IncomingMessage),
+					expect.any(http.ServerResponse),
+					expect.any(Object)
+				);
 
 				encodeResponse.mockClear();
-			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
+			})
+			.then(() => broker.stop())
+			.catch(err =>
+				broker.stop().then(() => {
+					throw err;
+				})
+			);
 	});
 });
 
 describe("Test route middlewares", () => {
-
 	it("should call global & route middlewares", () => {
 		const broker = new ServiceBroker({ logger: false });
 		broker.loadService("./test/services/test.service");
@@ -3051,20 +3322,23 @@ describe("Test route middlewares", () => {
 			next();
 		});
 
-		const service = broker.createService(ApiGateway, {
+		const service = broker.createService({
+			mixins: [ApiGateway],
 			settings: {
 				use: [mwg],
-				routes: [{
-					path: "/",
-					use: [mw1, mw2]
-				}]
+				routes: [
+					{
+						path: "/",
+						use: [mw1, mw2]
+					}
+				]
 			}
 		});
 		const server = service.server;
 
-		return broker.start()
-			.then(() => request(server)
-				.get("/test/hello/"))
+		return broker
+			.start()
+			.then(() => request(server).get("/test/hello/"))
 			.then(res => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
@@ -3072,14 +3346,32 @@ describe("Test route middlewares", () => {
 
 				expect(res.body).toBe("Hello Moleculer");
 				expect(mwg).toHaveBeenCalledTimes(1);
-				expect(mwg).toHaveBeenCalledWith(expect.any(http.IncomingMessage), expect.any(http.ServerResponse), expect.any(Function));
+				expect(mwg).toHaveBeenCalledWith(
+					expect.any(http.IncomingMessage),
+					expect.any(http.ServerResponse),
+					expect.any(Function)
+				);
 
 				expect(mw1).toHaveBeenCalledTimes(1);
-				expect(mw1).toHaveBeenCalledWith(expect.any(http.IncomingMessage), expect.any(http.ServerResponse), expect.any(Function));
+				expect(mw1).toHaveBeenCalledWith(
+					expect.any(http.IncomingMessage),
+					expect.any(http.ServerResponse),
+					expect.any(Function)
+				);
 
 				expect(mw2).toHaveBeenCalledTimes(1);
-				expect(mw2).toHaveBeenCalledWith(expect.any(http.IncomingMessage), expect.any(http.ServerResponse), expect.any(Function));
-			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
+				expect(mw2).toHaveBeenCalledWith(
+					expect.any(http.IncomingMessage),
+					expect.any(http.ServerResponse),
+					expect.any(Function)
+				);
+			})
+			.then(() => broker.stop())
+			.catch(err =>
+				broker.stop().then(() => {
+					throw err;
+				})
+			);
 	});
 
 	it("should return with error if middlewares call next with error", () => {
@@ -3094,19 +3386,22 @@ describe("Test route middlewares", () => {
 			next();
 		});
 
-		const service = broker.createService(ApiGateway, {
+		const service = broker.createService({
+			mixins: [ApiGateway],
 			settings: {
-				routes: [{
-					path: "/",
-					use: [mw1, mw2]
-				}]
+				routes: [
+					{
+						path: "/",
+						use: [mw1, mw2]
+					}
+				]
 			}
 		});
 		const server = service.server;
 
-		return broker.start()
-			.then(() => request(server)
-				.get("/test/hello"))
+		return broker
+			.start()
+			.then(() => request(server).get("/test/hello"))
 			.then(res => {
 				expect(res.statusCode).toBe(500);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
@@ -3117,21 +3412,31 @@ describe("Test route middlewares", () => {
 					name: "MoleculerError"
 				});
 				expect(mw1).toHaveBeenCalledTimes(1);
-				expect(mw1).toHaveBeenCalledWith(expect.any(http.IncomingMessage), expect.any(http.ServerResponse), expect.any(Function));
+				expect(mw1).toHaveBeenCalledWith(
+					expect.any(http.IncomingMessage),
+					expect.any(http.ServerResponse),
+					expect.any(Function)
+				);
 
 				expect(mw2).toHaveBeenCalledTimes(0);
-			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
+			})
+			.then(() => broker.stop())
+			.catch(err =>
+				broker.stop().then(() => {
+					throw err;
+				})
+			);
 	});
-
 });
 
 describe("Test authentication", () => {
-
 	it("don't enabled authentication if missing 'authenticate' method", () => {
 		let service = setup({
-			routes: [{
-				authentication: true
-			}]
+			routes: [
+				{
+					authentication: true
+				}
+			]
 		})[1];
 
 		expect(service.routes[0].authentication).toBeNull();
@@ -3147,11 +3452,14 @@ describe("Test authentication", () => {
 			email: "my@user.mail"
 		};
 		const authenticate = jest.fn(() => Promise.resolve(user));
-		const service = broker.createService(ApiGateway, {
+		const service = broker.createService({
+			mixins: [ApiGateway],
 			settings: {
-				routes: [{
-					authentication: true
-				}]
+				routes: [
+					{
+						authentication: true
+					}
+				]
 			},
 			methods: {
 				authenticate
@@ -3161,17 +3469,29 @@ describe("Test authentication", () => {
 
 		expect(typeof service.routes[0].authentication).toBe("function");
 
-		return broker.start()
-			.then(() => request(server)
-				.get("/test/whoami"))
+		return broker
+			.start()
+			.then(() => request(server).get("/test/whoami"))
 			.then(res => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
 
 				expect(res.body).toBe(`Hello ${user.username}`);
 				expect(authenticate).toHaveBeenCalledTimes(1);
-				expect(authenticate).toHaveBeenCalledWith(expect.any(Context), expect.any(Object), expect.any(http.IncomingMessage), expect.any(http.ServerResponse), expect.any(Object));
-			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
+				expect(authenticate).toHaveBeenCalledWith(
+					expect.any(Context),
+					expect.any(Object),
+					expect.any(http.IncomingMessage),
+					expect.any(http.ServerResponse),
+					expect.any(Object)
+				);
+			})
+			.then(() => broker.stop())
+			.catch(err =>
+				broker.stop().then(() => {
+					throw err;
+				})
+			);
 	});
 
 	it("anonymous user", () => {
@@ -3179,11 +3499,14 @@ describe("Test authentication", () => {
 		broker.loadService("./test/services/test.service");
 
 		const authenticate = jest.fn(() => Promise.resolve(null));
-		const service = broker.createService(ApiGateway, {
+		const service = broker.createService({
+			mixins: [ApiGateway],
 			settings: {
-				routes: [{
-					authentication: true
-				}]
+				routes: [
+					{
+						authentication: true
+					}
+				]
 			},
 			methods: {
 				authenticate
@@ -3193,29 +3516,46 @@ describe("Test authentication", () => {
 
 		expect(typeof service.routes[0].authentication).toBe("function");
 
-		return broker.start()
-			.then(() => request(server)
-				.get("/test/whoami"))
+		return broker
+			.start()
+			.then(() => request(server).get("/test/whoami"))
 			.then(res => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
 
 				expect(res.body).toBe("Who are you?");
 				expect(authenticate).toHaveBeenCalledTimes(1);
-				expect(authenticate).toHaveBeenCalledWith(expect.any(Context), expect.any(Object), expect.any(http.IncomingMessage), expect.any(http.ServerResponse), expect.any(Object));
-			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
+				expect(authenticate).toHaveBeenCalledWith(
+					expect.any(Context),
+					expect.any(Object),
+					expect.any(http.IncomingMessage),
+					expect.any(http.ServerResponse),
+					expect.any(Object)
+				);
+			})
+			.then(() => broker.stop())
+			.catch(err =>
+				broker.stop().then(() => {
+					throw err;
+				})
+			);
 	});
 
 	it("authentication failed", () => {
 		const broker = new ServiceBroker({ logger: false });
 		broker.loadService("./test/services/test.service");
 
-		const authenticate = jest.fn(() => Promise.reject(new MoleculerError("Not available", 400)));
-		const service = broker.createService(ApiGateway, {
+		const authenticate = jest.fn(() =>
+			Promise.reject(new MoleculerError("Not available", 400))
+		);
+		const service = broker.createService({
+			mixins: [ApiGateway],
 			settings: {
-				routes: [{
-					authentication: true
-				}]
+				routes: [
+					{
+						authentication: true
+					}
+				]
 			},
 			methods: {
 				authenticate
@@ -3225,9 +3565,9 @@ describe("Test authentication", () => {
 
 		expect(typeof service.routes[0].authentication).toBe("function");
 
-		return broker.start()
-			.then(() => request(server)
-				.get("/test/whoami"))
+		return broker
+			.start()
+			.then(() => request(server).get("/test/whoami"))
 			.then(res => {
 				expect(res.statusCode).toBe(400);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
@@ -3238,19 +3578,31 @@ describe("Test authentication", () => {
 					name: "MoleculerError"
 				});
 				expect(authenticate).toHaveBeenCalledTimes(1);
-				expect(authenticate).toHaveBeenCalledWith(expect.any(Context), expect.any(Object), expect.any(http.IncomingMessage), expect.any(http.ServerResponse), expect.any(Object));
-			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
+				expect(authenticate).toHaveBeenCalledWith(
+					expect.any(Context),
+					expect.any(Object),
+					expect.any(http.IncomingMessage),
+					expect.any(http.ServerResponse),
+					expect.any(Object)
+				);
+			})
+			.then(() => broker.stop())
+			.catch(err =>
+				broker.stop().then(() => {
+					throw err;
+				})
+			);
 	});
-
 });
 
 describe("Test authorization", () => {
-
 	it("don't enabled authorization if missing 'authorize' method", () => {
 		let service = setup({
-			routes: [{
-				authorization: true
-			}]
+			routes: [
+				{
+					authorization: true
+				}
+			]
 		})[1];
 
 		expect(service.routes[0].authorization).toBeNull();
@@ -3261,11 +3613,14 @@ describe("Test authorization", () => {
 		broker.loadService("./test/services/test.service");
 
 		const authorize = jest.fn(() => Promise.resolve());
-		const service = broker.createService(ApiGateway, {
+		const service = broker.createService({
+			mixins: [ApiGateway],
 			settings: {
-				routes: [{
-					authorization: true
-				}]
+				routes: [
+					{
+						authorization: true
+					}
+				]
 			},
 			methods: {
 				authorize
@@ -3275,17 +3630,29 @@ describe("Test authorization", () => {
 
 		expect(typeof service.routes[0].authorization).toBe("function");
 
-		return broker.start()
-			.then(() => request(server)
-				.get("/test/hello"))
+		return broker
+			.start()
+			.then(() => request(server).get("/test/hello"))
 			.then(res => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
 
 				expect(res.body).toBe("Hello Moleculer");
 				expect(authorize).toHaveBeenCalledTimes(1);
-				expect(authorize).toHaveBeenCalledWith(expect.any(Context), expect.any(Object), expect.any(http.IncomingMessage), expect.any(http.ServerResponse), expect.any(Object));
-			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
+				expect(authorize).toHaveBeenCalledWith(
+					expect.any(Context),
+					expect.any(Object),
+					expect.any(http.IncomingMessage),
+					expect.any(http.ServerResponse),
+					expect.any(Object)
+				);
+			})
+			.then(() => broker.stop())
+			.catch(err =>
+				broker.stop().then(() => {
+					throw err;
+				})
+			);
 	});
 
 	it("should give back error", () => {
@@ -3293,11 +3660,14 @@ describe("Test authorization", () => {
 		broker.loadService("./test/services/test.service");
 
 		const authorize = jest.fn(() => Promise.reject(new UnAuthorizedError(ERR_NO_TOKEN)));
-		const service = broker.createService(ApiGateway, {
+		const service = broker.createService({
+			mixins: [ApiGateway],
 			settings: {
-				routes: [{
-					authorization: true
-				}]
+				routes: [
+					{
+						authorization: true
+					}
+				]
 			},
 			methods: {
 				authorize
@@ -3307,23 +3677,34 @@ describe("Test authorization", () => {
 
 		expect(typeof service.routes[0].authorization).toBe("function");
 
-		return broker.start()
-			.then(() => request(server)
-				.get("/test/hello"))
+		return broker
+			.start()
+			.then(() => request(server).get("/test/hello"))
 			.then(res => {
 				expect(res.statusCode).toBe(401);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
 				expect(res.body).toEqual({
-					"message": "Unauthorized",
-					"code": 401,
-					"type": "NO_TOKEN",
-					"name": "UnAuthorizedError"
+					message: "Unauthorized",
+					code: 401,
+					type: "NO_TOKEN",
+					name: "UnAuthorizedError"
 				});
 				expect(authorize).toHaveBeenCalledTimes(1);
-				expect(authorize).toHaveBeenCalledWith(expect.any(Context), expect.any(Object), expect.any(http.IncomingMessage), expect.any(http.ServerResponse), expect.any(Object));
-			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
+				expect(authorize).toHaveBeenCalledWith(
+					expect.any(Context),
+					expect.any(Object),
+					expect.any(http.IncomingMessage),
+					expect.any(http.ServerResponse),
+					expect.any(Object)
+				);
+			})
+			.then(() => broker.stop())
+			.catch(err =>
+				broker.stop().then(() => {
+					throw err;
+				})
+			);
 	});
-
 });
 
 describe("Test authentication", () => {
@@ -3358,7 +3739,7 @@ describe("Test authentication", () => {
 						path: "C",
 						authentication: "cAuthn",
 						authorization: "cAuthz"
-					},
+					}
 				]
 			},
 			methods: {
@@ -3367,7 +3748,7 @@ describe("Test authentication", () => {
 				cAuthn,
 				cAuthz,
 				authenticate,
-				authorize,
+				authorize
 			}
 		});
 		server = service.server;
@@ -3440,25 +3821,26 @@ describe("Test authentication", () => {
 				expect(cAuthz).toHaveBeenCalledTimes(1);
 			});
 	});
-
 });
 
 describe("Test onError handlers", () => {
-
 	it("should return with JSON error object", () => {
 		const broker = new ServiceBroker({ logger: false });
-		const service = broker.createService(ApiGateway, {
+		const service = broker.createService({
+			mixins: [ApiGateway],
 			settings: {
-				routes: [{
-					path: "/api"
-				}]
+				routes: [
+					{
+						path: "/api"
+					}
+				]
 			}
 		});
 		const server = service.server;
 
-		return broker.start()
-			.then(() => request(server)
-				.get("/api/test/hello"))
+		return broker
+			.start()
+			.then(() => request(server).get("/api/test/hello"))
 			.then(res => {
 				expect(res.statusCode).toBe(404);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
@@ -3471,16 +3853,25 @@ describe("Test onError handlers", () => {
 					name: "ServiceNotFoundError",
 					type: "SERVICE_NOT_FOUND"
 				});
-			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
+			})
+			.then(() => broker.stop())
+			.catch(err =>
+				broker.stop().then(() => {
+					throw err;
+				})
+			);
 	});
 
 	it("should return with global error handler response", () => {
 		const broker = new ServiceBroker({ logger: false });
-		const service = broker.createService(ApiGateway, {
+		const service = broker.createService({
+			mixins: [ApiGateway],
 			settings: {
-				routes: [{
-					path: "/api",
-				}],
+				routes: [
+					{
+						path: "/api"
+					}
+				],
 				onError(req, res, err) {
 					res.setHeader("Content-Type", "text/plain");
 					res.writeHead(501);
@@ -3490,29 +3881,38 @@ describe("Test onError handlers", () => {
 		});
 		const server = service.server;
 
-		return broker.start()
-			.then(() => request(server)
-				.get("/api/test/hello"))
+		return broker
+			.start()
+			.then(() => request(server).get("/api/test/hello"))
 			.then(res => {
 				expect(res.statusCode).toBe(501);
 				expect(res.headers["content-type"]).toBe("text/plain");
 
 				expect(res.text).toBe("Global error: Service 'test.hello' is not found.");
-			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
+			})
+			.then(() => broker.stop())
+			.catch(err =>
+				broker.stop().then(() => {
+					throw err;
+				})
+			);
 	});
 
 	it("should return with route error handler response", () => {
 		const broker = new ServiceBroker({ logger: false });
-		const service = broker.createService(ApiGateway, {
+		const service = broker.createService({
+			mixins: [ApiGateway],
 			settings: {
-				routes: [{
-					path: "/api",
-					onError(req, res, err) {
-						res.setHeader("Content-Type", "text/plain");
-						res.writeHead(500);
-						res.end("Route error: " + err.message);
+				routes: [
+					{
+						path: "/api",
+						onError(req, res, err) {
+							res.setHeader("Content-Type", "text/plain");
+							res.writeHead(500);
+							res.end("Route error: " + err.message);
+						}
 					}
-				}],
+				],
 
 				onError(req, res, err) {
 					res.setHeader("Content-Type", "text/plain");
@@ -3523,20 +3923,25 @@ describe("Test onError handlers", () => {
 		});
 		const server = service.server;
 
-		return broker.start()
-			.then(() => request(server)
-				.get("/api/test/hello"))
+		return broker
+			.start()
+			.then(() => request(server).get("/api/test/hello"))
 			.then(res => {
 				expect(res.statusCode).toBe(500);
 				expect(res.headers["content-type"]).toBe("text/plain");
 
 				expect(res.text).toBe("Route error: Service 'test.hello' is not found.");
-			}).then(() => broker.stop()).catch(err => broker.stop().then(() => { throw err; }));
+			})
+			.then(() => broker.stop())
+			.catch(err =>
+				broker.stop().then(() => {
+					throw err;
+				})
+			);
 	});
 });
 
 describe("Test lifecycle events", () => {
-
 	it("`created` with only HTTP", () => {
 		const broker = new ServiceBroker({ logger: false });
 
@@ -3547,12 +3952,17 @@ describe("Test lifecycle events", () => {
 	it("`created` with HTTPS", () => {
 		const broker = new ServiceBroker({ logger: false });
 
-		const service = broker.createService(ApiGateway, {
+		const service = broker.createService({
+			mixins: [ApiGateway],
 			settings: {
 				https: {
-					key: fs.readFileSync(path.join(__dirname, "..", "..", "examples", "ssl", "key.pem")),
-					cert: fs.readFileSync(path.join(__dirname, "..", "..", "examples", "ssl", "cert.pem"))
-				},
+					key: fs.readFileSync(
+						path.join(__dirname, "..", "..", "examples", "ssl", "key.pem")
+					),
+					cert: fs.readFileSync(
+						path.join(__dirname, "..", "..", "examples", "ssl", "cert.pem")
+					)
+				}
 			}
 		});
 		expect(service.isHTTPS).toBe(true);
@@ -3568,7 +3978,11 @@ describe("Test lifecycle events", () => {
 		service.schema.started.call(service);
 
 		expect(server.listen).toHaveBeenCalledTimes(1);
-		expect(server.listen).toHaveBeenCalledWith(service.settings.port, service.settings.ip, expect.any(Function));
+		expect(server.listen).toHaveBeenCalledWith(
+			service.settings.port,
+			service.settings.ip,
+			expect.any(Function)
+		);
 	});
 
 	it("`stopped`", () => {
@@ -3595,28 +4009,31 @@ describe("Test route.path and aliases", () => {
 	let nextHandler = jest.fn((req, res) => res.sendStatus(200));
 
 	beforeAll(() => {
-
 		broker = new ServiceBroker({ logger: false });
 
-		service = broker.createService(ApiGateway, {
+		service = broker.createService({
+			mixins: [ApiGateway],
 			settings: {
 				path: "/api",
 				autoAliases: true,
-				routes: [{
-					path: "/te",
-					aliases: {
-						"GET test"(req, res) {
-							res.end("/api/te/test");
+				routes: [
+					{
+						path: "/te",
+						aliases: {
+							"GET test"(req, res) {
+								res.end("/api/te/test");
+							}
+						}
+					},
+					{
+						path: "",
+						aliases: {
+							"GET test"(req, res) {
+								res.end("/api/test");
+							}
 						}
 					}
-				}, {
-					path: "",
-					aliases: {
-						"GET test"(req, res) {
-							res.end("/api/test");
-						}
-					}
-				}]
+				]
 			}
 		});
 		broker.loadService("./test/services/test.service");
@@ -3647,9 +4064,7 @@ describe("Test route.path and aliases", () => {
 				expect(nextHandler).toHaveBeenCalledTimes(0);
 			});
 	});
-
 });
-
 
 describe("Test middleware mode", () => {
 	let broker;
@@ -3658,11 +4073,11 @@ describe("Test middleware mode", () => {
 	let nextHandler = jest.fn((req, res) => res.sendStatus(200));
 
 	beforeAll(() => {
-
 		broker = new ServiceBroker({ logger: false });
 		broker.loadService("./test/services/test.service");
 
-		service = broker.createService(ApiGateway, {
+		service = broker.createService({
+			mixins: [ApiGateway],
 			settings: {
 				server: false,
 				path: "/api"
@@ -3707,24 +4122,27 @@ describe("Test middleware mode", () => {
 });
 
 describe("Test file uploading", () => {
-
 	const broker = new ServiceBroker({ logger: false });
 
 	broker.createService({
 		name: "file",
 		actions: {
 			save(ctx) {
-				return new this.Promise((resolve) => {
-					if (ctx.params.pipe) {
+				return new this.Promise(resolve => {
+					if (ctx.stream && ctx.stream.pipe) {
 						const hash = crypto.createHash("sha256");
 
 						hash.on("readable", () => {
 							const data = hash.read();
 							if (data)
-								resolve({ hash: data.toString("base64"), meta: ctx.meta });
+								resolve({
+									hash: data.toString("base64"),
+									params: ctx.params,
+									meta: ctx.meta
+								});
 						});
 
-						ctx.params.pipe(hash);
+						ctx.stream.pipe(hash);
 					} else {
 						resolve({ params: ctx.params, meta: ctx.meta });
 					}
@@ -3735,58 +4153,61 @@ describe("Test file uploading", () => {
 
 	const onFilesLimitFn = jest.fn();
 
-	const service = broker.createService(ApiGateway, {
+	const service = broker.createService({
+		mixins: [ApiGateway],
 		settings: {
-			routes: [{
-				path: "/upload",
+			routes: [
+				{
+					path: "/upload",
 
-				bodyParsers: {
-					json: false
-				},
-
-				aliases: {
-					// File upload from HTML form
-					"POST /": "multipart:file.save",
-
-					// File upload from AJAX or cURL
-					"PUT /": "stream:file.save",
-
-					// File upload from AJAX or cURL
-					"PUT /:id": "stream:file.save",
-
-					// File upload from HTML form and overwrite busboy config
-					"POST /multi": {
-						type: "multipart",
-						// Action level busboy config
-						busboyConfig: {
-							empty: true,
-							limits: {
-								files: 3
-							}
-						},
-						action: "file.save"
+					bodyParsers: {
+						json: false
 					},
 
-					"POST /form/:id": {
-						type: "multipart",
-						// Action level busboy config
-						busboyConfig: {
-							empty: true,
-							limits: {
-								files: 0
-							}
+					aliases: {
+						// File upload from HTML form
+						"POST /": "multipart:file.save",
+
+						// File upload from AJAX or cURL
+						"PUT /": "stream:file.save",
+
+						// File upload from AJAX or cURL
+						"PUT /:id": "stream:file.save",
+
+						// File upload from HTML form and overwrite busboy config
+						"POST /multi": {
+							type: "multipart",
+							// Action level busboy config
+							busboyConfig: {
+								empty: true,
+								limits: {
+									files: 3
+								}
+							},
+							action: "file.save"
 						},
-						action: "file.save"
+
+						"POST /form/:id": {
+							type: "multipart",
+							// Action level busboy config
+							busboyConfig: {
+								empty: true,
+								limits: {
+									files: 0
+								}
+							},
+							action: "file.save"
+						}
+					},
+					// https://github.com/mscdex/busboy#busboy-methods
+					busboyConfig: {
+						limits: {
+							files: 1
+						},
+						onFilesLimit: onFilesLimitFn
 					}
-				},
-				// https://github.com/mscdex/busboy#busboy-methods
-				busboyConfig: {
-					limits: {
-						files: 1
-					},
-					onFilesLimit: onFilesLimitFn
-				},
-			}]
+				}
+			]
 		}
 	});
 	const server = service.server;
@@ -3794,23 +4215,25 @@ describe("Test file uploading", () => {
 
 	const origHashes = {};
 	const getHash = filename => {
-		return new Promise((resolve) => {
+		return new Promise(resolve => {
 			const hash = crypto.createHash("sha256");
 			hash.on("readable", () => {
 				const data = hash.read();
-				if (data)
-					resolve(data.toString("base64"));
+				if (data) resolve(data.toString("base64"));
 			});
 			fs.createReadStream(assetsDir + filename).pipe(hash);
 		});
 	};
 
 	beforeAll(() => {
-		return broker.start()
-			.then(() => Promise.all([
-				getHash("logo.png").then(hash => origHashes["logo.png"] = hash),
-				getHash("lorem.txt").then(hash => origHashes["lorem.txt"] = hash),
-			]));
+		return broker
+			.start()
+			.then(() =>
+				Promise.all([
+					getHash("logo.png").then(hash => (origHashes["logo.png"] = hash)),
+					getHash("lorem.txt").then(hash => (origHashes["lorem.txt"] = hash))
+				])
+			);
 	});
 	afterAll(() => broker.stop());
 
@@ -3821,14 +4244,16 @@ describe("Test file uploading", () => {
 			.then(res => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
-				expect(res.body).toEqual({ hash: origHashes["logo.png"], meta: {
-					$multipart: {},
-					$params: {},
-					encoding: "7bit",
-					fieldname: "myFile",
-					filename: "logo.png",
-					mimetype: "image/png"
-				} });
+				expect(res.body).toEqual({
+					hash: origHashes["logo.png"],
+					params: {
+						$encoding: "7bit",
+						$fieldname: "myFile",
+						$filename: "logo.png",
+						$mimetype: "image/png"
+					},
+					meta: {}
+				});
 
 				expect(onFilesLimitFn).toHaveBeenCalledTimes(0);
 			});
@@ -3837,21 +4262,22 @@ describe("Test file uploading", () => {
 	it("should send data field with multipart", () => {
 		return request(server)
 			.post("/upload")
-			.attach("myFile", assetsDir + "logo.png")
 			.field("name", "moleculer")
+			.attach("myFile", assetsDir + "logo.png")
 			.then(res => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
-				expect(res.body).toEqual({ hash: origHashes["logo.png"], meta: {
-					$multipart: {
-						name: "moleculer"
+				expect(res.body).toEqual({
+					hash: origHashes["logo.png"],
+					params: {
+						name: "moleculer",
+						$encoding: "7bit",
+						$fieldname: "myFile",
+						$filename: "logo.png",
+						$mimetype: "image/png"
 					},
-					$params: {},
-					encoding: "7bit",
-					fieldname: "myFile",
-					filename: "logo.png",
-					mimetype: "image/png"
-				}  });
+					meta: {}
+				});
 
 				expect(onFilesLimitFn).toHaveBeenCalledTimes(0);
 			});
@@ -3865,13 +4291,12 @@ describe("Test file uploading", () => {
 			.then(res => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
-				expect(res.body).toEqual([{
-					meta: {
-						$multipart: { name: "moleculer", more: "services" },
-						$params: { id: "f1234" }
-					},
-					params: {}
-				}]);
+				expect(res.body).toEqual([
+					{
+						meta: {},
+						params: { id: "f1234", name: "moleculer", more: "services" }
+					}
+				]);
 			});
 	});
 
@@ -3883,16 +4308,22 @@ describe("Test file uploading", () => {
 			.then(res => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
-				expect(res.body).toEqual({ hash: origHashes["logo.png"], meta: {
-					$multipart: {},
-					$params: {},
-					encoding: "7bit",
-					fieldname: "myFile",
-					filename: "logo.png",
-					mimetype: "image/png"
-				}  });
+				expect(res.body).toEqual({
+					hash: origHashes["logo.png"],
+					params: {
+						$encoding: "7bit",
+						$fieldname: "myFile",
+						$filename: "logo.png",
+						$mimetype: "image/png"
+					},
+					meta: {}
+				});
 				expect(onFilesLimitFn).toHaveBeenCalledTimes(1);
-				expect(onFilesLimitFn).toHaveBeenCalledWith(expect.any(Busboy), expect.any(Alias), service);
+				expect(onFilesLimitFn).toHaveBeenCalledWith(
+					expect.any(Busboy),
+					expect.any(Alias),
+					service
+				);
 			});
 	});
 
@@ -3905,22 +4336,26 @@ describe("Test file uploading", () => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
 				expect(res.body).toEqual([
-					{ hash: origHashes["logo.png"], meta: {
-						$multipart: {},
-						$params: {},
-						encoding: "7bit",
-						fieldname: "myFile",
-						filename: "logo.png",
-						mimetype: "image/png"
-					}  },
-					{ hash: origHashes["lorem.txt"], meta: {
-						$multipart: {},
-						$params: {},
-						encoding: "7bit",
-						fieldname: "myText",
-						filename: "lorem.txt",
-						mimetype: "text/plain"
-					}  }
+					{
+						hash: origHashes["logo.png"],
+						params: {
+							$encoding: "7bit",
+							$fieldname: "myFile",
+							$filename: "logo.png",
+							$mimetype: "image/png"
+						},
+						meta: {}
+					},
+					{
+						hash: origHashes["lorem.txt"],
+						params: {
+							$encoding: "7bit",
+							$fieldname: "myText",
+							$filename: "lorem.txt",
+							$mimetype: "text/plain"
+						},
+						meta: {}
+					}
 				]);
 			});
 	});
@@ -3934,11 +4369,8 @@ describe("Test file uploading", () => {
 			.then(res => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
-				expect(res.body).toEqual({ hash: origHashes["logo.png"], meta: {
-					$params: {},
-				}  });
+				expect(res.body).toEqual({ hash: origHashes["logo.png"], params: {}, meta: {} });
 			});
-
 	});
 
 	it("should upload file as stream with url params", () => {
@@ -3950,12 +4382,13 @@ describe("Test file uploading", () => {
 			.then(res => {
 				expect(res.statusCode).toBe(200);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
-				expect(res.body).toEqual({ hash: origHashes["logo.png"], meta: {
-					$params: { id: "f1234" },
-				} });
+				expect(res.body).toEqual({
+					hash: origHashes["logo.png"],
+					params: { id: "f1234" },
+					meta: {}
+				});
 			});
 	});
-
 });
 
 describe("Test dynamic routing", () => {
@@ -3979,10 +4412,10 @@ describe("Test dynamic routing", () => {
 				expect(res.statusCode).toBe(404);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
 				expect(res.body).toEqual({
-					"code": 404,
-					"message": "Not found",
-					"name": "NotFoundError",
-					"type": "NOT_FOUND"
+					code: 404,
+					message: "Not found",
+					name: "NotFoundError",
+					type: "NOT_FOUND"
 				});
 			});
 	});
@@ -3991,7 +4424,7 @@ describe("Test dynamic routing", () => {
 		service.addRoute({
 			path: "/my",
 			aliases: {
-				"hello": "test.hello"
+				hello: "test.hello"
 			}
 		});
 
@@ -4008,7 +4441,7 @@ describe("Test dynamic routing", () => {
 		service.addRoute({
 			path: "/other",
 			aliases: {
-				"hello": "test.hello"
+				hello: "test.hello"
 			}
 		});
 
@@ -4030,10 +4463,10 @@ describe("Test dynamic routing", () => {
 				expect(res.statusCode).toBe(404);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
 				expect(res.body).toEqual({
-					"code": 404,
-					"message": "Not found",
-					"name": "NotFoundError",
-					"type": "NOT_FOUND"
+					code: 404,
+					message: "Not found",
+					name: "NotFoundError",
+					type: "NOT_FOUND"
 				});
 			});
 	});
@@ -4052,7 +4485,7 @@ describe("Test dynamic routing", () => {
 		service.addRoute({
 			path: "/my",
 			aliases: {
-				"helloagain": "test.hello"
+				helloagain: "test.hello"
 			}
 		});
 
@@ -4072,10 +4505,10 @@ describe("Test dynamic routing", () => {
 				expect(res.statusCode).toBe(404);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
 				expect(res.body).toEqual({
-					"code": 404,
-					"message": "Not found",
-					"name": "NotFoundError",
-					"type": "NOT_FOUND"
+					code: 404,
+					message: "Not found",
+					name: "NotFoundError",
+					type: "NOT_FOUND"
 				});
 			});
 	});
@@ -4102,10 +4535,10 @@ describe("Test dynamic routing with name", () => {
 				expect(res.statusCode).toBe(404);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
 				expect(res.body).toEqual({
-					"code": 404,
-					"message": "Not found",
-					"name": "NotFoundError",
-					"type": "NOT_FOUND"
+					code: 404,
+					message: "Not found",
+					name: "NotFoundError",
+					type: "NOT_FOUND"
 				});
 			});
 	});
@@ -4115,7 +4548,7 @@ describe("Test dynamic routing with name", () => {
 			name: "first",
 			path: "/my",
 			aliases: {
-				"hello": "test.hello"
+				hello: "test.hello"
 			}
 		});
 
@@ -4133,7 +4566,7 @@ describe("Test dynamic routing with name", () => {
 			name: "second",
 			path: "/other",
 			aliases: {
-				"hello": "test.hello"
+				hello: "test.hello"
 			}
 		});
 
@@ -4155,10 +4588,10 @@ describe("Test dynamic routing with name", () => {
 				expect(res.statusCode).toBe(404);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
 				expect(res.body).toEqual({
-					"code": 404,
-					"message": "Not found",
-					"name": "NotFoundError",
-					"type": "NOT_FOUND"
+					code: 404,
+					message: "Not found",
+					name: "NotFoundError",
+					type: "NOT_FOUND"
 				});
 			});
 	});
@@ -4178,7 +4611,7 @@ describe("Test dynamic routing with name", () => {
 			name: "first",
 			path: "/my",
 			aliases: {
-				"helloagain": "test.hello"
+				helloagain: "test.hello"
 			}
 		});
 
@@ -4198,15 +4631,14 @@ describe("Test dynamic routing with name", () => {
 				expect(res.statusCode).toBe(404);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
 				expect(res.body).toEqual({
-					"code": 404,
-					"message": "Not found",
-					"name": "NotFoundError",
-					"type": "NOT_FOUND"
+					code: 404,
+					message: "Not found",
+					name: "NotFoundError",
+					type: "NOT_FOUND"
 				});
 			});
 	});
 });
-
 
 describe("Test dynamic routing with actions", () => {
 	let broker;
@@ -4229,10 +4661,10 @@ describe("Test dynamic routing with actions", () => {
 				expect(res.statusCode).toBe(404);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
 				expect(res.body).toEqual({
-					"code": 404,
-					"message": "Not found",
-					"name": "NotFoundError",
-					"type": "NOT_FOUND"
+					code: 404,
+					message: "Not found",
+					name: "NotFoundError",
+					type: "NOT_FOUND"
 				});
 			});
 	});
@@ -4242,7 +4674,7 @@ describe("Test dynamic routing with actions", () => {
 			route: {
 				path: "/my",
 				aliases: {
-					"hello": "test.hello"
+					hello: "test.hello"
 				}
 			}
 		});
@@ -4261,7 +4693,7 @@ describe("Test dynamic routing with actions", () => {
 			route: {
 				path: "/other",
 				aliases: {
-					"hello": "test.hello"
+					hello: "test.hello"
 				}
 			}
 		});
@@ -4284,10 +4716,10 @@ describe("Test dynamic routing with actions", () => {
 				expect(res.statusCode).toBe(404);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
 				expect(res.body).toEqual({
-					"code": 404,
-					"message": "Not found",
-					"name": "NotFoundError",
-					"type": "NOT_FOUND"
+					code: 404,
+					message: "Not found",
+					name: "NotFoundError",
+					type: "NOT_FOUND"
 				});
 			});
 	});
@@ -4311,15 +4743,16 @@ describe("Test route path optimization", () => {
 	beforeAll(() => {
 		[broker, service, server] = setup({
 			routes: [
-				{ path: "/", aliases: { "b": "test.hello" } },
-				{ path: "/a", aliases: { "c": "test.hello" } },
+				{ path: "/", aliases: { b: "test.hello" } },
+				{ path: "/a", aliases: { c: "test.hello" } },
 				{
-					path: "/a/b", aliases: {
-						"c": "test.hello",
+					path: "/a/b",
+					aliases: {
+						c: "test.hello",
 						"d/:id": "test.params",
-						"d/e": "test.params",
+						"d/e": "test.params"
 					}
-				},
+				}
 			]
 		});
 		return broker.start();
@@ -4384,30 +4817,34 @@ describe("Test auto aliasing", () => {
 	let server;
 
 	function regenerate() {
-		service.routes.forEach(route => route.opts.autoAliases && service.regenerateAutoAliases(route));
+		service.routes.forEach(
+			route => route.opts.autoAliases && service.regenerateAutoAliases(route)
+		);
 	}
 
 	beforeAll(() => {
-		[broker, service, server] = setup({
-			routes: [
-				{
-					path: "api",
-					whitelist: [
-						"posts.*",
-						"test.hello",
-						"test.full*",
-						"test.base*",
-						"test.update*"
-					],
+		[broker, service, server] = setup(
+			{
+				routes: [
+					{
+						path: "api",
+						whitelist: [
+							"posts.*",
+							"test.hello",
+							"test.full*",
+							"test.base*",
+							"test.update*"
+						],
 
-					autoAliases: true,
+						autoAliases: true,
 
-					aliases: {
-						"GET /postList": "posts.list"
+						aliases: {
+							"GET /postList": "posts.list"
+						}
 					}
-				}
-			]
-		}/*, { logger: true }*/);
+				]
+			} /*, { logger: true }*/
+		);
 
 		broker.loadService("./test/services/posts.service");
 		broker.loadService("./test/services/test.service");
@@ -4495,8 +4932,7 @@ describe("Test auto aliasing", () => {
 
 	it("unload `posts` service & regenerate aliases", () => {
 		const postService = broker.getLocalService("posts");
-		return broker.destroyService(postService)
-			.then(() => regenerate());
+		return broker.destroyService(postService).then(() => regenerate());
 	});
 
 	it("should call 'GET /api/posts'", () => {
@@ -4506,10 +4942,10 @@ describe("Test auto aliasing", () => {
 				expect(res.statusCode).toBe(404);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
 				expect(res.body).toEqual({
-					"name": "NotFoundError",
-					"message": "Not found",
-					"code": 404,
-					"type": "NOT_FOUND"
+					name: "NotFoundError",
+					message: "Not found",
+					code: 404,
+					type: "NOT_FOUND"
 				});
 			});
 	});
@@ -4531,18 +4967,17 @@ describe("Test auto aliasing", () => {
 				expect(res.statusCode).toBe(404);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
 				expect(res.body).toEqual({
-					"code": 404,
-					"message": "Not found",
-					"name": "NotFoundError",
-					"type": "NOT_FOUND"
+					code: 404,
+					message: "Not found",
+					name: "NotFoundError",
+					type: "NOT_FOUND"
 				});
 			});
 	});
 
 	it("reload `posts` service & regenerate aliases", () => {
 		broker.loadService("./test/services/posts.service");
-		return broker.Promise.delay(100)
-			.then(() => regenerate());
+		return broker.Promise.delay(100).then(() => regenerate());
 	});
 
 	it("should call 'GET /api/posts'", () => {
@@ -4569,7 +5004,7 @@ describe("Test auto aliasing", () => {
 		return Promise.all([
 			request(server).put("/api/update").query({ name: "John" }),
 			request(server).patch("/api/update").query({ name: "John" })
-		]).then((results) => {
+		]).then(results => {
 			results.forEach(result => {
 				expect(result.statusCode).toBe(200);
 				expect(result.headers["content-type"]).toBe("application/json; charset=utf-8");
@@ -4580,7 +5015,6 @@ describe("Test auto aliasing", () => {
 });
 
 describe("Test ETag cache control", () => {
-
 	describe("with enabled default ETag", () => {
 		let broker;
 		let service;
@@ -4589,10 +5023,12 @@ describe("Test ETag cache control", () => {
 		beforeAll(() => {
 			[broker, service, server] = setup({
 				etag: false,
-				routes: [{
-					path: "/",
-					etag: true
-				}]
+				routes: [
+					{
+						path: "/",
+						etag: true
+					}
+				]
 			});
 			broker.loadService("./test/services/test.service");
 			return broker.start();
@@ -4605,7 +5041,7 @@ describe("Test ETag cache control", () => {
 				.query({ name: "tiaod" })
 				.then(res => {
 					expect(res.statusCode).toBe(200);
-					expect(res.headers["etag"]).toBe("W/\"d-q+AO2Lbr8LT+rw9AWUCOel9HJU4\"");
+					expect(res.headers["etag"]).toBe('W/"d-q+AO2Lbr8LT+rw9AWUCOel9HJU4"');
 				});
 		});
 
@@ -4613,10 +5049,10 @@ describe("Test ETag cache control", () => {
 			return request(server)
 				.get("/test/greeter")
 				.query({ name: "tiaod" })
-				.set("If-None-Match", "\"d-q+AO2Lbr8LT+rw9AWUCOel9HJU4\"")
+				.set("If-None-Match", '"d-q+AO2Lbr8LT+rw9AWUCOel9HJU4"')
 				.then(res => {
 					expect(res.statusCode).toBe(304);
-					expect(res.headers["etag"]).toBe("W/\"d-q+AO2Lbr8LT+rw9AWUCOel9HJU4\"");
+					expect(res.headers["etag"]).toBe('W/"d-q+AO2Lbr8LT+rw9AWUCOel9HJU4"');
 				});
 		});
 
@@ -4671,7 +5107,7 @@ describe("Test ETag cache control", () => {
 			return request(server)
 				.head("/test/greeter")
 				.query({ name: "tiaod" })
-				.set("If-None-Match", "W/\"d-q+AO2Lbr8LT+rw9AWUCOel9HJU4\"")
+				.set("If-None-Match", 'W/"d-q+AO2Lbr8LT+rw9AWUCOel9HJU4"')
 				.then(res => {
 					expect(res.headers["content-type"]).toBe(undefined);
 					expect(res.headers["content-length"]).toBe(undefined);
@@ -4688,9 +5124,11 @@ describe("Test ETag cache control", () => {
 		beforeAll(() => {
 			[broker, service, server] = setup({
 				etag: "weak",
-				routes: [{
-					path: "/",
-				}]
+				routes: [
+					{
+						path: "/"
+					}
+				]
 			});
 			broker.loadService("./test/services/test.service");
 			return broker.start();
@@ -4703,7 +5141,7 @@ describe("Test ETag cache control", () => {
 				.query({ name: "tiaod" })
 				.then(res => {
 					expect(res.statusCode).toBe(200);
-					expect(res.headers["etag"]).toBe("W/\"d-q+AO2Lbr8LT+rw9AWUCOel9HJU4\"");
+					expect(res.headers["etag"]).toBe('W/"d-q+AO2Lbr8LT+rw9AWUCOel9HJU4"');
 				});
 		});
 	});
@@ -4716,9 +5154,11 @@ describe("Test ETag cache control", () => {
 		beforeAll(() => {
 			[broker, service, server] = setup({
 				etag: "strong",
-				routes: [{
-					path: "/",
-				}]
+				routes: [
+					{
+						path: "/"
+					}
+				]
 			});
 			broker.loadService("./test/services/test.service");
 			return broker.start();
@@ -4731,7 +5171,7 @@ describe("Test ETag cache control", () => {
 				.query({ name: "tiaod" })
 				.then(res => {
 					expect(res.statusCode).toBe(200);
-					expect(res.headers["etag"]).toBe("\"d-q+AO2Lbr8LT+rw9AWUCOel9HJU4\"");
+					expect(res.headers["etag"]).toBe('"d-q+AO2Lbr8LT+rw9AWUCOel9HJU4"');
 				});
 		});
 	});
@@ -4746,10 +5186,12 @@ describe("Test ETag cache control", () => {
 		beforeAll(() => {
 			[broker, service, server] = setup({
 				etag: true,
-				routes: [{
-					path: "/",
-					etag: custETag
-				}]
+				routes: [
+					{
+						path: "/",
+						etag: custETag
+					}
+				]
 			});
 			broker.loadService("./test/services/test.service");
 			return broker.start();
@@ -4766,7 +5208,7 @@ describe("Test ETag cache control", () => {
 					expect(res.headers["etag"]).toBe("123abc");
 
 					expect(custETag).toHaveBeenCalledTimes(1);
-					expect(custETag).toHaveBeenCalledWith("\"Hello tiaod\"");
+					expect(custETag).toHaveBeenCalledWith('"Hello tiaod"');
 				});
 		});
 	});
@@ -4809,13 +5251,13 @@ describe("Test new alias handling", () => {
 					aliases: {
 						"GET users": "users.create1",
 						"GET people": "people.list" // 503
-					},
+					}
 				},
 				{
 					path: "/user",
 					aliases: {
-						"GET users": "users.create2",
-					},
+						"GET users": "users.create2"
+					}
 				},
 				{
 					path: "/lang/:lng/",
@@ -4825,7 +5267,7 @@ describe("Test new alias handling", () => {
 						}
 					}
 				}
-			],
+			]
 		});
 
 		broker.createService({
@@ -4881,13 +5323,12 @@ describe("Test new alias handling", () => {
 				expect(res.statusCode).toBe(503);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
 				expect(res.body).toEqual({
-					"name": "ServiceUnavailableError",
-					"message": "Service unavailable",
-					"code": 503
+					name: "ServiceUnavailableError",
+					message: "Service unavailable",
+					code: 503
 				});
 			});
 	});
-
 });
 
 describe("Test internal service special char", () => {
@@ -4898,7 +5339,7 @@ describe("Test internal service special char", () => {
 	beforeAll(() => {
 		[broker, service, server] = setup({
 			path: "/api",
-			internalServiceSpecialChar: "@",
+			internalServiceSpecialChar: "@"
 		});
 
 		return broker.start();
@@ -4946,8 +5387,8 @@ describe("Test httpServerTimeout setting", () => {
 			.then(res => {
 				expect(res.statusCode).toBe(200);
 				expect(res.body).toEqual({
-					"status": 200,
-					"msg": "apitimeout response"
+					status: 200,
+					msg: "apitimeout response"
 				});
 			});
 	});
@@ -4964,7 +5405,6 @@ describe("Test httpServerTimeout setting", () => {
 				expect(err.message).toBe("socket hang up");
 			});
 	});
-
 });
 
 describe("Test listAliases action", () => {
@@ -4989,7 +5429,7 @@ describe("Test listAliases action", () => {
 					path: "/admin",
 
 					aliases: {
-						"basePath": "test.basePath"
+						basePath: "test.basePath"
 					}
 				}
 			]
@@ -5028,7 +5468,7 @@ describe("Test listAliases action", () => {
 						methods: "GET",
 						path: "greeter",
 						routePath: "/api"
-					},
+					}
 				]);
 			});
 	});
@@ -5045,8 +5485,16 @@ describe("Test listAliases action", () => {
 								action: {
 									name: "api.listAliases",
 									params: {
-										grouping: { convert: true, optional: true, type: "boolean" },
-										withActionSchema: { convert: true, optional: true, type: "boolean" }
+										grouping: {
+											convert: true,
+											optional: true,
+											type: "boolean"
+										},
+										withActionSchema: {
+											convert: true,
+											optional: true,
+											type: "boolean"
+										}
 									},
 									rawName: "listAliases",
 									rest: "GET /list-aliases"
@@ -5105,15 +5553,19 @@ describe("Test multi REST interfaces in service settings", () => {
 	let server;
 
 	function regenerate() {
-		service.routes.forEach(route => route.opts.autoAliases && service.regenerateAutoAliases(route));
+		service.routes.forEach(
+			route => route.opts.autoAliases && service.regenerateAutoAliases(route)
+		);
 	}
 
 	beforeAll(() => {
 		[broker, service, server] = setup({
-			routes: [{
-				path: "/",
-				autoAliases: true
-			}]
+			routes: [
+				{
+					path: "/",
+					autoAliases: true
+				}
+			]
 		});
 		broker.loadService("./test/services/multiRoute.service");
 		return broker.start().then(() => regenerate());
@@ -5124,7 +5576,7 @@ describe("Test multi REST interfaces in service settings", () => {
 		return Promise.all([
 			request(server).get("/route/hello"),
 			request(server).get("/route/multi/hello")
-		]).then((results) => {
+		]).then(results => {
 			results.forEach(result => {
 				expect(result.statusCode).toBe(200);
 				expect(result.headers["content-type"]).toBe("application/json; charset=utf-8");
@@ -5137,7 +5589,7 @@ describe("Test multi REST interfaces in service settings", () => {
 		return Promise.all([
 			request(server).get("/route/greet").query({ name: "John" }),
 			request(server).get("/route/multi/greet").query({ name: "John" })
-		]).then((results) => {
+		]).then(results => {
 			results.forEach(result => {
 				expect(result.statusCode).toBe(200);
 				expect(result.headers["content-type"]).toBe("application/json; charset=utf-8");
@@ -5172,7 +5624,7 @@ describe("Test multi REST interfaces in service settings", () => {
 			request(server).put("/route/multi/update").query({ name: "John" }),
 			request(server).patch("/route/update").query({ name: "John" }),
 			request(server).patch("/route/multi/update").query({ name: "John" })
-		]).then((results) => {
+		]).then(results => {
 			results.forEach(result => {
 				expect(result.statusCode).toBe(200);
 				expect(result.headers["content-type"]).toBe("application/json; charset=utf-8");
@@ -5181,7 +5633,6 @@ describe("Test multi REST interfaces in service settings", () => {
 		});
 	});
 });
-
 
 describe("Test pathToRegexpOptions", () => {
 	let broker;
@@ -5197,7 +5648,7 @@ describe("Test pathToRegexpOptions", () => {
 					aliases: {
 						"GET users": "users.create1",
 						"GET Users": "users.create2"
-					},
+					}
 				},
 				{
 					path: "/t2",
@@ -5208,8 +5659,8 @@ describe("Test pathToRegexpOptions", () => {
 					pathToRegexpOptions: {
 						sensitive: true
 					}
-				},
-			],
+				}
+			]
 		});
 
 		broker.createService({
@@ -5268,8 +5719,6 @@ describe("Test pathToRegexpOptions", () => {
 				expect(res.body).toEqual("OK2");
 			});
 	});
-
-
 });
 
 describe("Test named routes with same path", () => {
@@ -5301,10 +5750,10 @@ describe("Test named routes with same path", () => {
 				expect(res.statusCode).toBe(404);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
 				expect(res.body).toEqual({
-					"code": 404,
-					"message": "Not found",
-					"name": "NotFoundError",
-					"type": "NOT_FOUND"
+					code: 404,
+					message: "Not found",
+					name: "NotFoundError",
+					type: "NOT_FOUND"
 				});
 			});
 	});
@@ -5316,10 +5765,10 @@ describe("Test named routes with same path", () => {
 				expect(res.statusCode).toBe(404);
 				expect(res.headers["content-type"]).toBe("application/json; charset=utf-8");
 				expect(res.body).toEqual({
-					"code": 404,
-					"message": "Not found",
-					"name": "NotFoundError",
-					"type": "NOT_FOUND"
+					code: 404,
+					message: "Not found",
+					name: "NotFoundError",
+					type: "NOT_FOUND"
 				});
 			});
 	});
@@ -5329,7 +5778,7 @@ describe("Test named routes with same path", () => {
 			name: "no-auth",
 			path: "/my",
 			aliases: {
-				"hello": "test.hello"
+				hello: "test.hello"
 			},
 			onBeforeCall: hook1
 		});
@@ -5338,7 +5787,7 @@ describe("Test named routes with same path", () => {
 			name: "with-auth",
 			path: "/my",
 			aliases: {
-				"hi": "test.hello"
+				hi: "test.hello"
 			},
 			onBeforeCall: hook2
 		});
@@ -5375,7 +5824,7 @@ describe("Test named routes with same path", () => {
 			name: "with-auth",
 			path: "/other",
 			aliases: {
-				"hello": "test.hello"
+				hello: "test.hello"
 			}
 		});
 
@@ -5390,7 +5839,6 @@ describe("Test named routes with same path", () => {
 				expect(hook2).toHaveBeenCalledTimes(0);
 			});
 	});
-
 });
 
 describe("Test no qs options forwarding", () => {
@@ -5421,7 +5869,7 @@ describe("Test qs options forwarding", () => {
 		[broker, , server] = setup({
 			qsOptions: {
 				comma: true
-			},
+			}
 		});
 		return broker.start();
 	});

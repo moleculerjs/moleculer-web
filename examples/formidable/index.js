@@ -17,7 +17,7 @@
 
 const fs = require("fs");
 const { ServiceBroker } = require("moleculer");
-const formidable = require("formidable");
+const { formidable } = require("formidable");
 
 // ----
 
@@ -45,6 +45,8 @@ broker.createService({
 				},
 
 				aliases: {
+					"GET /:file": "file.get",
+
 					// File upload from AJAX or cURL
 					"PUT /": "stream:file.save",
 
@@ -58,7 +60,7 @@ broker.createService({
 					// File upload from HTML form
 					"POST /multi"(req, res) {
 						return this.handleFileUpload(req, res);
-					},
+					}
 				},
 
 				callOptions: {
@@ -68,12 +70,11 @@ broker.createService({
 				},
 
 				mappingPolicy: "restrict"
-			},
-
+			}
 		],
 
 		assets: {
-			folder: "./examples/formidable/assets",
+			folder: "./examples/formidable/assets"
 		}
 	},
 
@@ -90,21 +91,28 @@ broker.createService({
 
 				const ctx = req.$ctx;
 				const entries = Array.isArray(files.myfile) ? files.myfile : [files.myfile];
-				const result = await Promise.all(entries.map(entry => {
-					return ctx.call("file.save", fs.createReadStream(entry.path), {
-						meta: {
-							filename: entry.name,
-							$params: {
+				const result = await Promise.all(
+					entries.map(entry => {
+						return ctx.call(
+							"file.save",
+							{
+								$filename: entry.originalFilename,
+								$filesize: entry.size,
+								$mimetype: entry.type,
 								...req.params,
-								...fields,
-							}
-						}
-					});
-				}));
+								...fields
+							},
+							{ stream: fs.createReadStream(entry.filepath) }
+						);
+					})
+				);
 
-				return this.sendResponse(req, res, Array.isArray(files.myfile) ? result : result[0]);
+				return this.sendResponse(
+					req,
+					res,
+					Array.isArray(files.myfile) ? result : result[0]
+				);
 			});
-
 		}
 	}
 });

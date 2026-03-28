@@ -1,3 +1,145 @@
+<a name="0.11.0-beta4"></a>
+# 0.11.0-beta4 (2026-03-23)
+
+## Changes
+
+### Bug fixes
+- fix: skip blacklisted actions in auto-alias regeneration [#366](https://github.com/moleculerjs/moleculer-web/pull/366)
+- fix: crash when the upload file size exceeds the limit [#363](https://github.com/moleculerjs/moleculer-web/pull/363)
+- fix: mergeParams for internal services ($node.*) — params were not merged on the current request [#332](https://github.com/moleculerjs/moleculer-web/pull/332)
+
+### Improvements
+- Remove incorrect `declare module "moleculer-web"` wrapper from TypeScript definitions (based on [#357](https://github.com/moleculerjs/moleculer-web/pull/357))
+- Add tests for blacklist with autoAliases and mergeParams with internal services
+
+### Dependencies
+- Update all dependencies (major: eslint 10, @sinonjs/fake-timers 15, @types/serve-static 2, cross-env 10, eslint-plugin-security 4, webpack-dev-middleware 8)
+- Remove unused `eslint-plugin-node`
+- Add `@eslint/js` and `globals` for ESLint 10 flat config
+
+### CI
+- Update Node.js CI matrix: remove 18.x and 20.x, add 24.x
+- Bump minimum Node.js version to 22.x
+
+-----------------------------
+<a name="0.11.0-beta3"></a>
+# 0.11.0-beta3 (2025-10-09)
+
+## Changes
+
+- Added missing exported 3rd-party types
+- Added context response type
+- Added boolean CORS option
+- Fixed TypeScript definition exports
+- Fixed TypeScript import issue in case of module node16
+- Fixed typo in documentation
+
+<a name="0.11.0-beta2"></a>
+# 0.11.0-beta2 (2025-06-11)
+
+## Changes
+
+### BREAKING: Minimum Node 20
+
+The minimum Node version is Node 20.x.
+
+### BREAKING: Update dependencies
+Many dependencies (major, minor, patch) is upgraded which can contain breaking changes
+
+<a name="0.11.0-beta1"></a>
+# 0.11.0-beta1 (2024-12-04)
+
+## Changes
+
+### BREAKING: Updated `path-ro-regexp` library
+
+The `path-to-regexp` has been updated to 8.x.x. It contains many breaking changes in the path resolving. Check the [documentation](https://github.com/pillarjs/path-to-regexp?tab=readme-ov-file#express--4x) of library to how migrate your alias paths.
+
+**Optional parameter alias path**
+
+```
+    // Old way
+    "GET user/:name?": "user.get"
+
+    // New way
+    "GET user{/:name}": "user.get"
+```
+
+**Repeating parameter alias path**
+
+```
+    // Old way
+    "GET /users/*username": "user.resolveUsersByNames",
+
+    // New way
+    "GET /users/:username*": "user.resolveUsersByNames",
+```
+
+
+### Using 0.15 new streaming solution
+
+The moleculer-web@0.11.x supports Moleculer v0.15.x including the new streaming solution. It means, it doesn't support 0.13 and 0.14 moleculer versions.
+
+Thanks for the new solution, the multipart fields and request parameters are sent via `ctx.params` instead of meta and the file stream is available in `ctx.stream` in action handlers.
+
+**Example**
+
+```js
+module.exports = {
+    name: "file",
+    actions: {
+        save: {
+            handler(ctx) {
+                return new this.Promise((resolve, reject) => {
+                    const filePath = path.join(uploadDir, ctx.params.$filename);
+                    const f = fs.createWriteStream(filePath);
+                    f.on("close", () => {
+                        // File written successfully
+                        this.logger.info(`Uploaded file stored in '${filePath}'`);
+                        resolve({ filePath });
+                    });
+
+                    ctx.stream.on("error", err => {
+                        this.logger.info("File error received", err.message);
+                        reject(err);
+
+                        // Destroy the local file
+                        f.destroy(err);
+                    });
+
+                    f.on("error", () => {
+                        // Remove the errored file.
+                        fs.unlinkSync(filePath);
+                    });
+
+                    ctx.stream.pipe(f);
+                });
+            }
+        }
+    }
+};
+```
+
+Example content of `ctx.params`:
+
+```js
+{
+    // Multipart file properties
+    $fieldname: "myfile",
+    $filename: "avatar.png",
+    $encoding: "7bit",
+    $mimetype: "image/png",
+
+    // Other multipart fields
+    // e.g.: `<input type="text" name="name" id="name" value="Test User">`
+    name: "Test User",
+
+    // Request path parameter, e.g.: `/upload/single/1234`
+    id: "1234"
+}
+```
+
+-----------------------------
 <a name="0.10.8"></a>
 # 0.10.8 (2025-03-24)
 

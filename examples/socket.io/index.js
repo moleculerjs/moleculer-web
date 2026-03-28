@@ -12,10 +12,10 @@
  *
  */
 
-let path				= require("path");
-let { ServiceBroker } 	= require("moleculer");
-let ApiGatewayService 	= require("../../index");
-let IO 					= require("socket.io");
+let path = require("path");
+let { ServiceBroker } = require("moleculer");
+let ApiGatewayService = require("../../index");
+let IO = require("socket.io");
 
 // Create broker
 let broker = new ServiceBroker({
@@ -33,12 +33,14 @@ broker.createService({
 	mixins: [ApiGatewayService],
 	settings: {
 		assets: {
-			folder: path.join(__dirname, "assets"),
+			folder: path.join(__dirname, "assets")
 		},
 
-		routes: [{
-			path: "/api"
-		}]
+		routes: [
+			{
+				path: "/api"
+			}
+		]
 	},
 
 	events: {
@@ -61,12 +63,17 @@ broker.createService({
 			this.logger.info("Client connected via websocket!");
 
 			client.on("call", ({ action, params, opts }, done) => {
-				this.logger.info("Received request from client! Action:", action, ", Params:", params);
+				this.logger.info(
+					"Received request from client! Action:",
+					action,
+					", Params:",
+					params
+				);
 
-				this.broker.call(action, params, opts)
+				this.broker
+					.call(action, params, opts)
 					.then(res => {
-						if (done)
-							done(res);
+						if (done) done(res);
 					})
 					.catch(err => this.logger.error(err));
 			});
@@ -74,7 +81,6 @@ broker.createService({
 			client.on("disconnect", () => {
 				this.logger.info("Client disconnected");
 			});
-
 		});
 	}
 });

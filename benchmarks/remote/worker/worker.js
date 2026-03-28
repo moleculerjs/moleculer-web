@@ -1,6 +1,6 @@
 "use strict";
 
-let { ServiceBroker } 	= require("moleculer");
+let { ServiceBroker } = require("moleculer");
 
 // Create broker
 let broker = new ServiceBroker({
@@ -21,5 +21,4 @@ broker.createService({
 });
 
 // Start server
-broker.start()
-	.then(() => console.log(`Worker '${broker.nodeID}' started.`));
+broker.start().then(() => console.log(`Worker '${broker.nodeID}' started.`));

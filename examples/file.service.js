@@ -1,11 +1,11 @@
 const fs = require("fs");
 const path = require("path");
 const { NotFoundError } = require("../src/errors");
-const mkdir = require("mkdirp").sync;
+const { mkdirpSync } = require("mkdirp");
 const mime = require("mime-types");
 
 const uploadDir = path.join(__dirname, "__uploads");
-mkdir(uploadDir);
+mkdirpSync(uploadDir);
 
 module.exports = {
 	name: "file",
@@ -14,7 +14,9 @@ module.exports = {
 			handler(ctx) {
 				ctx.meta.$responseType = "image/png";
 				// Return as stream
-				return fs.createReadStream(path.join(__dirname, "full", "assets", "images", "logo.png"));
+				return fs.createReadStream(
+					path.join(__dirname, "full", "assets", "images", "logo.png")
+				);
 			}
 		},
 
@@ -35,8 +37,7 @@ module.exports = {
 		get: {
 			handler(ctx) {
 				const filePath = path.join(uploadDir, ctx.params.file);
-				if (!fs.existsSync(filePath))
-					return new NotFoundError();
+				if (!fs.existsSync(filePath)) return new NotFoundError();
 
 				ctx.meta.$responseType = mime.lookup(ctx.params.file);
 				// Return as stream
@@ -46,18 +47,21 @@ module.exports = {
 
 		save: {
 			handler(ctx) {
-				this.logger.info("Received upload $params:", ctx.meta.$params);
+				this.logger.info("Received upload params:", ctx.params);
 				return new this.Promise((resolve, reject) => {
 					//reject(new Error("Disk out of space"));
-					const filePath = path.join(uploadDir, ctx.meta.filename || this.randomName());
+					const filePath = path.join(
+						uploadDir,
+						ctx.params.$filename || this.randomName()
+					);
 					const f = fs.createWriteStream(filePath);
 					f.on("close", () => {
 						// File written successfully
 						this.logger.info(`Uploaded file stored in '${filePath}'`);
-						resolve({ filePath, meta: ctx.meta });
+						resolve({ filePath, params: ctx.params });
 					});
 
-					ctx.params.on("error", err => {
+					ctx.stream.on("error", err => {
 						this.logger.info("File error received", err.message);
 						reject(err);
 
@@ -70,7 +74,7 @@ module.exports = {
 						fs.unlinkSync(filePath);
 					});
 
-					ctx.params.pipe(f);
+					ctx.stream.pipe(f);
 				});
 			}
 		}

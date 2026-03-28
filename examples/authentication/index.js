@@ -2,20 +2,20 @@
 
 /**
  * This example shows how to use authentication with API Gateway
- * 
+ *
  * Example:
- * 	
+ *
  *  - Try to call /test/whoami. It will show a message "Who are you?"
- * 
+ *
  * 		http://localhost:3000/test/whoami
- * 	
+ *
  *  - Set a query param "access_token" with value "12345" and try again. Authentication will succeed and a message with the "Hello John" will be shown
- * 
+ *
  */
 
-let path 				= require("path");
-let { ServiceBroker } 	= require("moleculer");
-let ApiGatewayService 	= require("../../index");
+let path = require("path");
+let { ServiceBroker } = require("moleculer");
+let ApiGatewayService = require("../../index");
 
 // Create broker
 let broker = new ServiceBroker({
@@ -27,10 +27,9 @@ broker.loadService(path.join(__dirname, "..", "test.service"));
 
 // Load API Gateway
 broker.createService({
-	mixins: ApiGatewayService,
+	mixins: [ApiGatewayService],
 
 	settings: {
-
 		routes: [
 			{
 				// Enable authentication
@@ -42,12 +41,12 @@ broker.createService({
 	methods: {
 		/**
 		 * Authenticate the user from request
-		 * 
-		 * @param {Context} ctx 
+		 *
+		 * @param {Context} ctx
 		 * @param {Object} route
-		 * @param {IncomingMessage} req 
-		 * @param {ServerResponse} res 
-		 * @returns 
+		 * @param {IncomingMessage} req
+		 * @param {ServerResponse} res
+		 * @returns
 		 */
 		authenticate(ctx, route, req, res) {
 			let accessToken = req.query["access_token"];

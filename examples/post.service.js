@@ -1,13 +1,13 @@
 "use strict";
 
-const _ 		= require("lodash");
+const _ = require("lodash");
 const { MoleculerError } = require("moleculer").Errors;
-const fake 		= require("fakerator")();
+const fake = require("fakerator")();
 
 function generateFakeData(count) {
 	let rows = [];
 
-	for(let i = 0; i < count; i++) {
+	for (let i = 0; i < count; i++) {
 		let item = fake.entity.post();
 		item.id = i + 1;
 		item.author = fake.random.number(1, 10);
@@ -36,7 +36,6 @@ module.exports = {
 			}
 		},
 
-
 		get: {
 			cache: {
 				keys: ["id"]
@@ -44,8 +43,7 @@ module.exports = {
 			rest: "GET /:id",
 			handler(ctx) {
 				const post = this.findByID(ctx.params.id);
-				if (post)
-					return post;
+				if (post) return post;
 
 				return Promise.reject(new MoleculerError("Post not found!", 404));
 			}
@@ -74,12 +72,9 @@ module.exports = {
 			handler(ctx) {
 				const post = this.findByID(ctx.params.id);
 				if (post) {
-					if (ctx.params.title)
-						post.title = ctx.params.title;
-					if (ctx.params.content)
-						post.content = ctx.params.content;
-					if (ctx.params.author)
-						post.author = ctx.params.author;
+					if (ctx.params.title) post.title = ctx.params.title;
+					if (ctx.params.content) post.content = ctx.params.content;
+					if (ctx.params.author) post.author = ctx.params.author;
 
 					this.clearCache();
 					return post;
@@ -95,7 +90,6 @@ module.exports = {
 				this.clearCache();
 			}
 		}
-
 	},
 
 	methods: {

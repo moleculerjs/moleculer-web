@@ -1,7 +1,7 @@
 "use strict";
 
-const { ServiceBroker } 	= require("moleculer");
-const ApiService 			= require("../../index");
+const { ServiceBroker } = require("moleculer");
+const ApiService = require("../../index");
 
 // Create broker
 const broker = new ServiceBroker();
@@ -17,14 +17,14 @@ broker.createService({
 				name: "no-auth-route",
 				path: "/",
 				aliases: {
-					hi: "greeter.hello",
+					hi: "greeter.hello"
 				}
 			},
 			{
 				name: "only-auth-route",
 				path: "/",
 				aliases: {
-					"hello": "greeter.hello",
+					hello: "greeter.hello"
 				},
 				authorization: true
 			}
