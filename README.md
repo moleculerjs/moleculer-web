@@ -4,9 +4,8 @@
 [![Coverage Status](https://coveralls.io/repos/github/moleculerjs/moleculer-web/badge.svg?branch=master)](https://coveralls.io/github/moleculerjs/moleculer-web?branch=master)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/5d0c3b3d03bd4e8683a19630a32ad22b)](https://www.codacy.com/app/mereg-norbert/moleculer-web?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=moleculerjs/moleculer-web&amp;utm_campaign=Badge_Grade)
 [![Maintainability](https://api.codeclimate.com/v1/badges/6d81a3b83b448bbb1f99/maintainability)](https://codeclimate.com/github/moleculerjs/moleculer-web/maintainability)
-[![David](https://img.shields.io/david/moleculerjs/moleculer-web.svg)](https://david-dm.org/moleculerjs/moleculer-web)
 [![Known Vulnerabilities](https://snyk.io/test/github/moleculerjs/moleculer-web/badge.svg)](https://snyk.io/test/github/moleculerjs/moleculer-web)
-[![Join the chat at https://gitter.im/moleculerjs/moleculer](https://badges.gitter.im/moleculerjs/moleculer.svg)](https://gitter.im/moleculerjs/moleculer?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![Discord chat](https://img.shields.io/discord/585148559155003392)](https://discord.gg/TSEcDRP)
 
 # Official API Gateway for Moleculer framework  [![NPM version](https://img.shields.io/npm/v/moleculer-web.svg)](https://www.npmjs.com/package/moleculer-web)
 
@@ -90,6 +89,6 @@ $ npm run ci
 Moleculer-web is available under the [MIT license](https://tldrlegal.com/license/mit-license).
 
 ## Contact
-Copyright (c) 2016-2021 MoleculerJS
+Copyright (c) 2016-2026 MoleculerJS
 
 [![@moleculerjs](https://img.shields.io/badge/github-moleculerjs-green.svg)](https://github.com/moleculerjs) [![@MoleculerJS](https://img.shields.io/badge/twitter-MoleculerJS-blue.svg)](https://twitter.com/MoleculerJS)
