@@ -722,5 +722,3 @@ const ApiGatewayService: ServiceSchema & {
 };
 
 export default ApiGatewayService;
-
-export = ApiGatewayService;
