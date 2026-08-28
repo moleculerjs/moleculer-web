@@ -89,7 +89,6 @@ class Alias {
 		}
 	}
 
-
 	/**
 	 * Compiles a path using the given path parameters and returns the compiled string.
 	 *
@@ -103,19 +102,16 @@ class Alias {
 						k,
 						v == null ? v : Array.isArray(v) ? v.map(String) : String(v)
 					])
-			  )
+				)
 			: {};
 
 		try {
 			const toPath = compile(this.fullPath, this.route.opts.pathToRegexpOptions || {});
 			return toPath(strParams);
 		} catch (err) {
-			throw new MoleculerError(
-				err.message,
-				400,
-				"MISSING_PARAMETERS",
-				{ error: err.message }
-			);
+			throw new MoleculerError(err.message, 400, "MISSING_PARAMETERS", {
+				error: err.message
+			});
 		}
 	}
 
