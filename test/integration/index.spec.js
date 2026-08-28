@@ -5547,6 +5547,79 @@ describe("Test listAliases action", () => {
 	});
 });
 
+describe("Test compileRest action", () => {
+	let broker;
+	let server;
+	let service;
+
+	beforeAll(() => {
+		[broker, service, server] = setup({
+			routes: [
+				{
+					path: "/api",
+					aliases: {
+						"GET users": "test.greeter",
+						"GET users/:id": "test.greeter",
+						"POST users/:id": "test.hello",
+						"GET posts/:postId/comments/:commentId": "test.hello"
+					}
+				}
+			]
+		});
+
+		broker.loadService("./test/services/test.service");
+
+		return broker.start();
+	});
+
+	afterAll(() => broker.stop());
+
+	it("should compile path for action without parameters", async () => {
+		const res = await broker.call("api.compileRest", {
+			action: "test.greeter"
+		});
+		expect(res).toBe("/api/users");
+	});
+
+	it("should compile path for action with parameters", async () => {
+		const res = await broker.call("api.compileRest", {
+			action: "test.hello",
+			params: { id: "42" },
+			method: "POST"
+		});
+		expect(res).toBe("/api/users/42");
+	});
+
+	it("should compile path with multiple parameters", async () => {
+		const res = await broker.call("api.compileRest", {
+			action: "test.hello",
+			params: { postId: "post-1", commentId: "com-2" },
+			method: "GET"
+		});
+		expect(res).toBe("/api/posts/post-1/comments/com-2");
+	});
+
+	it("should return undefined if action not found", async () => {
+		const res = await broker.call("api.compileRest", {
+			action: "unknown.action"
+		});
+		expect(res).toBeUndefined();
+	});
+
+	it("should throw error if required parameters are missing", async () => {
+		expect.assertions(2);
+		try {
+			await broker.call("api.compileRest", {
+				action: "test.hello",
+				method: "POST"
+			});
+		} catch (err) {
+			expect(err.code).toBe(400);
+			expect(err.type).toBe("MISSING_PARAMETERS");
+		}
+	});
+});
+
 describe("Test multi REST interfaces in service settings", () => {
 	let broker;
 	let service;

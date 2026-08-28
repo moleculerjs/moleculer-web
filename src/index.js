@@ -278,9 +278,50 @@ module.exports = {
 
 				return this.removeRoute(ctx.params.path);
 			}
+		},
+		compileRest: {
+			params: {
+				action: {
+					type: "string"
+				},
+				params: {
+					type: "record",
+					optional: true,
+					key: { type: "string", pattern: /[A-Za-z0-9_]+/ },
+					value: { type: "string", convert: true, optional: true }
+				},
+				method: {
+					type: "string",
+					optional: true
+				}
+			},
+			visibility: "public",
+			handler(ctx) {
+				const actionName = ctx.params.action;
+				const method = ctx.params.method ? ctx.params.method.toUpperCase() : null;
+				const matchingAliases = this.aliases.filter(
+					alias => alias.action === actionName && (!method || alias.isMethod(method))
+				);
+
+				if (matchingAliases.length === 0) {
+					return;
+				}
+
+				let lastErr;
+				for (const alias of matchingAliases) {
+					try {
+						return alias.compile(ctx.params.params);
+					} catch (err) {
+						lastErr = err;
+					}
+				}
+
+				if (lastErr) {
+					throw lastErr;
+				}
+			}
 		}
 	},
-
 	methods: {
 		/**
 		 * Create HTTP server

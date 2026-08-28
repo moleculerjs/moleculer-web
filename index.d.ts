@@ -314,6 +314,7 @@ export class Alias {
 	path: string;
 	handler: null | Function[];
 	action: string;
+	compile(pathParameters?: Record<string, any>): string;
 }
 
 export class Route {

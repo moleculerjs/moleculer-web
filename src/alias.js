@@ -6,13 +6,13 @@
 
 "use strict";
 
-const { pathToRegexp } = require("path-to-regexp");
+const { pathToRegexp, compile } = require("path-to-regexp");
 const Busboy = require("@fastify/busboy");
 const kleur = require("kleur");
 const _ = require("lodash");
 
 const { PayloadTooLarge } = require("./errors");
-const { MoleculerClientError } = require("moleculer").Errors;
+const { MoleculerClientError, MoleculerError } = require("moleculer").Errors;
 const { removeTrailingSlashes, addSlashes, decodeParam, compose } = require("./utils");
 
 class Alias {
@@ -86,6 +86,32 @@ class Alias {
 		if (this.type == "multipart") {
 			// Handle file upload in multipart form
 			this.handler = this.multipartHandler.bind(this);
+		}
+	}
+
+	/**
+	 * Compiles a path using the given path parameters and returns the compiled string.
+	 *
+	 * @param {Object} pathParameters - The path parameters to be replaced in the path.
+	 * @return {string} - The compiled path with replaced path parameters.
+	 */
+	compile(pathParameters) {
+		const strParams = pathParameters
+			? Object.fromEntries(
+					Object.entries(pathParameters).map(([k, v]) => [
+						k,
+						v == null ? v : Array.isArray(v) ? v.map(String) : String(v)
+					])
+				)
+			: {};
+
+		try {
+			const toPath = compile(this.fullPath, this.route.opts.pathToRegexpOptions || {});
+			return toPath(strParams);
+		} catch (err) {
+			throw new MoleculerError(err.message, 400, "MISSING_PARAMETERS", {
+				error: err.message
+			});
 		}
 	}
 
